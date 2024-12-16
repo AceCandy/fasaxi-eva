@@ -1,0 +1,62 @@
+#主配置文件
+spring:
+  application:
+    name: wodi
+  # 激活环境配置
+  profiles:
+    active: local
+  # 文件编码 UTF8
+  mandatory-file-encoding: UTF-8
+  datasource:
+    username: "root"
+    password: "123456"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/fasaxi-eva?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&useAffectedRows=true
+
+server:
+  # 服务端口
+  port: 8801
+#  servlet:
+#    context-path: /wodi
+
+mybatis-plus:
+  configuration:
+    # 开启下划线转驼峰
+    map-underscore-to-camel-case: true
+  # mapper路径位置
+  mapper-locations: classpath:mapper/*.xml
+
+# 文档配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    #operations-sorter: order
+  group-configs:
+    - group: 'openApi'
+      display-name: '对外API'
+      paths-to-match: '/**'
+      packages-to-scan: cn.acecandy.fasaxi.eva.control
+  default-flat-param-object: true
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    swagger-model-name: 实体类列表
+  documents:
+    - name: 标题1
+      locations: classpath:markdown/*
+      group: 对外API
+    - name: 标题2
+      locations: classpath:markdown1/*
+      group: 对外API
+
+tg-bot:
+  emby-boss:
+    name: tgBot
+    token: '99xxxx999:AZXCVBNMQWERTYUIODFGHJKLRTYUI'
+    admins: 88888888888
+    owners: 88888888888
+    group: -18888888888888
