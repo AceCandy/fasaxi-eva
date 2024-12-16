@@ -90,11 +90,10 @@ public final class TgUtil {
      * 游戏讨论
      *
      * @param message      消息
-     * @param groupMessage 群组消息
      */
-    public static void gameSpeak(Message message, boolean groupMessage) {
+    public static void gameSpeak(Message message) {
         String text = message.getText();
-        if (StrUtil.isNotBlank(text) && StrUtil.startWith(text, "，") && groupMessage) {
+        if (StrUtil.isNotBlank(text) && StrUtil.startWith(text, "，")) {
             Game game = GameList.getGame(message.getChatId());
             if (game != null) {
                 game.speak(message.getFrom().getId());

@@ -1,10 +1,13 @@
 package cn.acecandy.fasaxi.eva.service;
 
 import cn.acecandy.fasaxi.eva.bot.impl.EmbyTelegramBot;
+import cn.acecandy.fasaxi.eva.config.FastEmbyConfig;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -28,27 +31,24 @@ public class FastEmbyService {
     private EmbyTelegramBot tgBot;
 
     @Resource
-    private AppConfig appConfig;
+    private FastEmbyConfig fastEmbyConfig;
 
     @Resource
     private RestTemplate restTemplate;
 
-    @Resource
-    private LogHelper logHelper;
-
     public ResponseEntity<?> handleEmbyRequest(String path, HttpServletRequest request) {
         String requestUrl = request.getRequestURL().toString();
-        logHelper.info("Received request: " + request.getMethod() + " " + requestUrl);
+        log.info("Received request: " + request.getMethod() + " " + requestUrl);
 
-        String originalUrl = appConfig.getEmbyHost() + "/emby/" + path;
+        String originalUrl = fastEmbyConfig.getEmbyHost() + "/emby/" + path;
         return proxyRequest(originalUrl, request);
     }
 
     public ResponseEntity<?> handleVideosRequest(String path, HttpServletRequest request) {
         String requestUrl = request.getRequestURL().toString();
-        logHelper.info("Received request: " + request.getMethod() + " " + requestUrl);
+        log.info("Received request: " + request.getMethod() + " " + requestUrl);
 
-        String originalUrl = appConfig.getEmbyHost() + "/Videos/" + path;
+        String originalUrl = fastEmbyConfig.getEmbyHost() + "/Videos/" + path;
         return proxyRequest(originalUrl, request);
     }
 
@@ -64,7 +64,7 @@ public class FastEmbyService {
                     .headers(response.getHeaders())
                     .body(response.getBody());
         } catch (Exception e) {
-            logHelper.error("Proxy error: " + e.getMessage());
+            log.error("Proxy error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body("Proxy error: " + e.getMessage());
         }
     }

@@ -122,8 +122,10 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
             command.process(msg, message, isGroupMessage);
         }
         // handleChatMembers(message);
-        if (!atBotUsername && !isCommand) {
-            TgUtil.gameSpeak(message, isGroupMessage);
+        if (!atBotUsername && !isCommand && isGroupMessage) {
+            // 全局游戏开局cnt-1
+            Command.SPEAK_TIME_CNT.getAndDecrement();
+            TgUtil.gameSpeak(message);
         }
     }
 

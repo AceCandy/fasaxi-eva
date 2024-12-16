@@ -1,5 +1,6 @@
 package cn.acecandy.fasaxi.eva.game;
 
+import cn.acecandy.fasaxi.eva.service.Command;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
@@ -834,6 +835,8 @@ public class Game extends Thread {
             tgBot.sendMessage(mailMsg);
         } finally {
             if (null != firstMsg) {
+                // 重置需要发言的条数
+                Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(50, 150));
                 tgBot.deleteMessage(firstMsg);
             }
         }

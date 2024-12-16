@@ -1,10 +1,5 @@
 package cn.acecandy.fasaxi.eva.service;
 
-import cn.hutool.cache.CacheUtil;
-import cn.hutool.cache.impl.TimedCache;
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.util.StrUtil;
 import cn.acecandy.fasaxi.eva.bin.GameStatus;
 import cn.acecandy.fasaxi.eva.bin.GameUtil;
 import cn.acecandy.fasaxi.eva.bin.TgUtil;
@@ -18,6 +13,12 @@ import cn.acecandy.fasaxi.eva.sql.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.sql.service.WodiGroupDao;
 import cn.acecandy.fasaxi.eva.sql.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.sql.service.WodiUserDao;
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.TimedCache;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
@@ -30,9 +31,11 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static cn.acecandy.fasaxi.eva.bin.Constants.GAME_SETTLEMENT;
 import static cn.acecandy.fasaxi.eva.bin.Constants.InTheGame;
+import static cn.acecandy.fasaxi.eva.bin.Constants.SPEAK_TIME_LIMIT_CNT;
 import static cn.acecandy.fasaxi.eva.bin.Constants.TIP_HELP;
 import static cn.acecandy.fasaxi.eva.bin.Constants.TIP_IN_GROUP;
 import static cn.acecandy.fasaxi.eva.bin.Constants.TIP_IN_RANK;
@@ -54,6 +57,12 @@ public class Command {
     private WodiUserDao wodiUserDao;
     @Resource
     private WodiTopDao wodiTopDao;
+
+    /**
+     * 全局发言时间数量
+     */
+    public final static AtomicInteger SPEAK_TIME_CNT =
+            new AtomicInteger(RandomUtil.randomInt(50, 150));
 
     public volatile Message rankMsg;
     public volatile TimedCache<String, List<WodiUser>> rankUserListMap
@@ -196,6 +205,13 @@ public class Command {
         if (!groupMessage) {
             return;
         }
+        if (SPEAK_TIME_CNT.get() > 0) {
+            SendMessage sendMessage = new SendMessage(chatId.toString(),
+                    StrUtil.format(SPEAK_TIME_LIMIT_CNT, SPEAK_TIME_CNT.get()));
+            tgBot.sendMessage(sendMessage);
+            return;
+        }
+
         Game game = GameList.getGame(chatId);
         // TelegramGroup group = TelegramGroupService.getGroup(chatId.toString());
         WodiGroup group = wodiGroupDao.findByGroupIdIfExist(chatId);

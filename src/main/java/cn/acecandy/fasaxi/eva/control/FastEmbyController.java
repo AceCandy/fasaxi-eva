@@ -1,5 +1,6 @@
 package cn.acecandy.fasaxi.eva.control;
 
+import cn.acecandy.fasaxi.eva.service.FastEmbyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

@@ -34,6 +34,7 @@ public interface Constants {
                       /wodi_top 查看飞升第一人榜单（20Dmail）
                       /wodi_exit 退出游戏
                       """;
+    String SPEAK_TIME_LIMIT_CNT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
     String userCreateGame = "{} 花费10封Dmail（成功开局后才扣取），创建了一个新游戏";
     String RECORD_TXT = """
                         \n
