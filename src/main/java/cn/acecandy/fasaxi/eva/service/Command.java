@@ -208,7 +208,7 @@ public class Command {
         if (SPEAK_TIME_CNT.get() > 0) {
             SendMessage sendMessage = new SendMessage(chatId.toString(),
                     StrUtil.format(SPEAK_TIME_LIMIT_CNT, SPEAK_TIME_CNT.get()));
-            tgBot.sendMessage(sendMessage);
+            tgBot.sendMessage(sendMessage, 15 * 1000);
             return;
         }
 
