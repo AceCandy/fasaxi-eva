@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+
 /**
  * @author tangningzhu
  * @since 2024/11/25
@@ -14,7 +16,13 @@ import org.springframework.web.client.RestTemplate;
 @Data
 public class FastEmbyConfig {
     @Value("${emby.host}")
-    private String embyHost;
+    public String embyHost;
+
+    @Value("${emby.publicAddr}")
+    public String embyPublicAddr;
+
+    @Value("${emby.strmPaths}")
+    public List<String> embyStrmPaths;
 
     @Bean
     public RestTemplate restTemplate() {

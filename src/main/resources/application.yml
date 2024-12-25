@@ -63,3 +63,7 @@ tg-bot:
 
 emby:
   host: http://192.168.0.34:8096
+  publicAddr: http://emby-real.acecandy.cn:800
+  strmPaths:
+    - 'https://alist.acecandy.cn:880/d'
+    - 'http://192.168.1.205:5244/d'

@@ -28,7 +28,7 @@ public class FastEmbyController {
     }
 
     @Operation(summary = "重定向请求")
-    @GetMapping("/Videos/{path:path}")
+    @GetMapping({"/Videos/{path:path}","/videos/{path:path}"})
     public ResponseEntity<?> handleVideosRequest(@PathVariable String path, HttpServletRequest request) {
         return fastEmbyService.handleVideosRequest(path, request);
     }
