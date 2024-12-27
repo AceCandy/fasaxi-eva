@@ -15,13 +15,19 @@ import java.util.List;
 @Data
 @ConfigurationProperties(prefix = "emby")
 public class FastEmbyConfig {
-    // @Value("${emby.host}")
+    /**
+     * 内网emby地址
+     */
     private String host;
 
-    // @Value("${emby.publicAddr}")
+    /**
+     * 公网emby地址
+     */
     private String publicAddr;
 
-    // @Value("${emby.strm-paths}")
+    /**
+     * strm相关路径
+     */
     private List<String> strmPaths;
 
     @Bean

@@ -624,7 +624,7 @@ public class Game extends Thread {
                 stringBuilder.append("🏆 ");
                 stringBuilder.append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word));
                 m.fraction = joinScore;
-                if(memberList.size()<=5){
+                if (memberList.size() <= 5) {
                     m.fraction += (memberList.size() - 6);
                 }
                 String homeOwnerFlag = "";
@@ -672,7 +672,7 @@ public class Game extends Thread {
                 stringBuilder.append(StrUtil.format(killUserWordIs,
                         TgUtil.tgNameOnUrl(m.user), m.word));
                 m.fraction = m.isUndercover ? spyJoinScore : joinScore;
-                if(memberList.size()<=5){
+                if (memberList.size() <= 5) {
                     m.fraction += (memberList.size() - 6);
                 }
                 String homeOwnerFlag = "";
@@ -699,6 +699,7 @@ public class Game extends Thread {
      * 实际结算
      */
     private void realSettlement(boolean winnerIsUndercover) {
+        boolean seasonEnds = false;
         try {
             wodiGroupDao.upFinishGame(chatId);
             wodiGroupDao.upMaxOfPeople(chatId, memberList.size());
@@ -812,8 +813,16 @@ public class Game extends Thread {
                         String upFirst = StrUtil.format(USER_LEVEL_UP_FIRST,
                                 TgUtil.tgNameOnUrl(maxMember.user),
                                 GameUtil.levelByLv(lv), upScore, registerMsg);
-                        embyDao.upIv(maxMember.user.getId(), upScore);
                         embyDao.allUpIv(5);
+                        if (lv >= 10) {
+                            upFirst = StrUtil.format(SEASON_ENDS,
+                                    TgUtil.tgNameOnUrl(maxMember.user),
+                                    GameUtil.levelByLv(lv), upScore, registerMsg);
+                            embyDao.allUpIv(5);
+                            seasonEnds = true;
+                        }
+                        embyDao.upIv(maxMember.user.getId(), upScore);
+
 
                         if (StrUtil.isNotBlank(registerCode)) {
                             SendMessage sendMessage = new SendMessage(maxMember.id.toString(),
@@ -843,6 +852,9 @@ public class Game extends Thread {
             if (null != firstMsg) {
                 // 重置需要发言的条数
                 Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(50, 150));
+                if (seasonEnds) {
+                    Command.SPEAK_TIME_CNT.set(99999);
+                }
                 tgBot.deleteMessage(firstMsg);
             }
         }

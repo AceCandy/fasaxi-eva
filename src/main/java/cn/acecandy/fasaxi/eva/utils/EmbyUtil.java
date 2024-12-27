@@ -1,5 +1,7 @@
 package cn.acecandy.fasaxi.eva.utils;
 
+import cn.acecandy.fasaxi.eva.bean.vo.HeadVO;
+import cn.acecandy.fasaxi.eva.bean.vo.HttpReqVO;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
@@ -7,12 +9,19 @@ import cn.hutool.core.util.URLUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpStatus;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.http.Method;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import cn.acecandy.fasaxi.eva.bean.vo.HeadVO;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 
+import java.util.Collections;
 import java.util.Map;
+
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 
 /**
  * emby 工具类
@@ -20,6 +29,7 @@ import java.util.Map;
  * @author tangningzhu
  * @since 2024/10/16
  */
+@Slf4j
 public final class EmbyUtil {
     private EmbyUtil() {
     }
@@ -67,6 +77,20 @@ public final class EmbyUtil {
      */
     public static HeadVO parseHead(HttpServletRequest request) {
         return HeadVO.builder().ua(request.getHeader("User-Agent")).build();
+    }
+
+    /**
+     * 解析http 请求入参
+     *
+     * @param request 请求
+     * @return {@link HttpReqVO }
+     */
+    public static HttpReqVO parseHttpReq(HttpServletRequest request) {
+        return HttpReqVO.builder()
+                .requestUri(request.getRequestURI()).method(request.getMethod())
+                .headers(rebuildReqHeader(request)).ua(request.getHeader("User-Agent"))
+                .paramsDict(request.getParameterMap())
+                .build();
     }
 
     /**
@@ -138,5 +162,80 @@ public final class EmbyUtil {
             return "";
         }
         return ALIST_PUBLIC_ADDR + "/d" + URLUtil.encode(embyUri);
+    }
+
+    /**
+     * 重新设置转换请求头
+     * <p>
+     * 忽略host参数
+     *
+     * @param request 请求
+     * @return {@link HttpHeaders }
+     */
+    public static HttpHeaders rebuildReqHeader(HttpServletRequest request) {
+        HttpHeaders headers = new HttpHeaders();
+
+        Map<String, String> headerMap = MapUtil.newHashMap();
+        for (String headerName : Collections.list(request.getHeaderNames())) {
+            if (!"host".equalsIgnoreCase(headerName)) {
+                headerMap.put(headerName, request.getHeader(headerName));
+            }
+        }
+        headers.setAll(headerMap);
+        return headers;
+    }
+
+    /**
+     * 重建 请求出参头
+     *
+     * @param resp 请求出参
+     * @return {@link HttpHeaders }
+     */
+    public static HttpHeaders rebuildRespHeader(HttpResponse resp) {
+        HttpHeaders headers = new HttpHeaders();
+
+        Map<String, String> headerMap = MapUtil.newHashMap();
+        resp.headers().forEach((k, v) -> {
+            headerMap.put(k, CollUtil.getFirst(v));
+        });
+        headers.setAll(headerMap);
+        return headers;
+    }
+
+
+    /**
+     * 代理直接请求
+     *
+     * @param originalUrl 原始url
+     * @param httpReqVO   http 请求入参vo
+     * @return {@link ResponseEntity }<{@link ? }>
+     */
+    public static ResponseEntity<?> proxyRequest(String originalUrl, HttpReqVO httpReqVO) {
+        try {
+            HttpRequest proxyRequest = HttpUtil
+                    .createRequest(Method.valueOf(httpReqVO.getMethod()), originalUrl).timeout(2000);
+            proxyRequest.header(httpReqVO.getHeaders());
+            try (HttpResponse httpResponse = proxyRequest.executeAsync()) {
+                return ResponseEntity.status(httpResponse.getStatus())
+                        .headers(EmbyUtil.rebuildRespHeader(httpResponse))
+                        .body(httpResponse.body());
+            }
+        } catch (Exception e) {
+            log.error("代理直接请求异常:{}", originalUrl, e);
+            return ResponseEntity.status(BAD_GATEWAY).body("Proxy error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 302重定向
+     *
+     * @param redirectUrl 重定向url
+     * @return {@link ResponseEntity }<{@link ? }>
+     */
+    public static ResponseEntity<?> redirect302(String redirectUrl) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Location", redirectUrl);
+        log.info("重定向到: {}", redirectUrl);
+        return new ResponseEntity<>(headers, org.springframework.http.HttpStatus.FOUND);
     }
 }

@@ -113,6 +113,18 @@ public interface Constants {
                                  🚨
                                  🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
                                  """;
+    String SEASON_ENDS = """
+                                 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+                                 🚨  🎇 游 戏 通 关，赛 季 结 束！🎇
+                                 🚨
+                                 🚨  🏆 {}成为<b>【{}】</b>飞升第一人
+                                 🚨  💰 收获<b>{}</b>封Dmail！{}
+                                 🚨  💓 <b>群内所有成员Dmail+10</b>
+                                 🚨  🎉 大家恭喜这个b！！！！！
+                                 🚨
+                                 🚨  游戏关闭<b>新赛季即将开始</b>，敬请期待！
+                                 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+                                 """;
     String USER_LEVEL_UP_HIGH = "注册码<b>{}</b>个";
     String killUserWordIs = "<s>{}</s> 的词语是 【{}】";
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
