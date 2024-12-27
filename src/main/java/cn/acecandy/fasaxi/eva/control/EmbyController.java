@@ -1,10 +1,10 @@
 package cn.acecandy.fasaxi.eva.control;
 
-import cn.hutool.core.util.ArrayUtil;
-import cn.hutool.core.util.StrUtil;
 import cn.acecandy.fasaxi.eva.bean.req.VideoRedirectReq;
 import cn.acecandy.fasaxi.eva.service.EmbyService;
 import cn.acecandy.fasaxi.eva.utils.EmbyUtil;
+import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.StrUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -14,69 +14,17 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Enumeration;
 
 @Slf4j
 @Tag(name = "Emby处理")
-@RestController
-@RequestMapping("/")
+// @RestController
+// @RequestMapping("/")
 public class EmbyController {
 
     @Resource
     private EmbyService embyService;
-
-    /*@Resource
-    private RestTemplate restTemplate;
-
-    private final String backendServiceUrl = "http://worldline-real.acecandy.cn:800";  // 后端服务 URL
-
-    @SneakyThrows
-    @RequestMapping(value = "/**", method = {RequestMethod.GET, RequestMethod.POST,
-            RequestMethod.PUT, RequestMethod.DELETE})
-    public ResponseEntity<?> proxyRequest(HttpServletRequest request) {
-        // 获取请求头
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Host", "worldline-real.acecandy.cn");
-        // headers.set("Host", request.getHeader("Host"));  // 保留原始 Host
-        headers.set("X-Real-IP", request.getRemoteAddr());  // 客户端真实 IP
-        headers.set("X-Forwarded-For", request.getHeader("X-Forwarded-For"));  // 转发的 IP 列表
-        headers.set("X-Forwarded-Proto", request.getScheme());  // 原请求协议
-        // 其他需要的请求头可以添加到这里
-
-        // 构建请求实体
-        HttpEntity<byte[]> entity = new HttpEntity<>(headers);
-        // HttpEntity<byte[]> entity;
-        if (request.getMethod().equalsIgnoreCase("POST")
-                || request.getMethod().equalsIgnoreCase("PUT")) {
-            byte[] body = request.getInputStream().readAllBytes();
-            entity = new HttpEntity<>(body, headers);
-        } else {
-            entity = new HttpEntity<>(headers);
-        }
-
-        String requestUri = request.getRequestURI();
-        String queryString = request.getQueryString();  // 获取请求的查询参数
-        String url = backendServiceUrl;
-        if (!StrUtil.startWith(requestUri, "/emby/")) {
-            url = url + "/web" + requestUri;
-        } else {
-            url = url + requestUri;
-        }
-        url = url + (queryString != null ? "?" + queryString : "");
-
-        // 转发请求并返回响应
-        *//*ResponseEntity<String> responseEntity = restTemplate.exchange(url,
-                HttpMethod.valueOf(request.getMethod()), entity, String.class);*//*
-        ResponseEntity<byte[]> responseEntity = restTemplate.exchange(url, HttpMethod.valueOf(request.getMethod()), entity, byte[].class);
-
-
-        return ResponseEntity.status(responseEntity.getStatusCode())
-                .headers(responseEntity.getHeaders())
-                .body(responseEntity.getBody());
-    }*/
 
     @Operation(summary = "重定向")
     @GetMapping({"emby/videos/{id}/stream*", "emby/videos/{id}/original*"})

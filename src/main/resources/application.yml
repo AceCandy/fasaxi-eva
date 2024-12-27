@@ -7,6 +7,9 @@ spring:
     active: local
   # 文件编码 UTF8
   mandatory-file-encoding: UTF-8
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   datasource:
     username: "root"
     password: "123456"
@@ -63,7 +66,7 @@ tg-bot:
 
 emby:
   host: http://192.168.0.34:8096
-  publicAddr: http://emby-real.acecandy.cn:800
+  publicAddr: http://192.168.0.34:8096
   strmPaths:
-    - 'https://alist.acecandy.cn:880/d'
-    - 'http://192.168.1.205:5244/d'
+    - 'https://xxxx.xx/d'
+    - 'http://192.168.0.34:5244/d'

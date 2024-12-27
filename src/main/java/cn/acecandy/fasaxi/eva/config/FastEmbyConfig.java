@@ -1,9 +1,8 @@
 package cn.acecandy.fasaxi.eva.config;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -12,17 +11,18 @@ import java.util.List;
  * @author tangningzhu
  * @since 2024/11/25
  */
-@Configuration
+// @Configuration
 @Data
+@ConfigurationProperties(prefix = "emby")
 public class FastEmbyConfig {
-    @Value("${emby.host}")
-    public String embyHost;
+    // @Value("${emby.host}")
+    private String host;
 
-    @Value("${emby.publicAddr}")
-    public String embyPublicAddr;
+    // @Value("${emby.publicAddr}")
+    private String publicAddr;
 
-    @Value("${emby.strmPaths}")
-    public List<String> embyStrmPaths;
+    // @Value("${emby.strm-paths}")
+    private List<String> strmPaths;
 
     @Bean
     public RestTemplate restTemplate() {

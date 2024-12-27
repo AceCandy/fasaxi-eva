@@ -44,31 +44,33 @@ public class FastEmbyService {
     @Resource
     private RestTemplate restTemplate;
 
-    public ResponseEntity<?> handleEmbyRequest(String path, HttpServletRequest request) {
-        String requestUrl = request.getRequestURL().toString();
+    public ResponseEntity<?> handleEmbyRequest(HttpServletRequest request) {
+        String requestUrl = request.getRequestURI();
         log.info("收到请求: [{}]{}", request.getMethod(), requestUrl);
-        String requestPath = "emby/" + CollUtil.get(StrUtil.split(requestUrl, "/emby/"), 1);
-        String originalUrl = fastEmbyConfig.getEmbyHost() + "/" + requestPath;
+        // String requestPath = "emby/" + CollUtil.get(StrUtil.split(requestUrl, "/emby/"), 1);
+        String requestPath = StrUtil.removePrefix(requestUrl, "/");
+        String originalUrl = fastEmbyConfig.getHost() + "/" + requestPath;
         String ua = request.getHeader("User-Agent");
         Map<String, String[]> paramsDict = request.getParameterMap();
         log.info("UA:{} 提取的参数: {}", ua, paramsDict);
+
         String apiKey = request.getParameter("api_key");
         String mediaSourceId = request.getParameter("MediaSourceId");
-        if (StrUtil.isBlank(apiKey) || StrUtil.contains(requestUrl, "/Subtitles/")) {
+        if (StrUtil.isBlank(apiKey) || StrUtil.containsIgnoreCase(requestUrl, "/subtitles/")) {
             log.info("非播放请求或字幕请求,使用原始URL: {}", originalUrl);
             return proxyRequest(originalUrl, request);
         }
-        String videoId = CollUtil.getFirst(StrUtil.split(path, "/"));
+        /*String videoId = CollUtil.getFirst(StrUtil.split(path, "/"));
         if (mediaSourceId == null) {
             mediaSourceId = videoId;
-        }
+        }*/
         mediaSourceId = StrUtil.replace(mediaSourceId, "mediasource_", "");
-        if (!StrUtil.startWithIgnoreCase(path.toLowerCase(), "videos/")) {
+        if (!StrUtil.containsIgnoreCase(requestPath.toLowerCase(), "videos/")) {
             log.info("这不是播放请求,使用原始URL: {}", originalUrl);
             return proxyRequest(originalUrl, request);
         }
         String redirectUrl = StrUtil.format("{}/Items?Ids={}&Fields=Path,MediaSources&Limit=1&api_key={}",
-                fastEmbyConfig.embyHost, mediaSourceId, apiKey);
+                fastEmbyConfig.getHost(), mediaSourceId, apiKey);
         // HttpHeaders headers = new HttpHeaders();
         // headers.add("Location", redirectUrl);
         // log.info("重定向为: {}", redirectUrl);
@@ -78,7 +80,7 @@ public class FastEmbyService {
 
     public ResponseEntity<?> redirect(String url, String ua, String originalUrl,
                                       HttpServletRequest request, String requestPath) {
-        try (HttpResponse res = HttpRequest.get(url).execute()) {
+        try (HttpResponse res = HttpRequest.get(url).timeout(2000).executeAsync()) {
             if (!res.isOk() || StrUtil.isBlank(res.body())) {
                 log.info("获取MediaSources失败,使用原始URL: {}", originalUrl);
                 return proxyRequest(originalUrl, request);
@@ -95,7 +97,7 @@ public class FastEmbyService {
             log.info("Emby源文件: {}", filePath);
 
             if (StrUtil.contains(filePath, "/udp/")) {
-                originalUrl = StrUtil.format("{}/{}", fastEmbyConfig.embyPublicAddr, requestPath);
+                originalUrl = StrUtil.format("{}/{}", fastEmbyConfig.getHost(), requestPath);
                 log.info("这是IPTV请求,使用原始URL: {}", originalUrl);
                 return redirect302(originalUrl);
             }
@@ -165,7 +167,7 @@ public class FastEmbyService {
     }
 
     private boolean isStrmFilePath(String filePath) {
-        List<String> embyStrmPaths = fastEmbyConfig.embyStrmPaths;
+        List<String> embyStrmPaths = fastEmbyConfig.getStrmPaths();
         if (CollUtil.isEmpty(embyStrmPaths)) {
             return false;
         }
@@ -180,9 +182,10 @@ public class FastEmbyService {
 
     private ResponseEntity<?> proxyRequest(String originalUrl, HttpServletRequest request) {
         try {
-            HttpRequest proxyRequest = HttpUtil.createRequest(Method.valueOf(request.getMethod()), originalUrl);
+            HttpRequest proxyRequest = HttpUtil
+                    .createRequest(Method.valueOf(request.getMethod()), originalUrl).timeout(2000);
             proxyRequest.header(rebuildHeader(request));
-            try (HttpResponse httpResponse = proxyRequest.execute()) {
+            try (HttpResponse httpResponse = proxyRequest.executeAsync()) {
                 return ResponseEntity.status(httpResponse.getStatus())
                         .headers(rebuildHeader(httpResponse))
                         .body(httpResponse.body());
@@ -241,7 +244,7 @@ public class FastEmbyService {
                     CollUtil.get(StrUtil.split(requestUrl, "/videos/"), 1));
         }
 
-        String originalUrl = fastEmbyConfig.getEmbyHost() + "/" + requestPath;
+        String originalUrl = fastEmbyConfig.getHost() + "/" + requestPath;
         if (StrUtil.contains(requestUrl, "/Subtitles/")) {
             log.info("字幕请求,使用原始URL: {}", originalUrl);
             return proxyRequest(originalUrl, request);
@@ -274,7 +277,17 @@ public class FastEmbyService {
 
         String ua = request.getHeader("User-Agent");
         String redirectUrl = StrUtil.format("{}/Items?Ids={}&Fields=Path,MediaSources&Limit=1&api_key={}",
-                fastEmbyConfig.embyHost, mediaSourceId, apiKey);
+                fastEmbyConfig.getHost(), mediaSourceId, apiKey);
         return redirect(redirectUrl, ua, originalUrl, request, requestPath);
+    }
+
+    public static void main(String[] args) {
+        String baseUrl = "t.me/saturday_lite_bot?start=SaturDay.Lite-30-Register_K98{}G{}g15J";
+        char secondReplacement = 's';
+
+        for (char firstReplacement = 'a'; firstReplacement <= 'z'; firstReplacement++) {
+            String generatedUrl = StrUtil.format(baseUrl, firstReplacement, secondReplacement);
+            System.out.println(generatedUrl);
+        }
     }
 }

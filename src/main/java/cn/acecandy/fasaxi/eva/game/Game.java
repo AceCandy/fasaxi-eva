@@ -583,9 +583,9 @@ public class Game extends Thread {
 
         // 如果卧底/民全部存活 积分翻倍
         boolean allUnderCoverSurvive = winnerIsUndercover
-                && undercoverNum == surviveNum && undercoverNum > 1;
+                && undercoverNum == surviveNum; //&& undercoverNum > 1;
         boolean allPeopleSurvive = !winnerIsUndercover
-                && peopleNum == surviveNum && undercoverNum > 1;
+                && peopleNum == surviveNum && undercoverNum > 2;
         boolean boom2 = allUnderCoverSurvive || allPeopleSurvive;
         if (allUnderCoverSurvive) {
             stringBuilder.append(GAME_OVER_BOOM_UNDERCOVER);
@@ -624,13 +624,16 @@ public class Game extends Thread {
                 stringBuilder.append("🏆 ");
                 stringBuilder.append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word));
                 m.fraction = joinScore;
+                if(memberList.size()<=5){
+                    m.fraction += (memberList.size() - 6);
+                }
                 String homeOwnerFlag = "";
                 if (m.id.equals(homeOwner.getId())) {
                     homeOwnerFlag = "[房主]";
                     m.fraction += 1;
                 }
                 if (undercover) {
-                    m.fraction += spyVictoryScore * (2 + memberList.size() / 6);
+                    m.fraction += spyVictoryScore * (2 + memberList.size() / 8);
                     if (m.isSpace) {
                         m.fraction += spaceVictoryScore;
                     }
@@ -669,6 +672,9 @@ public class Game extends Thread {
                 stringBuilder.append(StrUtil.format(killUserWordIs,
                         TgUtil.tgNameOnUrl(m.user), m.word));
                 m.fraction = m.isUndercover ? spyJoinScore : joinScore;
+                if(memberList.size()<=5){
+                    m.fraction += (memberList.size() - 6);
+                }
                 String homeOwnerFlag = "";
                 if (m.id.equals(homeOwner.getId())) {
                     homeOwnerFlag = "[房主]";

@@ -1,13 +1,14 @@
 package cn.acecandy.fasaxi.eva;
 
+import cn.acecandy.fasaxi.eva.runtime.Task;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import cn.acecandy.fasaxi.eva.runtime.Task;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +17,7 @@ import java.net.InetAddress;
 
 @Slf4j
 @RestController
+@ConfigurationPropertiesScan
 @SpringBootApplication
 public class Application {
 

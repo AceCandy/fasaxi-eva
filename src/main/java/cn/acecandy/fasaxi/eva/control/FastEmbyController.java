@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,15 +21,15 @@ public class FastEmbyController {
     private FastEmbyService fastEmbyService;
 
     @Operation(summary = "emby请求")
-    @GetMapping("/{path:path}")
-    public ResponseEntity<?> handleEmbyRequest(@PathVariable String path, HttpServletRequest request) {
-        return fastEmbyService.handleEmbyRequest(path, request);
+    @GetMapping("/**")
+    public ResponseEntity<?> handleEmbyRequest(HttpServletRequest request) {
+        return fastEmbyService.handleEmbyRequest(request);
     }
 
-    @Operation(summary = "重定向请求")
-    @GetMapping({"/Videos/{path:path}","/videos/{path:path}"})
+    /*@Operation(summary = "重定向请求")
+    @GetMapping({"/Videos/{path:**}","/videos/{path:**}"})
     public ResponseEntity<?> handleVideosRequest(@PathVariable String path, HttpServletRequest request) {
         return fastEmbyService.handleVideosRequest(path, request);
-    }
+    }*/
 
 }
