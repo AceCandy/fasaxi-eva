@@ -29,8 +29,21 @@ public final class CacheUtil extends cn.hutool.cache.CacheUtil {
         MEDIA_CACHE.put(mediaCacheKey(ua, mediaSourceId), value);
     }
 
+    /**
+     * 获取对应缓存
+     * <p>
+     * 先查询ua为空的缓存，有就返回（主要是非115不需要ua） 没有再查询ua不为空的缓存
+     *
+     * @param ua            ua
+     * @param mediaSourceId 媒体源id
+     * @return {@link String }
+     */
     public static String getMediaKey(String ua, String mediaSourceId) {
-        return MEDIA_CACHE.get(mediaCacheKey(ua, mediaSourceId));
+        String cache = MEDIA_CACHE.get(mediaCacheKey("", mediaSourceId));
+        if (StrUtil.isBlank(cache)) {
+            return MEDIA_CACHE.get(mediaCacheKey(ua, mediaSourceId));
+        }
+        return cache;
     }
 
 }

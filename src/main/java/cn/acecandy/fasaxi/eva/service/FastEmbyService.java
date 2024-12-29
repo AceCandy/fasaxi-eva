@@ -48,11 +48,8 @@ public class FastEmbyService {
             if (StrUtil.isBlank(redirectUrl)) {
                 String embyFilePath = fetchEmbyFilePath(mediaSourceId, req.getApi_key());
                 redirectUrl = findRedirectUrl(embyFilePath, ua);
-                if (StrUtil.isNotBlank(redirectUrl)) {
-                    CacheUtil.setMediaKey(ua, mediaSourceId, redirectUrl);
-                }
             }
-            return redirect302(redirectUrl);
+            return redirect302(ua, mediaSourceId, redirectUrl);
         } catch (Exception e) {
             log.error("处理Emby请求失败:{} ", originalUrl, e);
             return proxyRequest(originalUrl, httpReqVO);
@@ -69,7 +66,7 @@ public class FastEmbyService {
     private static String findRedirectUrl(String embyFilePath, String ua) {
         // TODO 特殊处理
         try (HttpResponse headResponse = HttpUtil.createRequest(Method.HEAD, embyFilePath)
-                .header("User-Agent", ua).timeout(3000).executeAsync()) {
+                .header("User-Agent", ua).executeAsync()) {
             String redirectUrl = headResponse.header("Location");
 
             if (headResponse.getStatus() != HttpStatus.HTTP_MOVED_TEMP ||

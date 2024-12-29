@@ -196,7 +196,9 @@ public final class EmbyUtil {
 
         Map<String, String> headerMap = MapUtil.newHashMap();
         resp.headers().forEach((k, v) -> {
-            headerMap.put(k, CollUtil.getFirst(v));
+            if (k != null) {
+                headerMap.put(k, CollUtil.getFirst(v));
+            }
         });
         headers.setAll(headerMap);
         return headers;
@@ -232,10 +234,17 @@ public final class EmbyUtil {
      * @param redirectUrl 重定向url
      * @return {@link ResponseEntity }<{@link ? }>
      */
-    public static ResponseEntity<?> redirect302(String redirectUrl) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Location", redirectUrl);
-        log.info("重定向到: {}", redirectUrl);
-        return new ResponseEntity<>(headers, org.springframework.http.HttpStatus.FOUND);
+    public static ResponseEntity<?> redirect302(String ua, String mediaSourceId, String redirectUrl) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Location", redirectUrl);
+            log.info("重定向到: {}", redirectUrl);
+            return new ResponseEntity<>(headers, org.springframework.http.HttpStatus.FOUND);
+        } finally {
+            if (!StrUtil.contains(redirectUrl, "cdnfhnfile.115.com")) {
+                ua = "";
+            }
+            CacheUtil.setMediaKey(ua, mediaSourceId, redirectUrl);
+        }
     }
 }

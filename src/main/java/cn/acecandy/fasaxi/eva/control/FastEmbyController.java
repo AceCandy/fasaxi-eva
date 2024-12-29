@@ -24,7 +24,7 @@ public class FastEmbyController {
     private FastEmbyService fastEmbyService;
 
     @Operation(summary = "emby请求")
-    @GetMapping("emby/videos/{videoId}/*")
+    @GetMapping("videos/{videoId}/*")
     public ResponseEntity<?> handleEmbyRequest(@PathVariable String videoId, HttpServletRequest request,
                                                VideoRedirectReq req) {
         log.info("收到请求: [{}]{}, 提取的参数:{}", request.getMethod(),

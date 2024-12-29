@@ -1,11 +1,8 @@
 package cn.acecandy.fasaxi.eva.service;
 
-import cn.hutool.core.util.StrUtil;
 import cn.acecandy.fasaxi.eva.bean.req.VideoRedirectReq;
 import cn.acecandy.fasaxi.eva.bean.vo.HeadVO;
 import cn.acecandy.fasaxi.eva.bot.impl.EmbyTelegramBot;
-import cn.acecandy.fasaxi.eva.utils.CacheUtil;
-import cn.acecandy.fasaxi.eva.utils.EmbyUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -24,7 +21,7 @@ public class EmbyService {
     private EmbyTelegramBot tgBot;
 
     public String videoRedirect(HeadVO headVO, VideoRedirectReq req) {
-        String ua = headVO.getUa();
+        /*String ua = headVO.getUa();
         String mediaSourceId = req.getMediaSourceId();
 
         String redirectUrl = CacheUtil.getMediaKey(ua, mediaSourceId);
@@ -36,7 +33,7 @@ public class EmbyService {
         if (StrUtil.isNotBlank(redirectUrl)) {
             CacheUtil.setMediaKey(ua, mediaSourceId, redirectUrl);
             return redirectUrl;
-        }
+        }*/
         return "";
     }
 }

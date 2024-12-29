@@ -853,7 +853,7 @@ public class Game extends Thread {
                 // 重置需要发言的条数
                 Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(50, 150));
                 if (seasonEnds) {
-                    Command.SPEAK_TIME_CNT.set(99999);
+                    Command.SPEAK_TIME_CNT.set(999);
                 }
                 tgBot.deleteMessage(firstMsg);
             }

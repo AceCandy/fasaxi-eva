@@ -170,9 +170,9 @@ public final class GameUtil {
             return 7;
         } else if (score >= 1000 && score < 1250) {
             return 8;
-        } else if (score >= 1250 && score < 1500) {
+        } else if (score >= 1250 && score < 1800) {
             return 9;
-        } else if (score >= 1500) {
+        } else if (score >= 1800) {
             return 10;
         }
         return -1;
