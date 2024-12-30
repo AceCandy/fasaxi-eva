@@ -122,7 +122,7 @@ public interface Constants {
                                  🚨  💓 <b>群内所有成员Dmail+10</b>
                                  🚨  🎉 大家恭喜这个b！！！！！
                                  🚨
-                                 🚨  游戏关闭<b>新赛季即将开始</b>，敬请期待！
+                                 🚨  <b>新赛季即将开始</b>，当前进入季后赛阶段！
                                  🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
                                  """;
     String USER_LEVEL_UP_HIGH = "注册码<b>{}</b>个";
