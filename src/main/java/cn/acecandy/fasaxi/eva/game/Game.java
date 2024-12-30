@@ -274,15 +274,23 @@ public class Game extends Thread {
         String people = "";
         boolean isPin = false;
         if (rotate == 1) {
-            Member member = memberList.stream()
+            List<Member> members = memberList.stream()
                     .filter(m -> m.survive && !m.isSpace)
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), filteredList -> {
-                        if (filteredList.isEmpty()) {
-                            return null; // 如果没有满足条件的成员，返回 null
+                    .collect(Collectors.collectingAndThen(Collectors.toList(), l -> {
+                        if (l.size() < 2) {
+                            return CollUtil.newArrayList(); // 如果没有足够的成员，返回 null
                         }
-                        return filteredList.get(RandomUtil.randomInt(filteredList.size()));
+                        // 随机选择两个不同的索引
+                        int firstIndex = RandomUtil.randomInt(l.size());
+                        int secondIndex;
+                        do {
+                            secondIndex = RandomUtil.randomInt(l.size());
+                        } while (secondIndex == firstIndex);
+
+                        return List.of(l.get(firstIndex), l.get(secondIndex));
                     }));
-            people = StrUtil.format(firstSpeak, TgUtil.tgNameOnUrl(member));
+            people = StrUtil.format(firstSpeak, TgUtil.tgNameOnUrl(CollUtil.getFirst(members)),
+                    TgUtil.tgNameOnUrl(CollUtil.getLast(members)));
             isPin = true;
         }
 
@@ -394,7 +402,7 @@ public class Game extends Thread {
      * 发牌
      */
     void initWords() {
-        WodiWord word = wodiWordDao.getRandom();
+        WodiWord word = wodiWordDao.getRandom2();
         if (word == null) {
             return;
         }

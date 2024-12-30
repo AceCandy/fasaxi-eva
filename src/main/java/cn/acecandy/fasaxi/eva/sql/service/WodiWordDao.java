@@ -36,6 +36,7 @@ public class WodiWordDao {
         if (totalRecords == 0) {
             return null;
         }
+
         int randomIndex = RandomUtil.randomInt(totalRecords);
         LambdaQueryWrapper<WodiWord> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.orderByAsc(WodiWord::getId).last("limit 3 offset " + randomIndex);
@@ -47,6 +48,20 @@ public class WodiWordDao {
         return wordList.stream()
                 .min(Comparator.comparingInt(WodiWord::getPlayTime))
                 .orElse(null);
+    }
+
+    /**
+     * 随机获取词汇2
+     *
+     * @return {@link WodiWord }
+     */
+    public WodiWord getRandom2() {
+        List<WodiWord> words = wodiWordMapper.selectRandomWord10();
+        if (words.isEmpty()) {
+            return null;
+        }
+        // 找到play_time最小的记录
+        return words.stream().min(Comparator.comparingInt(WodiWord::getPlayTime)).orElse(null);
     }
 
     /**

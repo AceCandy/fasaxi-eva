@@ -68,7 +68,7 @@ public interface Constants {
                          <b>{}</b>秒后将开始第<b>{}</b> 轮投票。\n
                          {}
                          """;
-    String firstSpeak = "请由<b>{}</b>先进行发言";
+    String firstSpeak = "请由<b>{}</b>先进行首位发言；<b>{}</b>进行第二位发言";
     String ViewWord = "查看词语";
     String gameStart = "房主{}扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
     String votingStart = "现在开始投票，你想淘汰谁？";
