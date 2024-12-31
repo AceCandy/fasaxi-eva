@@ -35,6 +35,9 @@ public class WodiTop {
     @Schema(name = "等级")
     private Integer level;
 
+    @Schema(name = "赛季")
+    private Integer season;
+
     @Schema(name = "飞升时间")
     private Date upTime;
 }

@@ -8,6 +8,11 @@ package cn.acecandy.fasaxi.eva.bin;
  * @since 2024/10/16
  */
 public interface Constants {
+    /**
+     * 当前季节
+     */
+    Integer CURRENT_SEASON = 1;
+
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
     String TIP_IN_RANK = "{} 花费20封Dmail进行开启榜单";

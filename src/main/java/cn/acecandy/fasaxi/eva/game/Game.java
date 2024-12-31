@@ -844,6 +844,7 @@ public class Game extends Thread {
                         wodiTop.setId(null);
                         wodiTop.setLevel(lv);
                         wodiTop.setUpTime(new DateTime());
+                        wodiTop.setSeason(CURRENT_SEASON);
                         wodiTopDao.insertOrUpdate(wodiTop);
 
                         Message msg = tgBot.sendMessage(chatId, upFirst);

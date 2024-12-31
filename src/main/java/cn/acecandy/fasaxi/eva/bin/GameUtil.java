@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Date;
 import java.util.List;
 
+import static cn.acecandy.fasaxi.eva.bin.Constants.CURRENT_SEASON;
 import static cn.acecandy.fasaxi.eva.bin.Constants.RANK;
 import static cn.acecandy.fasaxi.eva.bin.Constants.RECORD_TXT;
 import static cn.acecandy.fasaxi.eva.bin.Constants.TOP_TITLE;
@@ -26,7 +27,7 @@ import static cn.acecandy.fasaxi.eva.bin.Constants.TOP_TITLE;
  * @since 2024/10/17
  */
 @Slf4j
-public final class GameUtil {
+public final class GameUtil extends GameSubUtil {
     private GameUtil() {
     }
 
@@ -112,71 +113,41 @@ public final class GameUtil {
     }
 
     /**
-     * 首飞第一人奖励
+     * 按等级获取首飞第一人币奖励
      *
-     * @param score 分数
+     * @param lv lv
      * @return {@link Integer }
      */
-    public static Integer levelUpScoreByScore(Integer score) {
-        Integer lv = level(score);
-        return levelUpScoreByLv(lv);
+    public static Integer levelUpScoreByLv(Integer lv) {
+        if (CURRENT_SEASON == 1) {
+            return levelUpScoreByLv1(lv);
+        } else if (CURRENT_SEASON == 2) {
+            return levelUpScoreByLv2(lv);
+        }
+        throw new RuntimeException("未知赛季");
     }
 
-    public static Integer levelUpScoreByLv(Integer lv) {
-        if (lv >= 6 && lv <= 9) {
-            return 500;
-        } else if (lv >= 10) {
-            return 1000;
-        }
-        return lv * 100;
-    }
 
     public static String levelByScore(Integer score) {
         return levelByLv(level(score));
     }
 
     public static String levelByLv(Integer lv) {
-        return switch (lv) {
-            case 0 -> "善良白丁";
-            case 1 -> "钢铁暴民";
-            case 2 -> "新生凤雏";
-            case 3 -> "智计卧龙";
-            case 4 -> "迷踪神探";
-            case 5 -> "幻影刺客";
-            case 6 -> "岐山王者";
-            case 7 -> "九州霸王";
-            case 8 -> "无天杀神";
-            case 9 -> "乱世传奇";
-            default -> lv >= 10 ? "地界至尊" : "地痞混子";
-        };
+        if (CURRENT_SEASON == 1) {
+            return levelByLv1(lv);
+        } else if (CURRENT_SEASON == 2) {
+            return levelByLv2(lv);
+        }
+        throw new RuntimeException("未知赛季");
     }
 
     public static Integer level(Integer score) {
-        if (score >= 0 && score < 100) {
-            return 0;
-        } else if (score >= 100 && score < 200) {
-            return 1;
-        } else if (score >= 200 && score < 300) {
-            return 2;
-        } else if (score >= 300 && score < 400) {
-            return 3;
-        } else if (score >= 400 && score < 500) {
-            return 4;
-        } else if (score >= 500 && score < 600) {
-            return 5;
-        } else if (score >= 600 && score < 800) {
-            return 6;
-        } else if (score >= 800 && score < 1000) {
-            return 7;
-        } else if (score >= 1000 && score < 1250) {
-            return 8;
-        } else if (score >= 1250 && score < 1800) {
-            return 9;
-        } else if (score >= 1800) {
-            return 10;
+        if (CURRENT_SEASON == 1) {
+            return level1(score);
+        } else if (CURRENT_SEASON == 2) {
+            return level2(score);
         }
-        return -1;
-        // return score / 100;
+        throw new RuntimeException("未知赛季");
     }
 
     /**
