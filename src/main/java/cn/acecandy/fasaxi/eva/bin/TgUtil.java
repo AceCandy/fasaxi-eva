@@ -23,6 +23,7 @@ import static cn.acecandy.fasaxi.eva.bin.Constants.READY;
 import static cn.acecandy.fasaxi.eva.bin.Constants.START;
 import static cn.acecandy.fasaxi.eva.bin.Constants.ViewWord;
 import static cn.acecandy.fasaxi.eva.bin.Constants.abstain;
+import static cn.acecandy.fasaxi.eva.bin.GameStatus.讨论时间;
 
 /**
  * tg工具类
@@ -89,14 +90,21 @@ public final class TgUtil {
     /**
      * 游戏讨论
      *
-     * @param message      消息
+     * @param message 消息
      */
     public static void gameSpeak(Message message) {
         String text = message.getText();
         if (StrUtil.isNotBlank(text) && StrUtil.startWith(text, "，")) {
             Game game = GameList.getGame(message.getChatId());
-            if (game != null) {
-                game.speak(message.getFrom().getId());
+            if (game != null && 讨论时间.equals(game.getStatus())) {
+                text = StrUtil.removeAllPrefix(text, "，");
+                if (StrUtil.startWithIgnoreCase(text, "！")) {
+                    // 白板爆词专用
+                    text = StrUtil.removeAllPrefix(text, "！");
+                    game.boom(message, message.getFrom().getId(), text);
+                } else {
+                    game.speak(message.getFrom().getId());
+                }
             }
         }
     }

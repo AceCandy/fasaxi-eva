@@ -32,6 +32,7 @@ public interface Constants {
                       
                       <b>游戏限制</b>：游戏最多10人参与，每轮至少45秒参与投票。
                       <b>胜利条件</b>：平民<b>找出所有卧底</b>时平民胜利。当<b>场上只剩下1名卧底和1名平民</b>时，卧底获得胜利。
+                      <b>白板附加胜利条件</b>：白板在讨论环节随时可以通过“，！XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则获胜，猜词失败则自己暴毙，游戏继续。
                       
                       /wodi 创建游戏
                       /wodi_record 查看自身记录
@@ -64,7 +65,7 @@ public interface Constants {
     String START = "开始";
     String TimeoutShutdown = "{}长时间无操作，游戏已自动关闭！";
     String sendWord = """
-                            你在<b>{}</b>群组中的游戏词语是: <b>{}</b>
+                            你在<b>{}</b>群组中的游戏词语是: <b>{}</b>\n{}
                       """;
     String exitGame = "{} 强行关闭了游戏";
     String SPEECH_TIME = """
@@ -89,6 +90,9 @@ public interface Constants {
     String everyoneVoted = "✅ 所有人都完成了投票：";
     String GAME_OVER = "🎇 游戏结束 <b>{}</b> 胜利！！！🎇\n";
     String DIVIDING_LINE = "------------------------\n";
+    String GAME_OVER_BOOM_SPACE = "<b>🀆 白板 达成【只能孤注一掷了不然我怎么活】成就，奖励积分翻倍！！</b>\n";
+    String GAME_OVER_BOOM_SPACE2 = "<b>🀆 白板 达成【对不起我是个警察】成就，奖励积分+5！！</b>\n";
+    String GAME_OVER_BOOM_SPACE3 = "<b>🀆 白板 达成【兄弟我不敢赌】成就，奖励积分+3！！</b>\n";
     String GAME_OVER_BOOM_UNDERCOVER = "<b>🤡卧底 阵营达成【全员恶人你怕了吗】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_PEOPLE = "<b>👨‍🌾平民 阵营达成【坚决肃清黑恶势力】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER = "<b>🤡卧底 阵营达成【白板怎么能算我们的人】成就，奖励积分+3！</b>\n";
@@ -119,17 +123,17 @@ public interface Constants {
                                  🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
                                  """;
     String SEASON_ENDS = """
-                                 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
-                                 🚨  🎇 游 戏 通 关，赛 季 结 束！🎇
-                                 🚨
-                                 🚨  🏆 {}成为<b>【{}】</b>飞升第一人
-                                 🚨  💰 收获<b>{}</b>封Dmail！{}
-                                 🚨  💓 <b>群内所有成员Dmail+10</b>
-                                 🚨  🎉 大家恭喜这个b！！！！！
-                                 🚨
-                                 🚨  <b>新赛季即将开始</b>，当前进入季后赛阶段！
-                                 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
-                                 """;
+                         🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+                         🚨  🎇 游 戏 通 关，赛 季 结 束！🎇
+                         🚨
+                         🚨  🏆 {}成为<b>【{}】</b>飞升第一人
+                         🚨  💰 收获<b>{}</b>封Dmail！{}
+                         🚨  💓 <b>群内所有成员Dmail+10</b>
+                         🚨  🎉 大家恭喜这个b！！！！！
+                         🚨
+                         🚨  <b>新赛季即将开始</b>，当前进入季后赛阶段！
+                         🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+                         """;
     String USER_LEVEL_UP_HIGH = "注册码<b>{}</b>个";
     String killUserWordIs = "<s>{}</s> 的词语是 【{}】";
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
@@ -143,7 +147,9 @@ public interface Constants {
     String RIGISTER_CODE4 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_qBZaZ6NEIP\n";
     String RIGISTER_CODE5 = """
                             t.me/WorldLineEmby_bot?start=WorldLine-30-Register_5CL4LdTaYL
-                            t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL
-                            t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
                             """;
+    // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL
+    // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
+    String BOOM_WAITING = "🔪🔪🔪 神秘的屠夫悄悄举起了手中的钢刀，静静地等待着最后的时刻…………";
+    String BOOM_FAIL = "❌❌❌ 猜词失败，白板玩家【{}】已暴毙，剩余玩家游戏继续…………";
 }

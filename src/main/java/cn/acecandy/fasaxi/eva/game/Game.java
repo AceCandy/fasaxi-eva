@@ -97,6 +97,8 @@ public class Game extends Thread {
      * 即将开始投票提醒
      */
     boolean voteReminder;
+    String PEOPLE_WORD;
+    String SPY_WORD;
 
     public EmbyTelegramBot tgBot;
 
@@ -183,12 +185,37 @@ public class Game extends Thread {
             return;
         }
 
-        if (endTime > speechTimeEnd || memberList.stream().filter(m -> m.survive).allMatch(m -> m.speak)) {
+        List<Member> boomList = memberList.stream()
+                .filter(m -> m.survive && StrUtil.isNotBlank(m.boom)).toList();
+        if (CollUtil.isNotEmpty(boomList)) {
+            sendBoom(CollUtil.getFirst(boomList));
+        }
+
+        if (endTime > speechTimeEnd || memberList.stream()
+                .filter(m -> m.survive).allMatch(m -> m.speak)) {
             transitionToVoting();
         } else if (!voteReminder && endTime > (speechTimeEnd - voteReminderVote)) {
             sendAboutToVote();
         }
     }
+
+    private void sendBoom(Member member) {
+        SendMessage sendMessage = new SendMessage(chatId.toString(), StrUtil.format(BOOM_WAITING));
+        tgBot.sendMessage(sendMessage, 5 * 1000);
+        ThreadUtil.safeSleep(5 * 1000);
+
+        String boom = member.boom;
+        if (StrUtil.equalsIgnoreCase(boom, PEOPLE_WORD)) {
+            sendBoomGameOver();
+        } else {
+            member.survive = false;
+            SendMessage failedMsg = new SendMessage(chatId.toString(),
+                    StrUtil.format(BOOM_FAIL, TgUtil.tgNameOnUrl(member)));
+            tgBot.sendMessage(failedMsg, 8 * 1000);
+        }
+
+    }
+
 
     private void handleVotingStatus(long endTime) {
         if (status != GameStatus.投票中) {
@@ -411,6 +438,9 @@ public class Game extends Thread {
         String wordPeople = b ? word.getPeopleWord() : word.getSpyWord();
         String wordSpy = b ? word.getSpyWord() : word.getPeopleWord();
         String wordBlank = " ";
+
+        PEOPLE_WORD = wordPeople;
+        SPY_WORD = wordSpy;
         wodiWordDao.upPlayTime(word.getId());
 
         // 总人数
@@ -562,6 +592,79 @@ public class Game extends Thread {
         return memberList.stream()
                 .filter(m -> m.survive && m.beVoted.get() == maxVotes)
                 .collect(Collectors.toList());
+    }
+
+    void sendBoomGameOver() {
+        status = GameStatus.游戏结算中;
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(StrUtil.format(GAME_OVER, "🀆 白板")).append(DIVIDING_LINE);
+
+        long undercoverSurviveNum = memberList.stream().filter(m -> m.isUndercover && m.survive).count();
+        long surviveNum = memberList.stream().filter(m -> m.survive).count();
+        long noSpaceSurviveNum = memberList.stream()
+                .filter(m -> m.survive && m.isUndercover && !m.isSpace).count();
+
+        Member member = memberList.stream().filter(m -> m.isSpace).findFirst().get();
+        member.fraction = joinScore;
+        member.fraction += (8 - memberList.size());
+        member.fraction += spaceVictoryScore;
+        String homeOwnerFlag = "";
+        if (member.id.equals(homeOwner.getId())) {
+            homeOwnerFlag = "[房主]";
+            member.fraction += 1;
+        }
+        Integer realFraction = member.fraction;
+
+        String boomStr = "";
+        if (surviveNum == 3) {
+            member.fraction += 3;
+            boomStr += "<b> +3</b>";
+            stringBuilder.append(GAME_OVER_BOOM_SPACE3);
+        } else {
+            if (noSpaceSurviveNum == 0) {
+                member.fraction *= 2;
+                boomStr += "<b> X 2</b>";
+                stringBuilder.append(GAME_OVER_BOOM_SPACE);
+            }
+            if (noSpaceSurviveNum + 1 == undercoverSurviveNum) {
+                member.fraction += 5;
+                boomStr += "<b> +5</b>";
+                stringBuilder.append(GAME_OVER_BOOM_SPACE2);
+            }
+        }
+
+        stringBuilder.append("\n\n");
+        // 其它用户全部杀掉
+        memberList.stream().filter(m -> m.survive && !m.isSpace).forEach(m -> m.survive = false);
+
+        stringBuilder.append("🏆 ").append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(member), ""))
+                .append(StrUtil.format("🀆 {} +{}", homeOwnerFlag, realFraction))
+                .append(boomStr).append("\n");
+
+        stringBuilder.append("\n");
+        // 淘汰
+        for (Member m : memberList) {
+            if (!m.survive) {
+                stringBuilder.append("☠️ ").append(StrUtil.format(killUserWordIs,
+                        TgUtil.tgNameOnUrl(m.user), m.word));
+                m.fraction = m.isUndercover ? spyJoinScore + 1 : joinScore - 1;
+                m.fraction += memberList.size() - 8;
+                homeOwnerFlag = "";
+                if (m.id.equals(homeOwner.getId())) {
+                    homeOwnerFlag = "[房主]";
+                    m.fraction += 2;
+                }
+                m.fraction += faileScore;
+                stringBuilder.append(m.isUndercover ? "🤡" + homeOwnerFlag + " +" : "👨‍🌾" + homeOwnerFlag + " +")
+                        .append(m.fraction).append("\n");
+            }
+        }
+        SendMessage sendMessage = new SendMessage(chatId.toString(), stringBuilder.toString());
+        tgBot.sendMessage(sendMessage);
+
+        realSettlement(true);
+        status = GameStatus.游戏关闭;
     }
 
     void sendGameOver() {
@@ -814,7 +917,7 @@ public class Game extends Thread {
                                 registerCode = RIGISTER_CODE4;
                             }
                         } else if (lv >= 10) {
-                            registerMsg = StrUtil.format(USER_LEVEL_UP_HIGH, 3);
+                            registerMsg = StrUtil.format(USER_LEVEL_UP_HIGH, 1);
                             registerCode = RIGISTER_CODE5;
                         }
                         // maxMember.dmailUp = upScore;
@@ -875,6 +978,24 @@ public class Game extends Thread {
             if (member != null && !member.speak && member.survive) {
                 member.speak = true;
             }
+        }
+    }
+
+    /**
+     * 白板爆词
+     *
+     * @param message 消息
+     * @param userId  用户id
+     * @param text    文本
+     */
+    public void boom(Message message, Long userId, String text) {
+        if (status == GameStatus.讨论时间) {
+            Member member = getMember(userId);
+            if (member == null || member.speak || !member.survive || !member.isSpace) {
+                return;
+            }
+            tgBot.deleteMessage(message);
+            member.boom = text;
         }
     }
 
@@ -990,6 +1111,7 @@ public class Game extends Thread {
         public int dmailUp = 0;
 
         public boolean speak = false;
+        public String boom = "";
 
         public Member(User user, WodiUser wodiUser) {
             this.user = user;
