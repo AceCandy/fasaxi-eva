@@ -1,6 +1,5 @@
 package cn.acecandy.fasaxi.eva.bot.impl;
 
-import cn.hutool.core.util.StrUtil;
 import cn.acecandy.fasaxi.eva.bin.GameStatus;
 import cn.acecandy.fasaxi.eva.bin.TgUtil;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
@@ -8,6 +7,7 @@ import cn.acecandy.fasaxi.eva.game.Game;
 import cn.acecandy.fasaxi.eva.runtime.Task;
 import cn.acecandy.fasaxi.eva.service.ButtonEvent;
 import cn.acecandy.fasaxi.eva.service.Command;
+import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -18,12 +18,14 @@ import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPermissions;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.PinChatMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.ChatPermissions;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
@@ -190,6 +192,22 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         Message execute = tgClient.execute(message);
         Task.addAutoDeleteMessage(execute, autoDeleteTime, status, game);
         return execute;
+    }
+
+    @SneakyThrows
+    public void muteGroup(Long chatId) {
+        ChatPermissions permissions = ChatPermissions.builder()
+                .canSendMessages(false).build();
+        SetChatPermissions setChatPermissions = new SetChatPermissions(chatId.toString(),permissions);
+        tgClient.executeAsync(setChatPermissions);
+    }
+
+    @SneakyThrows
+    public void unmuteGroup(Long chatId) {
+        ChatPermissions permissions = ChatPermissions.builder()
+                .canSendMessages(true).build();
+        SetChatPermissions setChatPermissions = new SetChatPermissions(chatId.toString(), permissions);
+        tgClient.executeAsync(setChatPermissions);
     }
 
     @SneakyThrows

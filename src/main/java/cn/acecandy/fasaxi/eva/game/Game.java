@@ -202,7 +202,8 @@ public class Game extends Thread {
     private void sendBoom(Member member) {
         SendMessage sendMessage = new SendMessage(chatId.toString(), StrUtil.format(BOOM_WAITING));
         tgBot.sendMessage(sendMessage, 5 * 1000);
-        ThreadUtil.safeSleep(5 * 1000);
+        tgBot.muteGroup(chatId);
+        ThreadUtil.safeSleep(4 * 1000);
 
         String boom = member.boom;
         if (StrUtil.equalsIgnoreCase(boom, PEOPLE_WORD)) {
@@ -213,7 +214,7 @@ public class Game extends Thread {
                     StrUtil.format(BOOM_FAIL, TgUtil.tgNameOnUrl(member)));
             tgBot.sendMessage(failedMsg, 8 * 1000);
         }
-
+        tgBot.unmuteGroup(chatId);
     }
 
 
@@ -641,7 +642,7 @@ public class Game extends Thread {
         memberList.stream().filter(m -> m.survive && !m.isSpace).forEach(m -> m.survive = false);
 
         stringBuilder.append("🏆 ").append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(member), ""))
-                .append(StrUtil.format("🀆 {} +{}", homeOwnerFlag, realFraction))
+                .append(StrUtil.format(" {} +{}", homeOwnerFlag, realFraction))
                 .append(boomStr).append("\n");
 
         stringBuilder.append("\n");

@@ -98,9 +98,9 @@ public final class TgUtil {
             Game game = GameList.getGame(message.getChatId());
             if (game != null && 讨论时间.equals(game.getStatus())) {
                 text = StrUtil.removeAllPrefix(text, "，");
-                if (StrUtil.startWithIgnoreCase(text, "！")) {
+                if (StrUtil.startWithIgnoreCase(text, "。")) {
                     // 白板爆词专用
-                    text = StrUtil.removeAllPrefix(text, "！");
+                    text = StrUtil.removeAllPrefix(text, "。");
                     game.boom(message, message.getFrom().getId(), text);
                 } else {
                     game.speak(message.getFrom().getId());

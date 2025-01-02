@@ -30,7 +30,7 @@ public class WodiTopDao {
 
     public List<WodiTop> selectTop(Integer season) {
         LambdaQueryWrapper<WodiTop> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.in(WodiTop::getSeason, season).orderByAsc(WodiTop::getLevel);
+        queryWrapper.eq(WodiTop::getSeason, season).orderByAsc(WodiTop::getLevel);
         return wodiTopMapper.selectList(queryWrapper);
     }
 

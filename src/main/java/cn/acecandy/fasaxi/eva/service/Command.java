@@ -102,7 +102,7 @@ public class Command {
                 break;
             case TOP:
                 handleTopCommand(chatId, message);
-                handleRankCommand(chatId, message);
+                // handleRankCommand(chatId, message);
                 break;
             case NEW_GAME:
                 handleNewGameCommand(message, groupMessage, chatId);
@@ -175,7 +175,8 @@ public class Command {
         }
         tgBot.sendMessage(new SendMessage(chatId.toString(),
                 StrUtil.format(TIP_IN_RANK, TgUtil.tgNameOnUrl(message.getFrom()))), 100);
-        Integer season = StrUtil.isBlank(message.getText()) ? CURRENT_SEASON : Integer.valueOf(message.getText());
+        String seasonStr = StrUtil.trim(StrUtil.removePrefix(message.getText(), "/wodi_top"));
+        Integer season = StrUtil.isBlank(seasonStr) ? CURRENT_SEASON : Integer.valueOf(seasonStr);
         List<WodiTop> topList = wodiTopDao.selectTop(season);
         if (CollUtil.isEmpty(topList)) {
             return;
