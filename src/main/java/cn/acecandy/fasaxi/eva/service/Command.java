@@ -33,6 +33,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static cn.acecandy.fasaxi.eva.bin.Constants.CURRENT_SEASON;
 import static cn.acecandy.fasaxi.eva.bin.Constants.GAME_SETTLEMENT;
 import static cn.acecandy.fasaxi.eva.bin.Constants.InTheGame;
 import static cn.acecandy.fasaxi.eva.bin.Constants.SPEAK_TIME_LIMIT_CNT;
@@ -150,6 +151,7 @@ public class Command {
         }
         tgBot.sendMessage(new SendMessage(chatId.toString(),
                 StrUtil.format(TIP_IN_RANK, TgUtil.tgNameOnUrl(message.getFrom()))), 1 * 1000);
+
         List<WodiUser> rankUserList = wodiUserDao.selectRank();
         if (CollUtil.isEmpty(rankUserList)) {
             return;
@@ -173,15 +175,17 @@ public class Command {
         }
         tgBot.sendMessage(new SendMessage(chatId.toString(),
                 StrUtil.format(TIP_IN_RANK, TgUtil.tgNameOnUrl(message.getFrom()))), 100);
-        List<WodiTop> topList = wodiTopDao.selectTop();
+        Integer season = StrUtil.isBlank(message.getText()) ? CURRENT_SEASON : Integer.valueOf(message.getText());
+        List<WodiTop> topList = wodiTopDao.selectTop(season);
         if (CollUtil.isEmpty(topList)) {
             return;
         }
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(message.getChatId().toString())
-                .photo(new InputFile(ResourceUtil.getStream(
-                        "static/pic/Top飞升-闭时曲线的碑文-压缩.png"), "闭时曲线的碑文"))
-                .caption(GameUtil.getTop(topList))
+                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
+                        "static/pic/Top飞升-{}-压缩.jpg", GameUtil.getTopBySeason(season))),
+                        GameUtil.getTopBySeason(season)))
+                .caption(GameUtil.getTop(topList, season))
                 .parseMode(ParseMode.HTML)
                 .build();
         tgBot.sendPhoto(sendPhoto, 300 * 1000);
@@ -205,7 +209,8 @@ public class Command {
         if (!groupMessage) {
             return;
         }
-        if (SPEAK_TIME_CNT.get() > 0) {
+        // 发言结束或者管理可以直接开
+        if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId()) && SPEAK_TIME_CNT.get() > 0) {
             SendMessage sendMessage = new SendMessage(chatId.toString(),
                     StrUtil.format(SPEAK_TIME_LIMIT_CNT, SPEAK_TIME_CNT.get()));
             tgBot.sendMessage(sendMessage, 15 * 1000);

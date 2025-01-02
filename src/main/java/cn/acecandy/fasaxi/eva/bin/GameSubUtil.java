@@ -1,6 +1,9 @@
 package cn.acecandy.fasaxi.eva.bin;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
+
+import static cn.acecandy.fasaxi.eva.bin.Constants.*;
 
 /**
  * 游戏工具类(赛季子集)
@@ -106,13 +109,52 @@ public class GameSubUtil {
             return 6;
         } else if (score >= 980 && score < 1200) {
             return 7;
-        } else if (score >= 1200 && score < 1500) {
+        } else if (score >= 1200 && score < 1521) {
             return 8;
-        } else if (score >= 1500 && score < 2000) {
+        } else if (score >= 1521 && score < 1999) {
             return 9;
-        } else if (score >= 2000) {
+        } else if (score >= 1999) {
             return 10;
         }
         return -1;
+    }
+
+    /**
+     * 获得首飞title
+     *
+     * @param season 季节
+     * @return {@link String }
+     */
+    public static String getTopTitle(Integer season) {
+        if (null == season) {
+            return StrUtil.format(TOP_TITLE, SEASON1, 1);
+        }
+        return StrUtil.format(TOP_TITLE, getTopBySeason(season), season);
+    }
+
+    public static String getTopBySeason(Integer season) {
+        if (season == 1) {
+            return SEASON1;
+        } else if (season == 2) {
+            return SEASON2;
+        } else if (season == 3) {
+            return SEASON3;
+        } else if (season == 4) {
+            return SEASON4;
+        } else if (season == 5) {
+            return SEASON5;
+        } else if (season == 6) {
+            return SEASON6;
+        } else if (season == 7) {
+            return SEASON7;
+        } else if (season == 8) {
+            return SEASON8;
+        } else if (season == 9) {
+            return SEASON9;
+        } else if (season == 10) {
+            return SEASON10;
+        }
+
+        return SEASON1;
     }
 }

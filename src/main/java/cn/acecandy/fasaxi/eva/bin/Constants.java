@@ -32,7 +32,7 @@ public interface Constants {
                       
                       <b>游戏限制</b>：游戏最多10人参与，每轮至少45秒参与投票。
                       <b>胜利条件</b>：平民<b>找出所有卧底</b>时平民胜利。当<b>场上只剩下1名卧底和1名平民</b>时，卧底获得胜利。
-                      <b>白板附加胜利条件</b>：白板在讨论环节随时可以通过“，！XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则获胜，猜词失败则自己暴毙，游戏继续。
+                      <b>白板附加胜利条件</b>：白板在讨论环节（自己未发言状态下）可以通过“，！XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则直接获胜，猜词失败则自己暴毙，游戏继续。
                       
                       /wodi 创建游戏
                       /wodi_record 查看自身记录
@@ -51,8 +51,8 @@ public interface Constants {
                         🏆 <b>等级积分</b>：<b>{level}</b>（{fraction}）
                         🐉 <b>特权</b>：<b>无加成</b>
                         """;
-    String RANK = "\n<b>▎🏆 [谁是卧底]  无限远点的牵牛星 ♪</b>\n\n";
-    String TOP_TITLE = "\n<b>▎🏆 [谁是卧底]  闭时曲线的碑文 ♪</b>\n\n";
+    String RANK = "\n<b>▎🏆 [谁是卧底] 无限远点的牵牛星 S{}赛季 ♪</b>\n\n";
+    String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
     String InTheGame = "{},这个群组正在游戏中";
     String JOIN_GAME = "加入游戏";
     String GamePlayerWaiting = """
@@ -65,7 +65,7 @@ public interface Constants {
     String START = "开始";
     String TimeoutShutdown = "{}长时间无操作，游戏已自动关闭！";
     String sendWord = """
-                            你在<b>{}</b>群组中的游戏词语是: <b>{}</b>\n{}
+                            你在<b>{}</b>群组中的游戏词语是: <b>{}</b>
                       """;
     String exitGame = "{} 强行关闭了游戏";
     String SPEECH_TIME = """
@@ -87,11 +87,12 @@ public interface Constants {
     String ABSTAINED = "{} 放弃了这一票";
     String NOT_VOTE = "{} 没有在时间内进行投票";
     String votedTimeEnd = "️⌛️投票时间到：";
+    String ANONYMOUS_VOTE = "️🎭 由于剩余人数<=4，本轮投票将匿名进行";
     String everyoneVoted = "✅ 所有人都完成了投票：";
     String GAME_OVER = "🎇 游戏结束 <b>{}</b> 胜利！！！🎇\n";
     String DIVIDING_LINE = "------------------------\n";
     String GAME_OVER_BOOM_SPACE = "<b>🀆 白板 达成【只能孤注一掷了不然我怎么活】成就，奖励积分翻倍！！</b>\n";
-    String GAME_OVER_BOOM_SPACE2 = "<b>🀆 白板 达成【对不起我是个警察】成就，奖励积分+5！！</b>\n";
+    String GAME_OVER_BOOM_SPACE2 = "<b>🀆 白板 达成【对不起我是个警察】成就，奖励积分+2！！</b>\n";
     String GAME_OVER_BOOM_SPACE3 = "<b>🀆 白板 达成【兄弟我不敢赌】成就，奖励积分+3！！</b>\n";
     String GAME_OVER_BOOM_UNDERCOVER = "<b>🤡卧底 阵营达成【全员恶人你怕了吗】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_PEOPLE = "<b>👨‍🌾平民 阵营达成【坚决肃清黑恶势力】成就，奖励积分翻倍！！</b>\n";
@@ -150,6 +151,21 @@ public interface Constants {
                             """;
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
-    String BOOM_WAITING = "🔪🔪🔪 神秘的屠夫悄悄举起了手中的钢刀，静静地等待着最后的时刻…………";
-    String BOOM_FAIL = "❌❌❌ 猜词失败，白板玩家【{}】已暴毙，剩余玩家游戏继续…………";
+
+    String BOOM_WAITING = "🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪\n🌌\n🌌嘘～神秘的屠夫悄悄从屁股中抽出了五米长的钢刀…………\n🌌\n🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪";
+    String BOOM_FAIL = "☠️❌☠️❌☠️ 玩家【{}】突然暴毙，谁也不知道为什么。剩余玩家游戏继续…………";
+
+    String SEASON0 = "零化域的缺失之环";
+    String SEASON1 = "闭时曲线的碑文";
+    String SEASON2 = "双体福音的契约";
+    String SEASON3 = "永劫回归的潘多拉";
+    String SEASON4 = "私密镜里的圣痕";
+    String SEASON5 = "亡失流转的孤独";
+    String SEASON6 = "轨道秩序的暗蚀";
+    String SEASON7 = "存在证明的自动人偶";
+    String SEASON8 = "二律背反的双重人格";
+    String SEASON9 = "相互再归的鹅妈妈";
+    String SEASON10 = "盟誓的文艺复兴";
+    String SEASON11 = "无限远点的牵牛星";
+    String SEASON12 = "交叉坐标的星辰";
 }

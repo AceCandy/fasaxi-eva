@@ -496,12 +496,14 @@ public class Game extends Thread {
         } else {
             stringBuilder.append(votedTimeEnd).append("\n");
         }
+        stringBuilder.append(ANONYMOUS_VOTE).append("\n");
+        boolean anonymousVote = GameUtil.getSurvivesNumber(this) <= 4;
         // 投给谁
         for (Member member : memberList) {
             if (member.survive && member.toUser != null) {
                 stringBuilder.append(TgUtil.tgNameOnUrl(member.user))
                         .append(" 👉 [")
-                        .append(TgUtil.tgNameOnUrl(member.toUser.user))
+                        .append(anonymousVote ? "🀫🀫🀫🀫" : TgUtil.tgNameOnUrl(member.toUser.user))
                         .append("]\n");
                 member.notVote = 0;
             }
@@ -628,8 +630,8 @@ public class Game extends Thread {
                 stringBuilder.append(GAME_OVER_BOOM_SPACE);
             }
             if (noSpaceSurviveNum + 1 == undercoverSurviveNum) {
-                member.fraction += 5;
-                boomStr += "<b> +5</b>";
+                member.fraction += 2;
+                boomStr += "<b> +2</b>";
                 stringBuilder.append(GAME_OVER_BOOM_SPACE2);
             }
         }

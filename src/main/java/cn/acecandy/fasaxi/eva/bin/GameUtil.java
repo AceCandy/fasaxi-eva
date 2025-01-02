@@ -1,13 +1,13 @@
 package cn.acecandy.fasaxi.eva.bin;
 
+import cn.acecandy.fasaxi.eva.game.Game;
+import cn.acecandy.fasaxi.eva.sql.entity.WodiTop;
+import cn.acecandy.fasaxi.eva.sql.entity.WodiUser;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.acecandy.fasaxi.eva.game.Game;
-import cn.acecandy.fasaxi.eva.sql.entity.WodiTop;
-import cn.acecandy.fasaxi.eva.sql.entity.WodiUser;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
@@ -16,7 +16,6 @@ import java.util.List;
 import static cn.acecandy.fasaxi.eva.bin.Constants.CURRENT_SEASON;
 import static cn.acecandy.fasaxi.eva.bin.Constants.RANK;
 import static cn.acecandy.fasaxi.eva.bin.Constants.RECORD_TXT;
-import static cn.acecandy.fasaxi.eva.bin.Constants.TOP_TITLE;
 
 /**
  * 游戏工具类
@@ -63,7 +62,7 @@ public final class GameUtil extends GameSubUtil {
     }
 
     public static String getRank(List<WodiUser> userList, Integer pageNum) {
-        StringBuilder rankFinal = new StringBuilder(RANK);
+        StringBuilder rankFinal = new StringBuilder(StrUtil.format(RANK, CURRENT_SEASON));
         String[] nos = {"🥇", "🥈", "🥉"};
         String rankSingle = "{} | {} | <b>{}</b>（{}）\n";
         String detailSingle = "      <u>总场次:<b>{}</b>  |  民/卧胜率:<b>{}</b>/ <b>{}</b></u>\n";
@@ -94,8 +93,8 @@ public final class GameUtil extends GameSubUtil {
         return rankFinal.toString();
     }
 
-    public static String getTop(List<WodiTop> topList) {
-        StringBuilder rankFinal = new StringBuilder(TOP_TITLE);
+    public static String getTop(List<WodiTop> topList, Integer season) {
+        StringBuilder rankFinal = new StringBuilder(getTopTitle(season != null ? season : CURRENT_SEASON));
         String topSingle = """
                            👑 <b>{}</b> <i>飞升第一人</i> | {}
                                         <b>{}</b>
