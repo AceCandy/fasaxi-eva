@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@Tag(name = "Emby处理-模仿fastEmby")
+@Tag(name = "Emby处理入口")
 @RestController
 @RequestMapping("/emby")
 public class FastEmbyController {
@@ -24,7 +24,7 @@ public class FastEmbyController {
     private FastEmbyService fastEmbyService;
 
     @Operation(summary = "emby请求")
-    @GetMapping("videos/{videoId}/*")
+    @GetMapping({"videos/{videoId}/**", "Videos/{videoId}/**"})
     public ResponseEntity<?> handleEmbyRequest(@PathVariable String videoId, HttpServletRequest request,
                                                VideoRedirectReq req) {
         log.info("收到请求: [{}]{}, 提取的参数:{}", request.getMethod(),

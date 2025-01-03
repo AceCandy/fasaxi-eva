@@ -15,6 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.InetAddress;
 
+/**
+ * 应用入口
+ *
+ * @author AceCandy
+ * @since 2025/01/03
+ */
 @Slf4j
 @RestController
 @ConfigurationPropertiesScan
@@ -23,24 +29,23 @@ public class Application {
 
     @SneakyThrows
     public static void main(String[] args) {
-        ConfigurableApplicationContext application = SpringApplication.run(Application.class, args);
-        init();
-
-        Environment env = application.getEnvironment();
-        String host = InetAddress.getLocalHost().getHostAddress();
-        String port = env.getProperty("server.port", "8801");
-        String pathContext = env.getProperty("server.servlet.context-path", "");
-        String uri = StrUtil.format("http://{}:{}{}", host, port, pathContext);
-        log.info("""
-                 \r----------------------------------------------------------
-                 {}[{}] 已启动!
-                 请求路径: {}
-                 健康检查: {}/health/time
-                 接口文档: {}/doc.html
-                 ----------------------------------------------------------
-                 """,
-                env.getProperty("spring.application.name"), env.getProperty("spring.profiles.active"),
-                uri, uri, uri);
+            ConfigurableApplicationContext application = SpringApplication.run(Application.class, args);
+            init();
+            Environment env = application.getEnvironment();
+            String host = InetAddress.getLocalHost().getHostAddress();
+            String port = env.getProperty("server.port", "8801");
+            String pathContext = env.getProperty("server.servlet.context-path", "");
+            String uri = StrUtil.format("http://{}:{}{}", host, port, pathContext);
+            log.info("""
+                     \r----------------------------------------------------------
+                     {}[{}] 已启动!
+                     请求路径: {}
+                     健康检查: {}/health/time
+                     接口文档: {}/doc.html
+                     ----------------------------------------------------------
+                     """,
+                    env.getProperty("spring.application.name"), env.getProperty("spring.profiles.active"),
+                    uri, uri, uri);
     }
 
     /**

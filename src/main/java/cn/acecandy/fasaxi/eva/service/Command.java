@@ -175,7 +175,7 @@ public class Command {
         }
         tgBot.sendMessage(new SendMessage(chatId.toString(),
                 StrUtil.format(TIP_IN_RANK, TgUtil.tgNameOnUrl(message.getFrom()))), 100);
-        String seasonStr = StrUtil.trim(StrUtil.removePrefix(message.getText(), "/wodi_top"));
+        String seasonStr = StrUtil.trim(StrUtil.removePrefix(message.getText(), TOP));
         Integer season = StrUtil.isBlank(seasonStr) ? CURRENT_SEASON : Integer.valueOf(seasonStr);
         List<WodiTop> topList = wodiTopDao.selectTop(season);
         if (CollUtil.isEmpty(topList)) {
