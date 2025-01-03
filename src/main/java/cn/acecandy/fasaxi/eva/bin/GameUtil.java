@@ -1,6 +1,7 @@
 package cn.acecandy.fasaxi.eva.bin;
 
 import cn.acecandy.fasaxi.eva.game.Game;
+import cn.acecandy.fasaxi.eva.sql.entity.Emby;
 import cn.acecandy.fasaxi.eva.sql.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.sql.entity.WodiUser;
 import cn.hutool.core.collection.CollUtil;
@@ -30,7 +31,7 @@ public final class GameUtil extends GameSubUtil {
     private GameUtil() {
     }
 
-    public static String getRecord(WodiUser user) {
+    public static String getRecord(WodiUser user, Emby embyUser) {
         Integer completeGame = user.getCompleteGame();
         Integer wordPeople = user.getWordPeople();
         Integer wordSpy = user.getWordSpy();
@@ -53,7 +54,8 @@ public final class GameUtil extends GameSubUtil {
                 .replace("{total_percentage}", NumberUtil.formatPercent(
                         totalVictory / NumberUtil.toDouble(completeGame), 1))
                 .replace("{fraction}", user.getFraction() + "")
-                .replace("{level}", levelByScore(user.getFraction()));
+                .replace("{level}", levelByScore(user.getFraction()))
+                .replace("{dm}", embyUser.getIv() + "");
         Integer level = level(user.getFraction());
         if (level > 0) {
             recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍Dmail加成");

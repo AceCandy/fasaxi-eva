@@ -34,8 +34,8 @@ public interface Constants {
                       <b>胜利条件</b>：平民<b>找出所有卧底</b>时平民胜利。当<b>场上只剩下1名卧底和1名平民</b>时，卧底获得胜利。
                       <b>白板附加胜利条件</b>：白板在每一轮的讨论环节（自己未发言状态下）可以通过“，。XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则直接获胜，猜词失败则自己暴毙，游戏继续。（注意此方式威力极大且人畜不分，队友也杀，请慎用！）
                       
-                      /wodi 创建游戏
-                      /wodi_record 查看自身记录
+                      /wodi 创建游戏（10Dmail 成功开局后扣取）
+                      /wodi_record 查看自身记录（1Dmail）
                       /wodi_rank 查看积分排行榜（20Dmail）
                       /wodi_top 查看飞升第一人榜单（20Dmail）
                       /wodi_exit 退出游戏
@@ -49,7 +49,7 @@ public interface Constants {
                         🍎 <b>平民场次</b>：{word_people_victory} / {word_people} ({people_percentage})
                         👿 <b>卧底场次</b>：{word_spy_victory} / {word_spy} ({spy_percentage})
                         🏆 <b>等级积分</b>：<b>{level}</b>（{fraction}）
-                        🐉 <b>特权</b>：<b>无加成</b>
+                        🐉 <b>Dmail/特权</b>：{dm}<b>无加成</b>
                         """;
     String RANK = "\n<b>▎🏆 [谁是卧底] 无限远点的牵牛星 S{}赛季 ♪</b>\n\n";
     String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
@@ -91,9 +91,9 @@ public interface Constants {
     String everyoneVoted = "✅ 所有人都完成了投票：";
     String GAME_OVER = "🎇 游戏结束 <b>{}</b> 胜利！！！🎇\n";
     String DIVIDING_LINE = "------------------------\n";
-    String GAME_OVER_BOOM_SPACE = "<b>🀆 白板 达成【只能孤注一掷了不然我怎么活】成就，奖励积分翻倍！！</b>\n";
-    String GAME_OVER_BOOM_SPACE2 = "<b>🀆 白板 达成【对不起我是个警察】成就，奖励积分+2！！</b>\n";
-    String GAME_OVER_BOOM_SPACE3 = "<b>🀆 白板 达成【兄弟我不敢赌】成就，奖励积分+3！！</b>\n";
+    String GAME_OVER_BOOM_SPACE = "<b>🀫 白板 达成【只能孤注一掷了不然我怎么活】成就，奖励积分+4！！</b>\n";
+    String GAME_OVER_BOOM_SPACE2 = "<b>🀫 白板 达成【对不起我是个警察】成就，奖励积分-1！！</b>\n";
+    String GAME_OVER_BOOM_SPACE3 = "<b>🀫 白板 达成【兄弟我不敢赌】成就，奖励积分+7！！</b>\n";
     String GAME_OVER_BOOM_UNDERCOVER = "<b>🤡卧底 阵营达成【全员恶人你怕了吗】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_PEOPLE = "<b>👨‍🌾平民 阵营达成【坚决肃清黑恶势力】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER = "<b>🤡卧底 阵营达成【白板怎么能算我们的人】成就，奖励积分+3！</b>\n";

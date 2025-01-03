@@ -51,6 +51,22 @@ public class GameSubUtil {
 
     public static String levelByLv2(Integer lv) {
         return switch (lv) {
+            case 0 -> "普通路人";
+            case 1 -> "古武高手";
+            case 2 -> "仙路强者";
+            case 3 -> "人界超赛";
+            case 4 -> "地界超赛";
+            case 5 -> "天界超赛";
+            case 6 -> "原始超赛";
+            case 7 -> "极道至尊";
+            case 8 -> "羽化星空";
+            case 9 -> "宇宙中枢";
+            default -> lv >= 10 ? "圣破万维" : "未知生物";
+        };
+    }
+
+    public static String levelByLv3(Integer lv) {
+        return switch (lv) {
             case 0 -> "无用折纸";
             case 1 -> "环保塑料";
             case 2 -> "坚韧黑铁";

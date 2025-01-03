@@ -41,6 +41,10 @@ public class FastEmbyService {
                                                String videoId, VideoRedirectReq req) {
         String originalUrl = fastEmbyConfig.getHost() + httpReqVO.getRequestUri();
         try {
+            if (StrUtil.containsIgnoreCase(httpReqVO.getRequestUri(),"subtitles")) {
+                return proxyRequest(originalUrl, httpReqVO);
+            }
+
             String ua = httpReqVO.getUa();
             String mediaSourceId = StrUtil.isBlank(req.getMediaSourceId()) ? videoId : req.getMediaSourceId();
 

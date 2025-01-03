@@ -528,7 +528,7 @@ public class Game extends Thread {
         long survivesNumber = GameUtil.getSurvivesNumber(this);
         // 本轮淘汰所需票数
         long weedOut = survivesNumber / 3 + (survivesNumber % 3 > 0 ? 1 : 0);
-        stringBuilder.append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
+        stringBuilder.append("\n").append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
         // 淘汰
         List<String> surviveStr = CollUtil.newArrayList();
         List<Member> highMember = getHighestVotedMembers();
@@ -601,12 +601,14 @@ public class Game extends Thread {
         status = GameStatus.游戏结算中;
 
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(StrUtil.format(GAME_OVER, "🀆 白板")).append(DIVIDING_LINE);
+        stringBuilder.append(StrUtil.format(GAME_OVER, "🀫 白板")).append(DIVIDING_LINE);
 
         long undercoverSurviveNum = memberList.stream().filter(m -> m.isUndercover && m.survive).count();
         long surviveNum = memberList.stream().filter(m -> m.survive).count();
         long noSpaceSurviveNum = memberList.stream()
                 .filter(m -> m.survive && m.isUndercover && !m.isSpace).count();
+        long noSpaceNum = memberList.stream()
+                .filter(m -> m.isUndercover && !m.isSpace).count();
 
         Member member = memberList.stream().filter(m -> m.isSpace).findFirst().get();
         member.fraction = joinScore;
@@ -621,18 +623,18 @@ public class Game extends Thread {
 
         String boomStr = "";
         if (surviveNum == 3) {
-            member.fraction += 3;
-            boomStr += "<b> +3</b>";
+            member.fraction += 7;
+            boomStr += "<b> +7</b>";
             stringBuilder.append(GAME_OVER_BOOM_SPACE3);
         } else {
             if (noSpaceSurviveNum == 0) {
-                member.fraction *= 2;
-                boomStr += "<b> X 2</b>";
+                member.fraction += 4;
+                boomStr += "<b> + 4</b>";
                 stringBuilder.append(GAME_OVER_BOOM_SPACE);
             }
-            if (noSpaceSurviveNum + 1 == undercoverSurviveNum) {
-                member.fraction += 2;
-                boomStr += "<b> +2</b>";
+            if (noSpaceNum == noSpaceSurviveNum) {
+                member.fraction -= 1;
+                boomStr += "<b> -1</b>";
                 stringBuilder.append(GAME_OVER_BOOM_SPACE2);
             }
         }

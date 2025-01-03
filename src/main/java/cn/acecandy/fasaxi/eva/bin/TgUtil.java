@@ -65,25 +65,25 @@ public final class TgUtil {
      */
     public static String tgName(User user) {
         String name = user.getFirstName();
-        if (StrUtil.isNotBlank(user.getLastName())) {
+        /*if (StrUtil.isNotBlank(user.getLastName())) {
             name += " " + user.getLastName();
-        }
+        }*/
         return StrUtil.subPre(name, 20);
     }
 
     public static String tgName(WodiUser user) {
         String name = user.getFirstName();
-        if (StrUtil.isNotBlank(user.getLastName())) {
+        /*if (StrUtil.isNotBlank(user.getLastName())) {
             name += " " + user.getLastName();
-        }
+        }*/
         return StrUtil.subPre(name, 20);
     }
 
     public static String tgName(WodiTop user) {
         String name = user.getFirstName();
-        if (StrUtil.isNotBlank(user.getLastName())) {
+        /*if (StrUtil.isNotBlank(user.getLastName())) {
             name += " " + user.getLastName();
-        }
+        }*/
         return StrUtil.subPre(name, 20);
     }
 
@@ -146,21 +146,42 @@ public final class TgUtil {
         return new InlineKeyboardMarkup(rows);
     }
 
+    /**
+     * 获得投票菜单
+     *
+     * @param game 游戏
+     * @return {@link InlineKeyboardMarkup }
+     */
     public static InlineKeyboardMarkup getVoteMarkup(Game game) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
+        // 用于跟踪当前行的按钮数量
+        int counter = 0;
+        InlineKeyboardRow rowInline = new InlineKeyboardRow();
+
         for (Game.Member member : game.memberList) {
             if (member.survive) {
-                InlineKeyboardRow rowInline = new InlineKeyboardRow();
                 InlineKeyboardButton button = new InlineKeyboardButton(TgUtil.tgName(member.user));
                 JSONObject data = new JSONObject();
                 data.put("action", ButtonEvent.ACTION_VOTE);
                 data.put("to", member.id);
                 button.setCallbackData(data.toString());
                 rowInline.add(button);
-                rows.add(rowInline);
+                counter++;
+
+                // 如果当前行有两个按钮，或者是最后一个按钮，添加到rows并重置行
+                if (counter == 2) {
+                    rows.add(rowInline);
+                    rowInline = new InlineKeyboardRow();
+                    counter = 0;
+                }
             }
         }
-        InlineKeyboardRow rowInline = new InlineKeyboardRow();
+        // 如果最后一行有未添加的按钮，确保它们被添加
+        if (!rowInline.isEmpty()) {
+            rows.add(rowInline);
+        }
+
+        rowInline = new InlineKeyboardRow();
         InlineKeyboardButton button = new InlineKeyboardButton(abstain);
         JSONObject data = new JSONObject();
         data.put("action", ButtonEvent.ACTION_VOTE);

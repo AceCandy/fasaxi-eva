@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.springframework.http.HttpStatus.BAD_GATEWAY;
+import static org.springframework.http.HttpStatus.OK;
 
 /**
  * emby 工具类
@@ -217,6 +217,7 @@ public final class EmbyUtil {
             HttpRequest proxyRequest = HttpUtil
                     .createRequest(Method.valueOf(httpReqVO.getMethod()), originalUrl).timeout(2000);
             proxyRequest.header(httpReqVO.getHeaders());
+            httpReqVO.getParamsDict().forEach(proxyRequest::form);
             try (HttpResponse httpResponse = proxyRequest.executeAsync()) {
                 return ResponseEntity.status(httpResponse.getStatus())
                         .headers(EmbyUtil.rebuildRespHeader(httpResponse))
@@ -224,7 +225,7 @@ public final class EmbyUtil {
             }
         } catch (Exception e) {
             log.error("代理直接请求异常:{}", originalUrl, e);
-            return ResponseEntity.status(BAD_GATEWAY).body("Proxy error: " + e.getMessage());
+            return ResponseEntity.status(OK).body("Proxy error: " + e.getMessage());
         }
     }
 

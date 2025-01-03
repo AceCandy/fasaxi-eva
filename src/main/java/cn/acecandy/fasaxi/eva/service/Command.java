@@ -6,6 +6,7 @@ import cn.acecandy.fasaxi.eva.bin.TgUtil;
 import cn.acecandy.fasaxi.eva.bot.impl.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.game.Game;
 import cn.acecandy.fasaxi.eva.game.GameList;
+import cn.acecandy.fasaxi.eva.sql.entity.Emby;
 import cn.acecandy.fasaxi.eva.sql.entity.WodiGroup;
 import cn.acecandy.fasaxi.eva.sql.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.sql.entity.WodiUser;
@@ -130,18 +131,23 @@ public class Command {
     }*/
 
     private void handleRecordCommand(Message message, Long userId) {
+        if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId())) {
+            embyDao.upIv(message.getFrom().getId(), -1);
+        }
         WodiUser user = wodiUserDao.findByTgId(userId);
         if (user == null) {
             return;
         }
+        Emby embyUser = embyDao.findByTgId(userId);
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(message.getChatId().toString())
-                .photo(new InputFile(
-                        ResourceUtil.getStream("static/pic/谁是卧底个人信息.jpeg"), "谁是卧底个人信息"))
-                .caption(GameUtil.getRecord(user))
+                .photo(new InputFile(ResourceUtil.getStream(
+                        StrUtil.format("static/pic/s2/lv{}.webp", GameUtil.level(user.getFraction()))),
+                        "谁是卧底个人信息"))
+                .caption(GameUtil.getRecord(user, embyUser))
                 .parseMode(ParseMode.HTML)
                 .build();
-        tgBot.sendPhoto(sendPhoto, 60 * 1000);
+        tgBot.sendPhoto(sendPhoto, 75 * 1000);
     }
 
     @SneakyThrows
