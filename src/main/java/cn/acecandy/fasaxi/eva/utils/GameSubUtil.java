@@ -1,4 +1,4 @@
-package cn.acecandy.fasaxi.eva.bin;
+package cn.acecandy.fasaxi.eva.utils;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;

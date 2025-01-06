@@ -1,7 +1,7 @@
 package cn.acecandy.fasaxi.eva.bot.impl;
 
 import cn.acecandy.fasaxi.eva.bin.GameStatus;
-import cn.acecandy.fasaxi.eva.bin.TgUtil;
+import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
 import cn.acecandy.fasaxi.eva.game.Game;
 import cn.acecandy.fasaxi.eva.runtime.Task;

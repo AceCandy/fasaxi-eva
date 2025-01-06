@@ -1,4 +1,4 @@
-package cn.acecandy.fasaxi.eva.bin;
+package cn.acecandy.fasaxi.eva.utils;
 
 import cn.acecandy.fasaxi.eva.game.Game;
 import cn.acecandy.fasaxi.eva.sql.entity.Emby;

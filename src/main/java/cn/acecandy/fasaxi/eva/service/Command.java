@@ -1,8 +1,8 @@
 package cn.acecandy.fasaxi.eva.service;
 
 import cn.acecandy.fasaxi.eva.bin.GameStatus;
-import cn.acecandy.fasaxi.eva.bin.GameUtil;
-import cn.acecandy.fasaxi.eva.bin.TgUtil;
+import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.bot.impl.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.game.Game;
 import cn.acecandy.fasaxi.eva.game.GameList;

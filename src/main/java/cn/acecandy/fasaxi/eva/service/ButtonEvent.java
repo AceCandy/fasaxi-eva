@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.acecandy.fasaxi.eva.bin.GameStatus;
-import cn.acecandy.fasaxi.eva.bin.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.bot.impl.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.game.Game;
 import cn.acecandy.fasaxi.eva.game.GameList;
