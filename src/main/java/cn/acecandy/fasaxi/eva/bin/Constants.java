@@ -11,7 +11,7 @@ public interface Constants {
     /**
      * 当前赛季
      */
-    Integer CURRENT_SEASON = 1;
+    Integer CURRENT_SEASON = 2;
 
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";

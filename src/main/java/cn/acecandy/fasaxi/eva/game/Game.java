@@ -347,8 +347,8 @@ public class Game extends Thread {
     void sendInvite() {
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(chatId)
-                .photo(new InputFile(ResourceUtil.getStream(
-                        "static/pic/谁是卧底主图.jpeg"), "谁是卧底主图"))
+                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
+                        "static/pic/s{}/游戏主图.webp", CURRENT_SEASON)), "游戏主图"))
                 .caption(StrUtil.format(GamePlayerWaiting, memberList.size(), getUserNames()))
                 .replyMarkup(TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this))
                 .parseMode(ParseMode.HTML)

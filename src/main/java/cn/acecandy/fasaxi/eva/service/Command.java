@@ -111,17 +111,6 @@ public class Command {
         }
     }
 
-    /*private void handleStartCommand(Long chatId, boolean groupMessage, Long userId) {
-        if (groupMessage) {
-            return;
-        }
-        GameList.UnsentUserWord unsentUserWords = GameList.getUnsentUserWords(userId);
-        if (unsentUserWords == null) {
-            return;
-        }
-        tgBot.sendMessage(new SendMessage(chatId.toString(), unsentUserWords.messageText));
-    }*/
-
     private void handleRecordCommand(Message message, Long userId) {
         if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId())) {
             embyDao.upIv(message.getFrom().getId(), -2);
@@ -133,8 +122,8 @@ public class Command {
         Emby embyUser = embyDao.findByTgId(userId);
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(message.getChatId().toString())
-                .photo(new InputFile(ResourceUtil.getStream(
-                        StrUtil.format("static/pic/s2/lv{}.webp", GameUtil.level(user.getFraction()))),
+                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
+                        "static/pic/s{}/lv{}.webp", CURRENT_SEASON, GameUtil.level(user.getFraction()))),
                         "谁是卧底个人信息"))
                 .caption(GameUtil.getRecord(user, embyUser))
                 .parseMode(ParseMode.HTML)
@@ -157,8 +146,8 @@ public class Command {
         rankUserListMap.put("RANK", rankUserList);
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(message.getChatId().toString())
-                .photo(new InputFile(
-                        ResourceUtil.getStream("static/pic/谁是卧底名人榜.png"), "谁是卧底名人榜"))
+                .photo(new InputFile(ResourceUtil.getStream(
+                        StrUtil.format("static/pic/s{}/名人榜.webp", CURRENT_SEASON)), "名人榜"))
                 .caption(GameUtil.getRank(rankUserList, 1))
                 .replyMarkup(TgUtil.rankPageBtn(1, CollUtil.size(rankUserList)))
                 .parseMode(ParseMode.HTML)
@@ -182,8 +171,7 @@ public class Command {
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(message.getChatId().toString())
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
-                        "static/pic/Top飞升-{}-压缩.jpg", GameUtil.getTopBySeason(season))),
-                        GameUtil.getTopBySeason(season)))
+                        "static/pic/s{}/Top飞升.webp", season)), "Top飞升"))
                 .caption(GameUtil.getTop(topList, season))
                 .parseMode(ParseMode.HTML)
                 .build();
