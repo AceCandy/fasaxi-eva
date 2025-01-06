@@ -84,7 +84,7 @@ public class Game extends Thread {
     Chat chat;
     public boolean run = true;
     volatile boolean updateInvitation = false;
-    int rotate = 0;
+    public int rotate = 0;
     /**
      * 讨论截止时间
      */
@@ -451,7 +451,33 @@ public class Game extends Thread {
         int spyCount = 0;
         // 白板数量
         int blankCount = 0;
-        if (size >= 4 && size <= 5) {
+        // 特殊模式
+        boolean specialMode = false;
+        if (size == 4) {
+            spyCount = 1;
+        } else if (size == 5) {
+            if (RandomUtil.randomInt(10) <= 1) {
+                // 特殊模式下 白板属于平民 非白板为卧底
+                specialMode = true;
+            } else {
+                blankCount = RandomUtil.randomBoolean() ? 1 : 0;
+            }
+            spyCount = 1;
+        } else if (size == 6) {
+            spyCount = 2;
+            blankCount = RandomUtil.randomBoolean() ? 1 : 0;
+        } else if (size == 7) {
+            spyCount = 3;
+            blankCount = RandomUtil.randomBoolean() ? 1 : 0;
+        } else if (size == 8) {
+            spyCount = 3;
+            blankCount = 1;
+        } else if (size == 9 || size == 10) {
+            spyCount = 4;
+            blankCount = 1;
+        }
+
+        /*if (size >= 4 && size <= 5) {
             spyCount = 1;
         } else if (size >= 6 && size <= 7) {
             spyCount = 2;
@@ -461,7 +487,7 @@ public class Game extends Thread {
         } else if (size >= 10) {
             spyCount = 4;
             blankCount = 1;
-        }
+        }*/
 
         // 分配卧底
         Set<Member> spyMembers = RandomUtil.randomEleSet(memberList, spyCount);
@@ -475,11 +501,15 @@ public class Game extends Thread {
             m.isSpace = true;
         });
         // 分配普通单词
-        memberList.forEach(m -> {
+        for (Member m : memberList) {
             if (!m.isUndercover) {
-                m.word = wordPeople;
+                if (specialMode) {
+                    m.word = wordBlank;
+                } else {
+                    m.word = wordPeople;
+                }
             }
-        });
+        }
     }
 
     void sendUserWord() {
@@ -497,8 +527,11 @@ public class Game extends Thread {
         } else {
             stringBuilder.append(votedTimeEnd).append("\n");
         }
-        stringBuilder.append(ANONYMOUS_VOTE).append("\n");
+
         boolean anonymousVote = GameUtil.getSurvivesNumber(this) <= 4;
+        if (anonymousVote) {
+            stringBuilder.append(ANONYMOUS_VOTE).append("\n");
+        }
         // 投给谁
         for (Member member : memberList) {
             if (member.survive && member.toUser != null) {

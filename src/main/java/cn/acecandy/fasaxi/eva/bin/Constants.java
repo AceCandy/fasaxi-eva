@@ -9,7 +9,7 @@ package cn.acecandy.fasaxi.eva.bin;
  */
 public interface Constants {
     /**
-     * 当前季节
+     * 当前赛季
      */
     Integer CURRENT_SEASON = 1;
 
@@ -17,39 +17,41 @@ public interface Constants {
     String TIP_IN_OWNER = "您无法使用该命令~";
     String TIP_IN_RANK = "{} 花费20封Dmail进行开启榜单";
     String TIP_HELP = """
-                      使用命令可创建游戏（<b>花费10封Dmail</b>），游戏开始后每个人会得到自己的游戏词语。
+                      使用命令可创建游戏（<b>花费10封Dmail 成功开局才扣除</b>），游戏开始后每个人会得到自己的游戏词语。
                       
-                      1. 房主开启游戏后才扣取Dmail，未成功开局不扣除。
-                      2. 阵营获胜房主积分底分+1（享受成就加成），获得12封Dmail。阵营失败房主积分底分+2，回收6封Dmail。
-                      3. 分为平民/卧底两个阵营，大部分玩家会获得平民词，少部分获会得卧底词。
-                      4. 大家需要描述自己的词语，但是<b>不能直接说出该词语</b>。
-                      5. 第一轮由<b>系统通知</b>首个玩家先进行发言描述，后续无顺序要求。
+                      <b>玩法小tips:</b>
+                      1. 分为平民/卧底两个阵营，大部分玩家会获得平民词，少部分获会得卧底词。
+                      2. 开局时大家<b>并不知道自己是否卧底</b>，需要根据他人的描述来判定，多数一致的词为平民阵营。
+                      3. 每位平民玩家需要描述自己的词语来证明自己不是卧底，但是尽量在<b>不让卧底猜到自己的词</b>的同时找到平民队友。
+                      4. 拿到卧底词语的玩家同样需要证明自己不是卧底，<b>尽快根据场上描述猜到平民词伪装混进平民阵营</b>。
+                      5. 没有拿到词的称为白板，白板属于卧底阵营，尽量伪装并混入并帮助卧底赢得胜利吧。
+                      6. 某些特殊模式下，按照人多的阵营属于平民这个规则来说，白板会属于平民方，所以不要被词所限制。
                       
-                      <b>小tips:</b>
-                      开局时大家<b>并不知道自己是否卧底</b>，需要根据他人的描述来判定，多数一致的词一般为平民阵营。
-                      每位平民玩家需要描述自己的词语来证明自己不是卧底，但是尽量在<b>不让卧底猜到自己的词</b>的同时找到平民队友。
-                      拿到卧底词语的玩家同样需要证明自己不是卧底，<b>尽快根据场上描述猜到平民词伪装混进平民阵营</b>。
-                      
-                      <b>游戏限制</b>：游戏最多10人参与，每轮至少45秒参与投票。
-                      <b>胜利条件</b>：平民<b>找出所有卧底</b>时平民胜利。当<b>场上只剩下1名卧底和1名平民</b>时，卧底获得胜利。
-                      <b>白板附加胜利条件</b>：白板在每一轮的讨论环节（自己未发言状态下）可以通过“，。XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则直接获胜，猜词失败则自己暴毙，游戏继续。（注意此方式威力极大且人畜不分，队友也杀，请慎用！）
+                      <b>规则说明:</b>
+                      1. <b>游戏限制</b>：游戏最多10人参与，通过“，XXX”（中文逗号前缀）此种方式先进行发言，所有人发言完成后进入投票环节。未发言玩家无法参与投票环节，两次不参与投票（弃票不算）的玩家将会被系统kill。
+                      2. <b>胜利条件</b>：平民<b>找出所有卧底</b>时平民胜利。当<b>场上只剩下1名平民</b>时，如果卧底存在，则卧底获得胜利。
+                      3. <b>白板附加胜利条件（特殊模式不可用）</b>：白板在<b>除第一轮外</b>的每一轮的讨论环节（自己未发言状态下）可以通过“，。XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则直接获胜，猜词失败则自己暴毙，游戏继续。（注意此方式威力极大且人畜不分，队友也杀，请慎用！）
+                      4. <b>发言顺序</b>：第一轮由<b>系统通知</b>前两名玩家进行发言描述，后续无顺序要求。
+                      5. <b>房主优劣</b>：阵营获胜房主积分底分+1（享受成就加成），获得12封Dmail。阵营失败房主积分底分+2，回收6封Dmail。
+                      6. <b>积分成就</b>：每把游戏其中无论输赢游戏积分均会增长，Dmail则根据胜负情况增减。根据游戏情况积分的获取多少有不同，获得成就会有额外的积分奖励。短时间内Dmail减少很正常，不必惊慌，尽量多获得积分才重要。
+                      6. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
                       
                       /wodi 创建游戏（10Dmail 成功开局后扣取）
-                      /wodi_record 查看自身记录（1Dmail）
+                      /wodi_record 查看自身记录（2Dmail）
                       /wodi_rank 查看积分排行榜（20Dmail）
                       /wodi_top 查看飞升第一人榜单（20Dmail）
-                      /wodi_exit 退出游戏
+                      /wodi_exit 退出游戏（3Dmail）
                       """;
     String SPEAK_TIME_LIMIT_CNT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
     String userCreateGame = "{} 花费10封Dmail（成功开局后才扣取），创建了一个新游戏";
     String RECORD_TXT = """
                         \n
-                        🍒 <b>用户名</b>: {userName}
-                        🍌 <b>游戏场次</b>：{completeGame} ({total_percentage})
-                        🍎 <b>平民场次</b>：{word_people_victory} / {word_people} ({people_percentage})
-                        👿 <b>卧底场次</b>：{word_spy_victory} / {word_spy} ({spy_percentage})
+                        👑 <b>用户名</b>: {userName}
+                        🎮 <b>游戏场次</b>：{completeGame} ({total_percentage})
+                        👨‍🌾 <b>平民场次</b>：{word_people_victory} / {word_people} ({people_percentage})
+                        🤡 <b>卧底场次</b>：{word_spy_victory} / {word_spy} ({spy_percentage})
                         🏆 <b>等级积分</b>：<b>{level}</b>（{fraction}）
-                        🐉 <b>Dmail/特权</b>：{dm}<b>无加成</b>
+                        💰 <b>Dmail/特权</b>：{dm}<b>无加成</b>
                         """;
     String RANK = "\n<b>▎🏆 [谁是卧底] 无限远点的牵牛星 S{}赛季 ♪</b>\n\n";
     String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
@@ -67,14 +69,15 @@ public interface Constants {
     String sendWord = """
                             你在<b>{}</b>群组中的游戏词语是: <b>{}</b>
                       """;
-    String exitGame = "{} 强行关闭了游戏";
+    String exitGame = "{} 花费3Dmail强行关闭了游戏";
+    String exitGameError = "❌ {}你干嘛呢？只有房主可以关闭游戏！";
     String SPEECH_TIME = """
                          当前存活人: {}
                          接下来是发言时间，在进行描述的时候请加上<b>‘，’中文逗号前缀</b>，才算一次有效发言。
                          <b>{}</b>秒后将开始第<b>{}</b> 轮投票。\n
                          {}
                          """;
-    String firstSpeak = "请由<b>{}</b>先进行首位发言；<b>{}</b>进行第二位发言";
+    String firstSpeak = "请由 <b>{}</b> 先进行首位发言；\n<b>{}</b> 进行第二位发言";
     String ViewWord = "查看词语";
     String gameStart = "房主{}扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
     String votingStart = "现在开始投票，你想淘汰谁？";
@@ -152,8 +155,8 @@ public interface Constants {
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
 
-    String BOOM_WAITING = "🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪\n🌌\n🌌嘘～神秘的屠夫悄悄从屁股中抽出了五米长的钢刀…………\n🌌\n🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪";
-    String BOOM_FAIL = "☠️❌☠️❌☠️ 玩家【{}】突然暴毙，谁也不知道为什么。剩余玩家游戏继续…………";
+    String BOOM_WAITING = "🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪\n🌌\n🌌嘘～噤声！神秘的屠夫悄悄从屁股中缓缓地抽出了五米长的钢刀…………\n🌌\n🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪";
+    String BOOM_FAIL = "☠️❌☠️❌☠️ 玩家【{}】突然暴毙，没人知道发生了没什么。剩余玩家游戏继续…………";
 
     String SEASON0 = "零化域的缺失之环";
     String SEASON1 = "闭时曲线的碑文";

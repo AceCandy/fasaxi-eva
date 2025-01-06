@@ -98,8 +98,8 @@ public final class TgUtil {
             Game game = GameList.getGame(message.getChatId());
             if (game != null && 讨论时间.equals(game.getStatus())) {
                 text = StrUtil.removeAllPrefix(text, "，");
-                if (StrUtil.startWithIgnoreCase(text, "。")) {
-                    // 白板爆词专用
+                if (game.rotate != 1 && StrUtil.startWithIgnoreCase(text, "。")) {
+                    // 白板爆词专用(第一轮不允许)
                     text = StrUtil.removeAllPrefix(text, "。");
                     game.boom(message, message.getFrom().getId(), text);
                 } else {

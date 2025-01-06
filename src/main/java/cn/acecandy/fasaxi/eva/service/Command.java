@@ -34,15 +34,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static cn.acecandy.fasaxi.eva.bin.Constants.CURRENT_SEASON;
-import static cn.acecandy.fasaxi.eva.bin.Constants.GAME_SETTLEMENT;
-import static cn.acecandy.fasaxi.eva.bin.Constants.InTheGame;
-import static cn.acecandy.fasaxi.eva.bin.Constants.SPEAK_TIME_LIMIT_CNT;
-import static cn.acecandy.fasaxi.eva.bin.Constants.TIP_HELP;
-import static cn.acecandy.fasaxi.eva.bin.Constants.TIP_IN_GROUP;
-import static cn.acecandy.fasaxi.eva.bin.Constants.TIP_IN_RANK;
-import static cn.acecandy.fasaxi.eva.bin.Constants.exitGame;
-import static cn.acecandy.fasaxi.eva.bin.Constants.userCreateGame;
+import static cn.acecandy.fasaxi.eva.bin.Constants.*;
 
 /**
  * 命令处理类，转入命令 仅命令名 （无‘/’，无‘@****’）
@@ -132,7 +124,7 @@ public class Command {
 
     private void handleRecordCommand(Message message, Long userId) {
         if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId())) {
-            embyDao.upIv(message.getFrom().getId(), -1);
+            embyDao.upIv(message.getFrom().getId(), -2);
         }
         WodiUser user = wodiUserDao.findByTgId(userId);
         if (user == null) {
@@ -291,13 +283,20 @@ public class Command {
 
     private void exitGame(Message message, String chatIdStr, Long userId, WodiGroup group) {
         Game game = GameList.getGame(message.getChatId());
+        if (!game.homeOwner.getId().equals(userId)) {
+            SendMessage sendMessage = SendMessage.builder()
+                    .chatId(chatIdStr)
+                    .text(StrUtil.format(exitGameError, TgUtil.tgNameOnUrl(message.getFrom())))
+                    .build();
+            tgBot.sendMessage(sendMessage, 5 * 1000);
+            return;
+        }
+        wodiUserDao.upFraction(userId, -3);
         game.setStatus(GameStatus.游戏关闭);
-        // wodiUserDao.upExitGame(userId);
-        // wodiUserDao.upFraction(userId, -2);
         SendMessage sendMessage = SendMessage.builder()
                 .chatId(chatIdStr)
                 .text(StrUtil.format(exitGame, TgUtil.tgNameOnUrl(message.getFrom())))
                 .build();
-        tgBot.sendMessage(sendMessage);
+        tgBot.sendMessage(sendMessage, 30 * 1000);
     }
 }
