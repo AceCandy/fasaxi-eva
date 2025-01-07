@@ -644,12 +644,11 @@ public class Game extends Thread {
                 .filter(m -> m.isUndercover && !m.isSpace).count();
 
         Member member = memberList.stream().filter(m -> m.isSpace).findFirst().get();
-        member.fraction = joinScore;
-        member.fraction += (8 - memberList.size());
-        member.fraction += spaceVictoryScore;
-        String homeOwnerFlag = "";
+        member.fraction = 8;
+        member.fraction += (8 - memberList.size()) / 2;
+        boolean isOwner = false;
         if (member.id.equals(homeOwner.getId())) {
-            homeOwnerFlag = "[房主]";
+            isOwner = true;
             member.fraction += 1;
         }
         Integer realFraction = member.fraction;
@@ -677,29 +676,26 @@ public class Game extends Thread {
         memberList.stream().filter(m -> m.survive && !m.isSpace).forEach(m -> m.survive = false);
 
         stringBuilder.append("🏆 ").append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(member), ""))
-                .append(StrUtil.format(" {} +{}", homeOwnerFlag, realFraction))
-                .append(boomStr).append("\n");
+                .append(StrUtil.format("🀫 +{}", realFraction))
+                .append(boomStr).append(isOwner ? " 🚩" : "").append("\n");
 
         stringBuilder.append("\n");
-        // 淘汰
+        // 淘汰 一视同仁 卧底均+4 平民均+1
         for (Member m : memberList) {
             if (!m.survive) {
                 stringBuilder.append("☠️ ").append(StrUtil.format(killUserWordIs,
                         TgUtil.tgNameOnUrl(m.user), m.word));
-                m.fraction = m.isUndercover ? spyJoinScore + 1 : joinScore - 1;
-                m.fraction += memberList.size() - 8;
-                homeOwnerFlag = "";
-                if (m.id.equals(homeOwner.getId())) {
-                    homeOwnerFlag = "[房主]";
-                    m.fraction += 2;
+                m.fraction = m.isUndercover ? 4 : 1;
+                isOwner = false;
+                if (member.id.equals(homeOwner.getId())) {
+                    isOwner = true;
+                    member.fraction += 2;
                 }
-                m.fraction += faileScore;
-                stringBuilder.append(m.isUndercover ? "🤡" + homeOwnerFlag + " +" : "👨‍🌾" + homeOwnerFlag + " +")
-                        .append(m.fraction).append("\n");
+                stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
+                        .append(m.fraction).append(isOwner ? " 🚩" : "").append("\n");
             }
         }
-        SendMessage sendMessage = new SendMessage(chatId.toString(), stringBuilder.toString());
-        tgBot.sendMessage(sendMessage);
+        tgBot.sendMessage(chatId, stringBuilder.toString());
 
         realSettlement(true);
         status = GameStatus.游戏关闭;
