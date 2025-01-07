@@ -1,6 +1,6 @@
 package cn.acecandy.fasaxi.eva;
 
-import cn.acecandy.fasaxi.eva.runtime.Task;
+import cn.acecandy.fasaxi.eva.task.ScheduledTask;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.InetAddress;
@@ -22,6 +23,7 @@ import java.net.InetAddress;
  * @since 2025/01/03
  */
 @Slf4j
+@EnableRetry
 @RestController
 @ConfigurationPropertiesScan
 @SpringBootApplication
@@ -52,6 +54,6 @@ public class Application {
      * 提前初始化一些数据
      */
     private static void init() {
-        ThreadUtil.execAsync(() -> SpringUtil.getBean(Task.class).run());
+        ThreadUtil.execAsync(() -> SpringUtil.getBean(ScheduledTask.class).run());
     }
 }

@@ -3,8 +3,8 @@ package cn.acecandy.fasaxi.eva.utils;
 import cn.hutool.cache.impl.FIFOCache;
 import cn.hutool.core.util.StrUtil;
 
-import static cn.acecandy.fasaxi.eva.bean.constants.CacheConstant.DAY_7_MS;
-import static cn.acecandy.fasaxi.eva.bean.constants.CacheConstant.MEDIA_CACHE_KEY;
+import static cn.acecandy.fasaxi.eva.common.constants.CacheConstant.DAY_7_MS;
+import static cn.acecandy.fasaxi.eva.common.constants.CacheConstant.MEDIA_CACHE_KEY;
 
 /**
  * emby 工具类

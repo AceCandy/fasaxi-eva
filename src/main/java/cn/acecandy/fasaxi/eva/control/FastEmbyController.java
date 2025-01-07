@@ -1,6 +1,6 @@
 package cn.acecandy.fasaxi.eva.control;
 
-import cn.acecandy.fasaxi.eva.bean.req.VideoRedirectReq;
+import cn.acecandy.fasaxi.eva.common.req.VideoRedirectReq;
 import cn.acecandy.fasaxi.eva.service.FastEmbyService;
 import cn.acecandy.fasaxi.eva.utils.EmbyUtil;
 import io.swagger.v3.oas.annotations.Operation;

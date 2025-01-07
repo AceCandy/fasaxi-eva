@@ -1,9 +1,9 @@
 package cn.acecandy.fasaxi.eva.utils;
 
-import cn.acecandy.fasaxi.eva.game.Game;
-import cn.acecandy.fasaxi.eva.sql.entity.Emby;
-import cn.acecandy.fasaxi.eva.sql.entity.WodiTop;
-import cn.acecandy.fasaxi.eva.sql.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.bot.game.Game;
+import cn.acecandy.fasaxi.eva.dao.entity.Emby;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Console;
@@ -14,9 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Date;
 import java.util.List;
 
-import static cn.acecandy.fasaxi.eva.bin.Constants.CURRENT_SEASON;
-import static cn.acecandy.fasaxi.eva.bin.Constants.RANK;
-import static cn.acecandy.fasaxi.eva.bin.Constants.RECORD_TXT;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.RANK;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.RECORD_TXT;
 
 /**
  * 游戏工具类

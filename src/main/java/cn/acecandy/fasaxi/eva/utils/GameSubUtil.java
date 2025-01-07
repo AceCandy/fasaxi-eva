@@ -3,7 +3,7 @@ package cn.acecandy.fasaxi.eva.utils;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import static cn.acecandy.fasaxi.eva.bin.Constants.*;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
 
 /**
  * 游戏工具类(赛季子集)

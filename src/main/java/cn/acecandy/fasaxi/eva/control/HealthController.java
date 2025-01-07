@@ -1,6 +1,6 @@
 package cn.acecandy.fasaxi.eva.control;
 
-import cn.acecandy.fasaxi.eva.bean.resp.Rsres;
+import cn.acecandy.fasaxi.eva.common.resp.Rsres;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;

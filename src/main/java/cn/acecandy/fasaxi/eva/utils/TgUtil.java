@@ -1,13 +1,11 @@
 package cn.acecandy.fasaxi.eva.utils;
 
+import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
-import cn.acecandy.fasaxi.eva.game.Game;
-import cn.acecandy.fasaxi.eva.game.GameList;
-import cn.acecandy.fasaxi.eva.service.ButtonEvent;
-import cn.acecandy.fasaxi.eva.sql.entity.WodiTop;
-import cn.acecandy.fasaxi.eva.sql.entity.WodiUser;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -17,13 +15,13 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
-import static cn.acecandy.fasaxi.eva.bin.Constants.EXIT;
-import static cn.acecandy.fasaxi.eva.bin.Constants.JOIN_GAME;
-import static cn.acecandy.fasaxi.eva.bin.Constants.READY;
-import static cn.acecandy.fasaxi.eva.bin.Constants.START;
-import static cn.acecandy.fasaxi.eva.bin.Constants.ViewWord;
-import static cn.acecandy.fasaxi.eva.bin.Constants.abstain;
-import static cn.acecandy.fasaxi.eva.bin.GameStatus.讨论时间;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.EXIT;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.JOIN_GAME;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.READY;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.START;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.ViewWord;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.abstain;
+import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
 
 /**
  * tg工具类
@@ -95,7 +93,7 @@ public final class TgUtil {
     public static void gameSpeak(Message message) {
         String text = message.getText();
         if (StrUtil.isNotBlank(text) && StrUtil.startWith(text, "，")) {
-            Game game = GameList.getGame(message.getChatId());
+            Game game = GameListUtil.getGame(message.getChatId());
             if (game != null && 讨论时间.equals(game.getStatus())) {
                 text = StrUtil.removeAllPrefix(text, "，");
                 if (game.rotate != 1 && StrUtil.startWithIgnoreCase(text, "。")) {
@@ -118,26 +116,26 @@ public final class TgUtil {
     public static InlineKeyboardMarkup getJoinGameMarkup(boolean startButton, Game game) {
         InlineKeyboardButton joinGame = new InlineKeyboardButton(JOIN_GAME);
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("action", ButtonEvent.ACTION_JOIN_GAME);
+        jsonObject.put("action", GameEventUtil.ACTION_JOIN_GAME);
         joinGame.setCallbackData(jsonObject.toString());
         List<InlineKeyboardRow> rows = CollUtil.newArrayList();
         rows.add(new InlineKeyboardRow(joinGame));
         if (startButton) {
             InlineKeyboardButton readyGame = new InlineKeyboardButton(READY);
             JSONObject readyJn = new JSONObject();
-            readyJn.put("action", ButtonEvent.ACTION_READY);
+            readyJn.put("action", GameEventUtil.ACTION_READY);
             readyGame.setCallbackData(readyJn.toString());
 
             InlineKeyboardButton exitGame = new InlineKeyboardButton(EXIT);
             JSONObject exitJn = new JSONObject();
-            exitJn.put("action", ButtonEvent.ACTION_EXIT);
+            exitJn.put("action", GameEventUtil.ACTION_EXIT);
             exitGame.setCallbackData(exitJn.toString());
 
             InlineKeyboardRow rowInline2 = new InlineKeyboardRow(readyGame, exitGame);
             if (GameUtil.isAllMemberReady(game)) {
                 InlineKeyboardButton openGame = new InlineKeyboardButton(START);
                 JSONObject openJn = new JSONObject();
-                openJn.put("action", ButtonEvent.ACTION_OPEN);
+                openJn.put("action", GameEventUtil.ACTION_OPEN);
                 openGame.setCallbackData(openJn.toString());
                 rowInline2.add(openGame);
             }
@@ -162,7 +160,7 @@ public final class TgUtil {
             if (member.survive) {
                 InlineKeyboardButton button = new InlineKeyboardButton(TgUtil.tgName(member.user));
                 JSONObject data = new JSONObject();
-                data.put("action", ButtonEvent.ACTION_VOTE);
+                data.put("action", GameEventUtil.ACTION_VOTE);
                 data.put("to", member.id);
                 button.setCallbackData(data.toString());
                 rowInline.add(button);
@@ -184,7 +182,7 @@ public final class TgUtil {
         rowInline = new InlineKeyboardRow();
         InlineKeyboardButton button = new InlineKeyboardButton(abstain);
         JSONObject data = new JSONObject();
-        data.put("action", ButtonEvent.ACTION_VOTE);
+        data.put("action", GameEventUtil.ACTION_VOTE);
         data.put("to", -1);
         button.setCallbackData(data.toString());
         rowInline.add(button);
@@ -201,7 +199,7 @@ public final class TgUtil {
     public static InlineKeyboardMarkup getViewWord(String botUserName) {
         InlineKeyboardButton viewWord = new InlineKeyboardButton(ViewWord);
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("action", ButtonEvent.ACTION_VIEW_WORD);
+        jsonObject.put("action", GameEventUtil.ACTION_VIEW_WORD);
         viewWord.setCallbackData(jsonObject.toString());
         viewWord.setUrl("t.me/" + botUserName);
         List<InlineKeyboardRow> rows = CollUtil.newArrayList();
@@ -225,7 +223,7 @@ public final class TgUtil {
         if (currentPage > 1) {
             InlineKeyboardButton prevButton = new InlineKeyboardButton("⬅️ 上一页");
             JSONObject preJn = new JSONObject();
-            preJn.put("action", ButtonEvent.PUBLIC_ACTION_RANKS + ":" + (currentPage - 1));
+            preJn.put("action", GameEventUtil.PUBLIC_ACTION_RANKS + ":" + (currentPage - 1));
             prevButton.setCallbackData(preJn.toString());
             pageBtn.add(prevButton);
         }
@@ -233,7 +231,7 @@ public final class TgUtil {
         if (currentPage < totalPages) {
             InlineKeyboardButton nextButton = new InlineKeyboardButton("下一页 ➡️");
             JSONObject nextJn = new JSONObject();
-            nextJn.put("action", ButtonEvent.PUBLIC_ACTION_RANKS + ":" + (currentPage + 1));
+            nextJn.put("action", GameEventUtil.PUBLIC_ACTION_RANKS + ":" + (currentPage + 1));
             nextButton.setCallbackData(nextJn.toString());
             pageBtn.add(nextButton);
         }

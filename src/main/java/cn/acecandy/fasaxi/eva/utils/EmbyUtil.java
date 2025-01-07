@@ -1,7 +1,7 @@
 package cn.acecandy.fasaxi.eva.utils;
 
-import cn.acecandy.fasaxi.eva.bean.vo.HeadVO;
-import cn.acecandy.fasaxi.eva.bean.vo.HttpReqVO;
+import cn.acecandy.fasaxi.eva.common.vo.HeadVO;
+import cn.acecandy.fasaxi.eva.common.vo.HttpReqVO;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;

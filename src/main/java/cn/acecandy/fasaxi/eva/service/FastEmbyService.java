@@ -1,8 +1,8 @@
 package cn.acecandy.fasaxi.eva.service;
 
-import cn.acecandy.fasaxi.eva.bean.req.VideoRedirectReq;
-import cn.acecandy.fasaxi.eva.bean.resp.EmbyItemsResp;
-import cn.acecandy.fasaxi.eva.bean.vo.HttpReqVO;
+import cn.acecandy.fasaxi.eva.common.req.VideoRedirectReq;
+import cn.acecandy.fasaxi.eva.common.resp.EmbyItemsResp;
+import cn.acecandy.fasaxi.eva.common.vo.HttpReqVO;
 import cn.acecandy.fasaxi.eva.config.FastEmbyConfig;
 import cn.acecandy.fasaxi.eva.utils.CacheUtil;
 import cn.hutool.core.collection.CollUtil;

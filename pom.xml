@@ -71,6 +71,11 @@
       <optional>true</optional>
     </dependency>
 
+    <dependency>
+      <groupId>org.springframework.retry</groupId>
+      <artifactId>spring-retry</artifactId>
+    </dependency>
+
     <!-- swagger -->
     <dependency>
       <groupId>com.github.xiaoymin</groupId>
