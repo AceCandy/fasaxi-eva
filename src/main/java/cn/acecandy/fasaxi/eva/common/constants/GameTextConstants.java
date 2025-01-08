@@ -87,28 +87,30 @@ public interface GameTextConstants {
     String success = "✅ 成功";
     String OPERATED_BEFORE = "❌ 已经操作过了";
     String failure = "失败";
-    String ABSTAINED = "{} 放弃了这一票";
-    String NOT_VOTE = "{} 没有在时间内进行投票";
-    String votedTimeEnd = "️⌛️投票时间到：";
-    String ANONYMOUS_VOTE = "️🎭 由于剩余人数<=4，本轮投票将匿名进行";
-    String everyoneVoted = "✅ 所有人都完成了投票：";
+    String ABSTAINED = "{} 放弃了这一票\n";
+    String NOT_VOTE = "{} 没有在时间内进行投票\n";
+    String ANONYMOUS_VOTE = "️🎭 由于不可抗力发生，本轮投票将匿名进行";
+    String votedTimeEnd = "️⌛️投票时间到：\n";
+    String everyoneVoted = "✅ 所有人都完成了投票：\n";
+    String LAST_VOTE = "👀 本轮最后投票人: {}\n\n";
     String GAME_OVER = "🎇 游戏结束 <b>{}</b> 胜利！！！🎇\n";
     String DIVIDING_LINE = "------------------------\n";
     String GAME_OVER_BOOM_SPACE = "<b>🀫 白板 达成【只能孤注一掷了不然我怎么活】成就，奖励积分+4！！</b>\n";
     String GAME_OVER_BOOM_SPACE2 = "<b>🀫 白板 达成【对不起我是个警察】成就，奖励积分-1！！</b>\n";
-    String GAME_OVER_BOOM_SPACE3 = "<b>🀫 白板 达成【兄弟我不敢赌】成就，奖励积分+7！！</b>\n";
+    String GAME_OVER_BOOM_SPACE3 = "<b>🀫 白板 达成【兄弟我不敢赌】成就，奖励积分+5！！</b>\n";
     String GAME_OVER_BOOM_UNDERCOVER = "<b>🤡卧底 阵营达成【全员恶人你怕了吗】成就，奖励积分翻倍！！</b>\n";
-    String GAME_OVER_BOOM_PEOPLE = "<b>👨‍🌾平民 阵营达成【坚决肃清黑恶势力】成就，奖励积分翻倍！！</b>\n";
+    String GAME_OVER_BOOM_PEOPLE = "<b>👨‍🌾平民 阵营达成【坚决肃清黑恶势力】成就，奖励积分1.5倍！！</b>\n";
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER = "<b>🤡卧底 阵营达成【白板怎么能算我们的人】成就，奖励积分+3！</b>\n";
-    String GAME_OVER_BOOM_SINGLE_UNDERCOVER2 = "<b>{}刺客 达成【我是荒原上一匹孤独的狼】成就，奖励积分+5！</b>\n";
-    String GAME_OVER_BOOM_SINGLE_PEOPLE = "<b>👨‍🌾平民 阵营达成【兄弟，还得是你】成就，奖励积分+5！</b>\n";
+    String GAME_OVER_BOOM_SINGLE_UNDERCOVER2 = "<b>🤡卧底 达成【我是荒原上的一匹孤狼】成就，奖励积分+5！</b>\n";
+    String GAME_OVER_BOOM_SINGLE_PEOPLE = "<b>👨‍🌾平民 阵营达成【兄弟，不愧是你】成就，奖励积分+5！</b>\n";
     String GAME_OVER_BOOM3 = "<b>{}屠夫 达成【哈哈哈哈哈，都没想到吧】成就，奖励积分三倍！！！</b>\n";
     String aboutToVoteL = "即将开始投票, 倒计时{}s, ";
     String aboutToVoteR = "还没有发言";
     String notAdmin = """
                       <i>没有看到有人说话，我可能没有权限</i>
                       """;
-    String USER_WORD_IS = "{} 的词语是 【{}】";
+    String USER_WORD_IS = "<s>{}</s> 的词语是 【{}】";
+    // String killUserWordIs = "<s>{}</s> 的词语是 【{}】";
     String USER_DMAIL = "🎉 恭喜[Lv{}]{}本次赢得 <b>{}</b> 封Dmail \n";
     String USER_DMAIL_OWNER_WIN = "🎉💓 房主{}阵营获胜！奖励 <b>{}</b> 封Dmail \n";
     String USER_DMAIL_OWNER_FAIL = "🎉☠️ 房主{}阵营失败！回收 <b>{}</b> 封Dmail \n";
@@ -139,7 +141,7 @@ public interface GameTextConstants {
                          🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
                          """;
     String USER_LEVEL_UP_HIGH = "注册码<b>{}</b>个";
-    String killUserWordIs = "<s>{}</s> 的词语是 【{}】";
+
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
     String GAME_SETTLEMENT = "游戏正在结算中，请稍候";
     String remainingPersonnel = "剩余人员({}/{}):\n{}";
@@ -152,6 +154,7 @@ public interface GameTextConstants {
     String RIGISTER_CODE5 = """
                             t.me/WorldLineEmby_bot?start=WorldLine-30-Register_5CL4LdTaYL
                             """;
+    String RIGISTER_CODE = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL";
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
 

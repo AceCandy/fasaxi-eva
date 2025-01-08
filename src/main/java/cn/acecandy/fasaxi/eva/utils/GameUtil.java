@@ -189,6 +189,16 @@ public final class GameUtil extends GameSubUtil {
         return game.memberList.stream().allMatch(member -> member.ready);
     }
 
+    /**
+     * 卧底胜利
+     *
+     * @param game 游戏
+     * @return boolean
+     */
+    public static boolean isUndercoverWin(Game game) {
+        return game.memberList.stream().filter(m -> m.survive).anyMatch(m -> m.isUndercover);
+    }
+
     public static void main(String[] args) {
         List<String> upTimeList = StrUtil.splitTrim(DateUtil.formatChineseDate(
                 new Date(), false, true), "分");
