@@ -2,7 +2,6 @@ package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
-import cn.acecandy.fasaxi.eva.dao.entity.WodiGroup;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
@@ -116,22 +115,26 @@ public class Game extends Thread {
     public WodiTopDao wodiTopDao;
     public EmbyDao embyDao;
 
-    public Game(WodiGroup group, Message message, User user) {
+    public Game(Chat chat, User user) {
+        initEnv();
+        this.endActiveTime = System.currentTimeMillis();
+        this.status = GameStatus.等待加入;
+        this.chat = chat;
+        this.chatId = chat.getId();
+        this.homeOwner = user;
+        wodiGroupDao.updateGroupData(chatId, chat.getUserName(), chat.getTitle());
+
+        joinGame(user);
+        start();
+    }
+
+    private void initEnv() {
         tgBot = SpringUtil.getBean(EmbyTelegramBot.class);
         wodiGroupDao = SpringUtil.getBean(WodiGroupDao.class);
         wodiUserDao = SpringUtil.getBean(WodiUserDao.class);
         wodiWordDao = SpringUtil.getBean(WodiWordDao.class);
         wodiTopDao = SpringUtil.getBean(WodiTopDao.class);
         embyDao = SpringUtil.getBean(EmbyDao.class);
-        this.endActiveTime = System.currentTimeMillis();
-        this.status = GameStatus.等待加入;
-        this.chat = message.getChat();
-        this.chatId = this.chat.getId();
-
-        homeOwner = user;
-        joinGame(user == null ? message.getFrom() : user);
-        wodiGroupDao.updateGroupData(chatId, chat.getUserName(), chat.getTitle());
-        start();
     }
 
     public void joinGame(User user) {
@@ -360,7 +363,7 @@ public class Game extends Thread {
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/游戏主图.webp", CURRENT_SEASON)), "游戏主图"))
                 .caption(StrUtil.format(GAME_WAITING, memberList.size(),
-                        GameUtil.getWaitingUserNames(memberList)))
+                        GameUtil.getWaitingUserNames(memberList, homeOwner)))
                 .replyMarkup(TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this))
                 .build();
         return tgBot.sendPhoto(sendPhoto, WaitingYoJoinTimeInterval, GameStatus.等待加入, this);
@@ -373,11 +376,17 @@ public class Game extends Thread {
         if (sendInviteMessage == null) {
             return;
         }
-        tgBot.editMessage(sendInviteMessage,
-                StrUtil.format(GAME_WAITING, memberList.size(), GameUtil.getWaitingUserNames(memberList)),
+        tgBot.editMessage(sendInviteMessage, StrUtil.format(
+                        GAME_WAITING, memberList.size(), GameUtil.getWaitingUserNames(memberList, homeOwner)),
                 TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this));
     }
 
+    /**
+     * 获取当前游戏中的玩家
+     *
+     * @param userId 用户id
+     * @return {@link GameUser }
+     */
     public GameUser getMember(@NotNull Long userId) {
         return memberList.stream().filter(m -> m.id.equals(userId)).findFirst().orElse(null);
     }

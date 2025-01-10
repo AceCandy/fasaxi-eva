@@ -12,6 +12,7 @@ import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.Comparator;
 import java.util.Date;
@@ -401,11 +402,14 @@ public final class GameUtil extends GameSubUtil {
      *
      * @return {@link String }
      */
-    public static String getWaitingUserNames(Set<GameUser> memberList) {
+    public static String getWaitingUserNames(Set<GameUser> memberList, User homeOwner) {
         return memberList.stream().map(m -> {
             String memberStr = StrUtil.format("<b>{}</b>", TgUtil.tgNameOnUrl(m.user));
             if (m.ready) {
                 memberStr = StrUtil.format("{}({})", TgUtil.tgName(m.user), READY);
+            }
+            if (m.id.equals(homeOwner.getId())) {
+                memberStr = StrUtil.format("{} 🚩", memberStr);
             }
             return memberStr;
         }).collect(Collectors.joining("、"));

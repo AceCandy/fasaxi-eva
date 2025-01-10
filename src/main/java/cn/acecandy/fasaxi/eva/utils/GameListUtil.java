@@ -1,10 +1,9 @@
 package cn.acecandy.fasaxi.eva.utils;
 
-import cn.acecandy.fasaxi.eva.dao.entity.WodiGroup;
 import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.hutool.core.collection.ConcurrentHashSet;
 import org.telegram.telegrambots.meta.api.objects.User;
-import org.telegram.telegrambots.meta.api.objects.message.Message;
+import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 
 import java.util.Optional;
 import java.util.Set;
@@ -22,8 +21,8 @@ public final class GameListUtil {
 
     private static final Set<Game> GAME_LIST = new ConcurrentHashSet<>();
 
-    public static void createGame(WodiGroup group, Message message, User user) {
-        GAME_LIST.add(new Game(group, message, user));
+    public static void createGame(Chat chat, User user) {
+        GAME_LIST.add(new Game(chat, user));
     }
 
     public static void removeGame(Game game) {

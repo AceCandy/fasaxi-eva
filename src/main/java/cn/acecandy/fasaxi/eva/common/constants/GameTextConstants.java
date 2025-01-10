@@ -45,7 +45,7 @@ public interface GameTextConstants {
                       /wodi_top 翻阅首飞升霸王榜（10Dmail）
                       /wodi_exit 关闭游戏（3Dmail）
                       """;
-    String SPEAK_TIME_LIMIT_CNT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
+    String SPEAK_TIME_LIMIT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
     String userCreateGame = "{} 花费10封Dmail（成功开局后才扣取），创建了一个新游戏";
     String RECORD_TXT = """
                         \n
@@ -58,7 +58,7 @@ public interface GameTextConstants {
                         """;
     String RANK = "\n<b>▎🏆 [谁是卧底] 无限远点的牵牛星 S{}赛季 ♪</b>\n\n";
     String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
-    String InTheGame = "{},这个群组正在游戏中";
+    String IN_GAMING = "{},这个群组正在游戏中";
     String JOIN_GAME = "加入游戏";
     String GAME_WAITING = """
                           【<b>谁是卧底</b>】游戏开启，等待玩家进入

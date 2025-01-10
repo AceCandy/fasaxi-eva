@@ -3,11 +3,9 @@ package cn.acecandy.fasaxi.eva.bot.game;
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
-import cn.acecandy.fasaxi.eva.dao.entity.WodiGroup;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
-import cn.acecandy.fasaxi.eva.dao.service.WodiGroupDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
@@ -24,11 +22,11 @@ import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.List;
@@ -45,9 +43,6 @@ public class Command {
 
     @Resource
     private EmbyTelegramBot tgBot;
-
-    @Resource
-    private WodiGroupDao wodiGroupDao;
     @Resource
     private WodiUserDao wodiUserDao;
     @Resource
@@ -90,11 +85,10 @@ public class Command {
                 handleRankCommand(chatId, userId);
                 break;
             case TOP:
-                handleTopCommand(chatId, userId, message);
-                // handleRankCommand(chatId, message);
+                handleTopCommand(chatId, userId, message.getText());
                 break;
             case NEW_GAME:
-                handleNewGameCommand(message, chatId);
+                handleNewGameCommand(message.getFrom(), message.getChat(), userId);
                 break;
             case HELP:
                 tgBot.sendMessage(chatId, TIP_HELP, 300 * 1000);
@@ -174,7 +168,7 @@ public class Command {
     }
 
     @SneakyThrows
-    private void handleTopCommand(Long chatId, Long userId, Message message) {
+    private void handleTopCommand(Long chatId, Long userId, String text) {
         if (!isEmbyUser(chatId, userId)) {
             return;
         }
@@ -183,7 +177,7 @@ public class Command {
         }
         tgBot.sendMessage(chatId, TIP_IN_TOP, 2 * 1000);
 
-        String seasonStr = StrUtil.trim(StrUtil.removePrefix(message.getText(), TOP));
+        String seasonStr = StrUtil.trim(StrUtil.removePrefix(text, TOP));
         if (!NumberUtil.isNumber(seasonStr)) {
             seasonStr = EMPTY;
         }
@@ -215,48 +209,35 @@ public class Command {
                 TgUtil.rankPageBtn(pageNum, CollUtil.size(rankUserList)));
     }
 
-    private void handleNewGameCommand(Message message, Long chatId) {
+    /**
+     * 处理 开启新游戏指令
+     *
+     * @param user   用户
+     * @param chat   聊天
+     * @param userId 用户id
+     */
+    private void handleNewGameCommand(User user, Chat chat, Long userId) {
         // 发言结束或者管理可以直接开
-        if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId()) && SPEAK_TIME_CNT.get() > 0) {
-            SendMessage sendMessage = new SendMessage(chatId.toString(),
-                    StrUtil.format(SPEAK_TIME_LIMIT_CNT, SPEAK_TIME_CNT.get()));
-            tgBot.sendMessage(sendMessage, 15 * 1000);
+        if (!CollUtil.contains(tgBot.getAdmins(), userId) && SPEAK_TIME_CNT.get() > 0) {
+            tgBot.sendMessage(chat.getId(),
+                    StrUtil.format(SPEAK_TIME_LIMIT, SPEAK_TIME_CNT.get()), 15 * 1000);
             return;
         }
 
-        Game game = GameListUtil.getGame(chatId);
-        // TelegramGroup group = TelegramGroupService.getGroup(chatId.toString());
-        WodiGroup group = wodiGroupDao.findByGroupIdIfExist(chatId);
+        Game game = GameListUtil.getGame(chat.getId());
         if (game == null) {
-            createNewGame(message, chatId, group);
+            // 不存在则创建新游戏
+            tgBot.sendMessage(chat.getId(),
+                    StrUtil.format(userCreateGame, TgUtil.tgNameOnUrl(user)), 5 * 1000);
+            GameListUtil.createGame(chat, user);
         } else {
-            handleExistingGame(message, chatId, game, group);
-        }
-    }
-
-    private void createNewGame(Message message, Long chatId, WodiGroup group) {
-        User user = message.getFrom();
-        SendMessage sendMessage = new SendMessage(chatId.toString(),
-                StrUtil.format(userCreateGame, TgUtil.tgNameOnUrl(user)));
-        tgBot.sendMessage(sendMessage);
-        GameListUtil.createGame(group, message, user);
-    }
-
-    private void handleExistingGame(Message message, Long chatId, Game game, WodiGroup group) {
-        if (game.getStatus() != GameStatus.游戏结算中) {
-            SendMessage.SendMessageBuilder sendMessageBuilder = SendMessage.builder()
-                    .chatId(chatId.toString())
-                    .text(StrUtil.format(InTheGame, TgUtil.tgNameOnUrl(message.getFrom())))
-                    .parseMode(ParseMode.HTML);
-
+            // 存在则加入 游戏已经开始就提示
             if (game.getStatus() == GameStatus.等待加入) {
-                sendMessageBuilder.replyMarkup(TgUtil.getJoinGameMarkup(false, game));
-                tgBot.sendMessage(sendMessageBuilder.build(), 0, GameStatus.等待加入, game);
-            } else {
-                tgBot.sendMessage(sendMessageBuilder.build(), 10000);
+                game.joinGame(user);
+                return;
             }
-        } else {
-            tgBot.sendMessage(new SendMessage(chatId.toString(), GAME_SETTLEMENT), GameStatus.游戏结算中, game);
+            tgBot.sendMessage(chat.getId(),
+                    StrUtil.format(IN_GAMING, TgUtil.tgNameOnUrl(user)), 5 * 1000);
         }
     }
 
