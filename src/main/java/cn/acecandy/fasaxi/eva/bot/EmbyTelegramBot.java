@@ -92,43 +92,48 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
 
     @Override
     public void consume(Update update) {
-        if (update.getMessage() != null) {
-            Integer date = update.getMessage().getDate();
-            if (System.currentTimeMillis() / 1000 - date > 60) {
-                log.warn("过期指令: {} {}", update.getMessage().getText(), update.getMessage());
+        Message msg = update.getMessage();
+        if (msg != null) {
+            if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
+                log.warn("过期指令:【{}】{}", msg.getFrom().getFirstName(), msg.getText());
                 return;
             }
-            handleIncomingMessage(update.getMessage());
+            handleIncomingMessage(msg);
         } else if (update.getCallbackQuery() != null) {
             handleCallbackQuery(update);
         }
     }
 
+    /**
+     * 处理传入消息
+     *
+     * @param message 消息
+     */
     private void handleIncomingMessage(Message message) {
         boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
-        boolean isCommand = false;
-        boolean atBotUsername = false;
+        boolean isCommand = message.isCommand();
         if (!message.hasText()) {
             return;
         }
-
         String msgData = message.getText();
+        boolean atBotUsername = msgData.endsWith(StrUtil.AT + getBotUsername());
         String msg = TgUtil.extractCommand(msgData, getBotUsername());
-        if (msgData.endsWith(StrUtil.AT + getBotUsername())) {
-            atBotUsername = true;
-        }
 
-        if (message.isCommand()) {
-            isCommand = true;
+        if (isCommand) {
             command.process(msg, message, isGroupMessage);
-        }
-
-        if (!atBotUsername && !isCommand && isGroupMessage) {
-            Command.SPEAK_TIME_CNT.getAndDecrement();
-            TgUtil.gameSpeak(message);
+        } else {
+            if (!atBotUsername && isGroupMessage) {
+                Command.SPEAK_TIME_CNT.getAndDecrement();
+                TgUtil.gameSpeak(message);
+            }
         }
     }
 
+    /**
+     * 处理回调查询
+     *
+     * @param update 更新
+     */
     private void handleCallbackQuery(Update update) {
         CallbackQuery callbackQuery = update.getCallbackQuery();
         boolean isGroupMessage = callbackQuery.getMessage().isGroupMessage()
@@ -169,13 +174,22 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         return executeTg(() -> tgClient.execute(message));
     }
 
+    public void sendMessage(Long chatId, String text, long autoDeleteTime) {
+        SendMessage message = new SendMessage(chatId.toString(), text);
+        message.setParseMode(ParseMode.HTML);
+        Message execute = executeTg(() -> tgClient.execute(message));
+        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
+    }
+
     public Message sendPhoto(SendPhoto photo, long autoDeleteTime) {
+        photo.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(photo));
         ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
         return execute;
     }
 
     public Message sendPhoto(SendPhoto photo, long autoDeleteTime, GameStatus status, Game game) {
+        photo.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(photo));
         ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime, status, game);
         return execute;

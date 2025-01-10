@@ -1,16 +1,19 @@
 package cn.acecandy.fasaxi.eva.utils;
 
-import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.bot.game.Game;
+import cn.acecandy.fasaxi.eva.bot.game.GameUser;
+import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.OPERATED_BEFORE;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.notSpeakVote;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.notVoteSelf;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.success;
+import java.util.Objects;
+
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.VOTE_FINISH;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.NO_SPEAK_NO_VOTE;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.NOT_VOTE_SELF;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.VOTE_SUCCESS;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAX_PLAYER;
 
 /**
@@ -48,24 +51,25 @@ public final class GameEventUtil {
      * 处理 投票
      *
      * @param game     游戏
-     * @param userId   用户id
+     * @param gameUser   用户
      * @param voteToId 投票给id
      * @param callback 回拨
      */
-    public static void handleVoteText(Game game, Long userId, Long voteToId,
+    public static void handleVoteText(Game game, GameUser gameUser, Long voteToId,
                                       AnswerCallbackQuery callback) {
         if (game.getStatus() != GameStatus.投票中) {
             return;
         }
+        Long userId = gameUser.id;
         if (userId.equals(voteToId)) {
-            callback.setText(notVoteSelf);
-        } else if (!game.isSpeakMember(userId)) {
-            callback.setText(notSpeakVote);
+            callback.setText(NOT_VOTE_SELF);
+        } else if (!gameUser.speak) {
+            callback.setText(NO_SPEAK_NO_VOTE);
         } else {
             if (game.vote(userId, voteToId)) {
-                callback.setText(success);
+                callback.setText(VOTE_SUCCESS);
             } else {
-                callback.setText(OPERATED_BEFORE);
+                callback.setText(VOTE_FINISH);
             }
         }
     }
@@ -73,14 +77,19 @@ public final class GameEventUtil {
     /**
      * 处理 准备
      *
-     * @param game   游戏
-     * @param userId 用户id
+     * @param game     游戏
+     * @param gameUser 用户
      */
-    public static void handleReadyText(Game game, Long userId) {
+    public static void handleReadyText(Game game, GameUser gameUser) {
         if (game.getStatus() != GameStatus.等待加入) {
             return;
         }
-        memberReady(game, userId);
+        if (gameUser.ready) {
+            return;
+        }
+        gameUser.ready = true;
+        game.endActiveTime = System.currentTimeMillis();
+        game.updateInvitation = true;
     }
 
     /**
@@ -90,7 +99,7 @@ public final class GameEventUtil {
      * @param userId 用户id
      */
     public static void memberReady(Game game, Long userId) {
-        Game.Member member = game.getMember(userId);
+        GameUser member = game.getMember(userId);
         if (null == member || member.ready) {
             return;
         }
@@ -116,7 +125,7 @@ public final class GameEventUtil {
         } else if (!userId.equals(game.homeOwner.getId())) {
             callback.setText("❌ 只有房主能开局");
         } else {
-            game.startDiscussion(false);
+            game.startDiscussion();
         }
     }
 
@@ -135,7 +144,7 @@ public final class GameEventUtil {
         if (userId.equals(game.homeOwner.getId())) {
             callback.setText("❌ 房主不能退出");
         } else {
-            game.exitGame(userId);
+            game.memberList.removeIf(m -> Objects.equals(m.id, userId));
         }
     }
 

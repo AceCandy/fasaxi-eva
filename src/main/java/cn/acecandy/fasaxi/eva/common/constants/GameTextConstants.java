@@ -15,7 +15,8 @@ public interface GameTextConstants {
 
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
-    String TIP_IN_RANK = "{} 花费20封Dmail进行开启榜单";
+    String TIP_IN_RANK = "您花费15封Dmail进行开启榜单";
+    String TIP_IN_TOP = "您花费10封Dmail进行开启榜单";
     String TIP_HELP = """
                       使用命令可创建游戏（<b>花费10封Dmail 成功开局才扣除</b>），游戏开始后每个人会得到自己的游戏词语。
                       
@@ -39,10 +40,10 @@ public interface GameTextConstants {
                       9. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
                       
                       /wodi 创建游戏（10Dmail 成功开局后扣取）
-                      /wodi_record 查看自身记录（2Dmail）
-                      /wodi_rank 查看积分排行榜（20Dmail）
-                      /wodi_top 查看飞升第一人榜单（20Dmail）
-                      /wodi_exit 退出游戏（3Dmail）
+                      /wodi_record 查看自身游戏积分记录（2Dmail）
+                      /wodi_rank 翻阅游戏积分排行榜（15Dmail）
+                      /wodi_top 翻阅首飞升霸王榜（10Dmail）
+                      /wodi_exit 关闭游戏（3Dmail）
                       """;
     String SPEAK_TIME_LIMIT_CNT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
     String userCreateGame = "{} 花费10封Dmail（成功开局后才扣取），创建了一个新游戏";
@@ -59,11 +60,11 @@ public interface GameTextConstants {
     String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
     String InTheGame = "{},这个群组正在游戏中";
     String JOIN_GAME = "加入游戏";
-    String GamePlayerWaiting = """
-                               【<b>谁是卧底</b>】游戏开启，等待玩家进入
-                               
-                               当前已加入{}人: {}
-                               """;
+    String GAME_WAITING = """
+                          【<b>谁是卧底</b>】游戏开启，等待玩家进入
+                          
+                          当前已加入{}人: {}
+                          """;
     String READY = "准备";
     String EXIT = "退出";
     String START = "开始";
@@ -71,8 +72,8 @@ public interface GameTextConstants {
     String sendWord = """
                             你在<b>{}</b>群组中的游戏词语是: <b>{}</b>
                       """;
-    String exitGame = "{} 花费3Dmail强行关闭了游戏";
-    String exitGameError = "❌ {}你干嘛呢？只有房主可以关闭游戏！";
+    String EXIT_GAME = "{} 花费3Dmail强行关闭了游戏";
+    String EXIT_GAME_ERROR = "❌ 只有房主可以关闭游戏";
     String SPEECH_TIME = """
                          当前存活人: {}
                          接下来是发言时间，在进行描述的时候请加上<b>‘，’中文逗号前缀</b>，才算一次有效发言。
@@ -81,13 +82,13 @@ public interface GameTextConstants {
                          """;
     String SPEAK_ORDER = "请由 <b>{}</b> 先进行首位发言；\n<b>{}</b> 进行第二位发言";
     String ViewWord = "查看词语";
-    String gameStart = "房主{}扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
+    String GAME_START = "房主{}扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
     String VOTING_START = "现在开始投票，你想淘汰谁？";
-    String notVoteSelf = "❌ 不能投自己";
-    String notSpeakVote = "❌ 未发言玩家禁止投票";
+    String NOT_VOTE_SELF = "❌ 不能投自己";
+    String NO_SPEAK_NO_VOTE = "❌ 未发言玩家禁止投票";
     String abstain = "放弃投票 🏳️";
-    String success = "✅ 成功";
-    String OPERATED_BEFORE = "❌ 已经操作过了";
+    String VOTE_SUCCESS = "✅ 投票成功";
+    String VOTE_FINISH = "❌ 已经投票完成";
     String failure = "失败";
     String VOTE_PUBLICITY = "{} 👉 [{}]\n";
     String VOTE_ABSTAINED = "{} 放弃了这一票\n";
@@ -146,7 +147,7 @@ public interface GameTextConstants {
     String USER_LEVEL_UP_HIGH = "注册码<b>{}</b>个";
 
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
-    String GAME_SETTLEMENT = "游戏正在结算中，请稍候";
+    String GAME_SETTLEMENT = "游戏正在结算中，无法退出";
     String SURVIVAL_PERSONNEL = "\n剩余人员({}/{}):\n{}";
     String NOT_VOTED_TIP = "🎃{} 两轮连续跑路，扣除5封Dmail🫶\n";
     String SPEAK_REPEAT = "🎃{} 无发言或重复发言，扣除2封Dmail🫶\n";

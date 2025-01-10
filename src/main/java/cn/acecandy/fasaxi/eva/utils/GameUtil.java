@@ -1,6 +1,7 @@
 package cn.acecandy.fasaxi.eva.utils;
 
 import cn.acecandy.fasaxi.eva.bot.game.Game;
+import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
@@ -24,9 +25,9 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.NOT_VOTE
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.RANK;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.READY;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.RECORD_TXT;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.SPEAK_ORDER;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.VOTE_ABSTAINED;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.VOTE_PUBLICITY;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.SPEAK_ORDER;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.DiscussionTimeLimit;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.DiscussionTimeLimitMin;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.GameSecondsAddedByThePlayer;
@@ -45,11 +46,11 @@ public final class GameUtil extends GameSubUtil {
     }
 
     public static String getRecord(WodiUser user, Emby embyUser) {
-        Integer completeGame = user.getCompleteGame();
-        Integer wordPeople = user.getWordPeople();
-        Integer wordSpy = user.getWordSpy();
-        Integer wordPeopleVictory = user.getWordPeopleVictory();
-        Integer wordSpyVictory = user.getWordSpyVictory();
+        Integer completeGame = NumberUtil.nullToZero(user.getCompleteGame());
+        Integer wordPeople = NumberUtil.nullToZero(user.getWordPeople());
+        Integer wordSpy = NumberUtil.nullToZero(user.getWordSpy());
+        Integer wordPeopleVictory = NumberUtil.nullToZero(user.getWordPeopleVictory());
+        Integer wordSpyVictory = NumberUtil.nullToZero(user.getWordSpyVictory());
         int totalVictory = wordPeopleVictory + wordSpyVictory;
         String recordTxt = RECORD_TXT
                 .replace("{userName}", TgUtil.tgNameOnUrl(user))
@@ -76,33 +77,38 @@ public final class GameUtil extends GameSubUtil {
         return recordTxt;
     }
 
+    /**
+     * 获取排行榜
+     *
+     * @param userList 用户列表
+     * @param pageNum  书籍页码
+     * @return {@link String }
+     */
     public static String getRank(List<WodiUser> userList, Integer pageNum) {
         StringBuilder rankFinal = new StringBuilder(StrUtil.format(RANK, CURRENT_SEASON));
         String[] nos = {"🥇", "🥈", "🥉"};
-        String rankSingle = "{} | {} | <b>{}</b>（{}）\n";
-        String detailSingle = "      <u>总场次:<b>{}</b>  |  民/卧胜率:<b>{}</b>/ <b>{}</b></u>\n";
+        String rankSingleFormat = "{} | {} | <b>{}</b>（{}）\n";
+        String detailSingleFormat = "      <u>总场次:<b>{}</b>  |  民/卧胜率:<b>{}</b>/ <b>{}</b></u>\n";
 
         List<List<WodiUser>> users = CollUtil.split(userList, 10);
         userList = CollUtil.get(users, pageNum - 1);
         for (int i = 0; i < userList.size(); i++) {
-            String noSingle = "{}No.{}";
-            String no = "🏅";
-            if (pageNum == 1) {
-                if (i < nos.length) {
-                    no = nos[i];
-                    noSingle = "<b>{}No.{}</b>";
-                }
-            }
             WodiUser user = userList.get(i);
-            noSingle = StrUtil.format(noSingle, no, (pageNum - 1) * 10 + i + 1);
-            rankFinal.append(StrUtil.format(rankSingle, noSingle, TgUtil.tgNameOnUrl(user),
-                            levelByScore(user.getFraction()), user.getFraction()))
-                    .append(StrUtil.format(detailSingle, user.getCompleteGame(),
-                            NumberUtil.formatPercent(user.getWordPeopleVictory()
-                                    / NumberUtil.toDouble(user.getWordPeople()), 0),
-                            NumberUtil.formatPercent(user.getWordSpyVictory()
-                                    / NumberUtil.toDouble(user.getWordSpy()), 0)))
-            ;
+
+            boolean top3 = (pageNum == 1 && i < nos.length);
+            String no = top3 ? nos[i] : "🏅";
+            String noSingle = StrUtil.format(top3 ? "<b>{}No.{}</b>" : "{}No.{}",
+                    no, (pageNum - 1) * 10 + i + 1);
+
+            String rankSingle = StrUtil.format(rankSingleFormat, noSingle,
+                    TgUtil.tgNameOnUrl(user), levelByScore(user.getFraction()), user.getFraction());
+            String detailSingle = StrUtil.format(detailSingleFormat, user.getCompleteGame(),
+                    NumberUtil.formatPercent(user.getWordPeopleVictory()
+                            / NumberUtil.toDouble(user.getWordPeople()), 0),
+                    NumberUtil.formatPercent(user.getWordSpyVictory()
+                            / NumberUtil.toDouble(user.getWordSpy()), 0));
+
+            rankFinal.append(rankSingle).append(detailSingle);
         }
         rankFinal.append(StrUtil.format("\n#WodiRank {}", DateUtil.now()));
         return rankFinal.toString();
@@ -142,6 +148,12 @@ public final class GameUtil extends GameSubUtil {
     }
 
 
+    /**
+     * 按分数获取称号
+     *
+     * @param score 分数
+     * @return {@link String }
+     */
     public static String levelByScore(Integer score) {
         return levelByLv(level(score));
     }
@@ -184,7 +196,7 @@ public final class GameUtil extends GameSubUtil {
         List<String> finishVoteStr = CollUtil.newArrayList();
         List<String> abstainVoteStr = CollUtil.newArrayList();
         List<String> notVoteStr = CollUtil.newArrayList();
-        for (Game.Member member : game.memberList) {
+        for (GameUser member : game.memberList) {
             if (!member.survive) {
                 continue;
             }
@@ -220,10 +232,10 @@ public final class GameUtil extends GameSubUtil {
             return "";
         }
         // 第一名发言指定：从不为space的survive成员中选一个
-        Game.Member firstMember = RandomUtil.randomEle(game.memberList.stream()
+        GameUser firstMember = RandomUtil.randomEle(game.memberList.stream()
                 .filter(m -> m.survive && !m.isSpace).toList());
         // 第二名发言指定：从剩下所有人中随机选一个
-        Game.Member secondMember = RandomUtil.randomEle(game.memberList.stream()
+        GameUser secondMember = RandomUtil.randomEle(game.memberList.stream()
                 .filter(m -> m.survive && !m.id.equals(firstMember.id)).toList());
         return StrUtil.format(SPEAK_ORDER, TgUtil.tgNameOnUrl(firstMember), TgUtil.tgNameOnUrl(secondMember));
     }
@@ -231,9 +243,9 @@ public final class GameUtil extends GameSubUtil {
     /**
      * 获得最高票数成员
      *
-     * @return {@link List }<{@link Game.Member }>
+     * @return {@link List }<{@link GameUser }>
      */
-    public static List<Game.Member> getHighestVotedMembers(Game game) {
+    public static List<GameUser> getHighestVotedMembers(Game game) {
         // 找到最高投票数
         int maxVotes = game.memberList.stream()
                 .filter(m -> m.survive)
@@ -251,9 +263,9 @@ public final class GameUtil extends GameSubUtil {
      * 获取最后投票成员（记录的投票时间最晚的）
      *
      * @param game 游戏
-     * @return {@link Game.Member }
+     * @return {@link GameUser }
      */
-    public static Game.Member lastVoteMember(Game game) {
+    public static GameUser lastVoteMember(Game game) {
         return game.memberList.stream().filter(m -> m.survive)
                 .max(Comparator.comparingLong(m -> m.voteTime)).get();
     }
@@ -361,7 +373,7 @@ public final class GameUtil extends GameSubUtil {
      * @return long
      */
     public static long getNoSpaceSurviveNumber(Game game) {
-        return game.memberList.stream().filter(m ->m.survive && m.isUndercover && !m.isSpace).count();
+        return game.memberList.stream().filter(m -> m.survive && m.isUndercover && !m.isSpace).count();
     }
 
     /**
@@ -389,11 +401,11 @@ public final class GameUtil extends GameSubUtil {
      *
      * @return {@link String }
      */
-    public static String getUserNames(Set<Game.Member> memberList) {
+    public static String getWaitingUserNames(Set<GameUser> memberList) {
         return memberList.stream().map(m -> {
-            String memberStr = TgUtil.tgNameOnUrl(m.user);
+            String memberStr = StrUtil.format("<b>{}</b>", TgUtil.tgNameOnUrl(m.user));
             if (m.ready) {
-                memberStr = StrUtil.format("<b>{}({})</b>", memberStr, READY);
+                memberStr = StrUtil.format("{}({})", TgUtil.tgName(m.user), READY);
             }
             return memberStr;
         }).collect(Collectors.joining("、"));

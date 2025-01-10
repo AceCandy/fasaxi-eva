@@ -1,10 +1,7 @@
 package cn.acecandy.fasaxi.eva.bot.game;
 
-import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
-import cn.acecandy.fasaxi.eva.utils.GameListUtil;
-import cn.acecandy.fasaxi.eva.utils.GameUtil;
-import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
+import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiGroup;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
@@ -13,10 +10,14 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiGroupDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
+import cn.acecandy.fasaxi.eva.utils.GameListUtil;
+import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.cache.CacheUtil;
 import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
+import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
 
 /**
  * 命令处理类，转入命令 仅命令名 （无‘/’，无‘@****’）
@@ -76,31 +78,26 @@ public class Command {
         Long userId = message.getFrom().getId();
 
         if (!groupMessage && command.equals(NEW_GAME)) {
-            tgBot.sendMessage(new SendMessage(chatId.toString(), TIP_IN_GROUP), 15 * 1000);
+            tgBot.sendMessage(chatId, TIP_IN_GROUP, 10 * 1000);
             return;
         }
 
-        /*if (StrUtil.equalsAny(command, RANK, EXIT) && !CollUtil.contains(tgBot.getAdmins(), userId)) {
-            tgBot.sendMessage(new SendMessage(chatId.toString(), TIP_IN_OWNER), 15 * 1000);
-            return;
-        }*/
-
         switch (command) {
             case RECORD:
-                handleRecordCommand(message, userId);
+                handleRecordCommand(chatId, userId);
                 break;
             case RANK:
-                handleRankCommand(chatId, message);
+                handleRankCommand(chatId, userId);
                 break;
             case TOP:
-                handleTopCommand(chatId, message);
+                handleTopCommand(chatId, userId, message);
                 // handleRankCommand(chatId, message);
                 break;
             case NEW_GAME:
-                handleNewGameCommand(message, groupMessage, chatId);
+                handleNewGameCommand(message, chatId);
                 break;
             case HELP:
-                handleHelpCommand(message, groupMessage);
+                tgBot.sendMessage(chatId, TIP_HELP, 300 * 1000);
                 break;
             case EXIT:
                 handleExitCommand(message, chatId, userId);
@@ -110,33 +107,57 @@ public class Command {
         }
     }
 
-    private void handleRecordCommand(Message message, Long userId) {
-        if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId())) {
-            embyDao.upIv(message.getFrom().getId(), -2);
-        }
+    /**
+     * 处理 个人记录
+     *
+     * @param chatId 聊天id
+     * @param userId 用户id
+     */
+    private void handleRecordCommand(Long chatId, Long userId) {
         WodiUser user = wodiUserDao.findByTgId(userId);
-        if (user == null) {
+        Emby embyUser = embyDao.findByTgId(userId);
+        if (user == null || embyUser == null) {
+            tgBot.sendMessage(chatId, "您还未参与过游戏或者未在助手处登记哦~", 10 * 1000);
             return;
         }
-        Emby embyUser = embyDao.findByTgId(userId);
+
+        if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
+            embyDao.upIv(userId, -2);
+        }
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(message.getChatId().toString())
+                .chatId(chatId.toString()).caption(GameUtil.getRecord(user, embyUser))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/lv{}.webp", CURRENT_SEASON, GameUtil.level(user.getFraction()))),
                         "谁是卧底个人信息"))
-                .caption(GameUtil.getRecord(user, embyUser))
-                .parseMode(ParseMode.HTML)
                 .build();
         tgBot.sendPhoto(sendPhoto, 75 * 1000);
     }
 
-    @SneakyThrows
-    private void handleRankCommand(Long chatId, Message message) {
-        if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId())) {
-            embyDao.upIv(message.getFrom().getId(), -20);
+    /**
+     * 是否玩家用户
+     *
+     * @param chatId 聊天id
+     * @param userId 用户id
+     * @return boolean
+     */
+    private boolean isEmbyUser(Long chatId, Long userId) {
+        Emby embyUser = embyDao.findByTgId(userId);
+        if (embyUser == null) {
+            tgBot.sendMessage(chatId, "您还未在助手处登记哦~", 5 * 1000);
+            return false;
         }
-        tgBot.sendMessage(new SendMessage(chatId.toString(),
-                StrUtil.format(TIP_IN_RANK, TgUtil.tgNameOnUrl(message.getFrom()))), 1 * 1000);
+        return true;
+    }
+
+    @SneakyThrows
+    private void handleRankCommand(Long chatId, Long userId) {
+        if (!isEmbyUser(chatId, userId)) {
+            return;
+        }
+        if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
+            embyDao.upIv(userId, -15);
+        }
+        tgBot.sendMessage(chatId, TIP_IN_RANK, 2 * 1000);
 
         List<WodiUser> rankUserList = wodiUserDao.selectRank();
         if (CollUtil.isEmpty(rankUserList)) {
@@ -144,57 +165,57 @@ public class Command {
         }
         rankUserListMap.put("RANK", rankUserList);
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(message.getChatId().toString())
-                .photo(new InputFile(ResourceUtil.getStream(
-                        StrUtil.format("static/pic/s{}/名人榜.webp", CURRENT_SEASON)), "名人榜"))
-                .caption(GameUtil.getRank(rankUserList, 1))
+                .chatId(chatId).caption(GameUtil.getRank(rankUserList, 1))
+                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
+                        "static/pic/s{}/名人榜.webp", CURRENT_SEASON)), "名人榜"))
                 .replyMarkup(TgUtil.rankPageBtn(1, CollUtil.size(rankUserList)))
-                .parseMode(ParseMode.HTML)
                 .build();
         rankMsg = tgBot.sendPhoto(sendPhoto, 300 * 1000);
     }
 
     @SneakyThrows
-    private void handleTopCommand(Long chatId, Message message) {
-        if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId())) {
-            embyDao.upIv(message.getFrom().getId(), -20);
+    private void handleTopCommand(Long chatId, Long userId, Message message) {
+        if (!isEmbyUser(chatId, userId)) {
+            return;
         }
-        tgBot.sendMessage(new SendMessage(chatId.toString(),
-                StrUtil.format(TIP_IN_RANK, TgUtil.tgNameOnUrl(message.getFrom()))), 100);
+        if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
+            embyDao.upIv(userId, -10);
+        }
+        tgBot.sendMessage(chatId, TIP_IN_TOP, 2 * 1000);
+
         String seasonStr = StrUtil.trim(StrUtil.removePrefix(message.getText(), TOP));
+        if (!NumberUtil.isNumber(seasonStr)) {
+            seasonStr = EMPTY;
+        }
         Integer season = StrUtil.isBlank(seasonStr) ? CURRENT_SEASON : Integer.valueOf(seasonStr);
         List<WodiTop> topList = wodiTopDao.selectTop(season);
         if (CollUtil.isEmpty(topList)) {
             return;
         }
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(message.getChatId().toString())
+                .chatId(chatId).caption(GameUtil.getTop(topList, season))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/Top飞升.webp", season)), "Top飞升"))
-                .caption(GameUtil.getTop(topList, season))
-                .parseMode(ParseMode.HTML)
                 .build();
         tgBot.sendPhoto(sendPhoto, 300 * 1000);
     }
 
+    /**
+     * 按照排行榜翻页
+     *
+     * @param pageNum 书籍页码
+     */
     public void handleEditRank(Integer pageNum) {
         if (rankMsg == null) {
             return;
         }
-        List<WodiUser> rankUserList = CollUtil.newArrayList();
-        if (rankUserListMap.containsKey("RANK")) {
-            rankUserList = rankUserListMap.get("RANK");
-        } else {
-            rankUserList = wodiUserDao.selectRank();
-        }
+        List<WodiUser> rankUserList = rankUserListMap.containsKey("RANK") ?
+                rankUserListMap.get("RANK") : wodiUserDao.selectRank();
         tgBot.editMessage(rankMsg, GameUtil.getRank(rankUserList, pageNum),
                 TgUtil.rankPageBtn(pageNum, CollUtil.size(rankUserList)));
     }
 
-    private void handleNewGameCommand(Message message, boolean groupMessage, Long chatId) {
-        if (!groupMessage) {
-            return;
-        }
+    private void handleNewGameCommand(Message message, Long chatId) {
         // 发言结束或者管理可以直接开
         if (!CollUtil.contains(tgBot.getAdmins(), message.getFrom().getId()) && SPEAK_TIME_CNT.get() > 0) {
             SendMessage sendMessage = new SendMessage(chatId.toString(),
@@ -235,55 +256,44 @@ public class Command {
                 tgBot.sendMessage(sendMessageBuilder.build(), 10000);
             }
         } else {
-            sendGameSettlementMessage(chatId, game);
+            tgBot.sendMessage(new SendMessage(chatId.toString(), GAME_SETTLEMENT), GameStatus.游戏结算中, game);
         }
     }
 
-    private void sendGameSettlementMessage(Long chatId, Game game) {
-        SendMessage sendMessage = SendMessage.builder()
-                .chatId(chatId.toString())
-                .text(GAME_SETTLEMENT)
-                .build();
-        tgBot.sendMessage(sendMessage, 0, GameStatus.游戏结算中, game);
-    }
-
-    private void handleHelpCommand(Message message, boolean groupMessage) {
-        SendMessage sendMessage = SendMessage.builder()
-                .chatId(message.getChatId().toString())
-                .text(TIP_HELP)
-                .build();
-        tgBot.sendMessage(sendMessage, 300 * 1000);
-    }
-
+    /**
+     * 处理退出命令
+     *
+     * @param message 消息
+     * @param chatId  聊天id
+     * @param userId  用户id
+     */
     private void handleExitCommand(Message message, Long chatId, Long userId) {
         Game game = GameListUtil.getGame(chatId);
-        if (game != null && game.getMember(userId) != null) {
-            // TelegramGroup group = TelegramGroupService.getGroup(chatId.toString());
-            WodiGroup group = wodiGroupDao.findByGroupIdIfExist(chatId);
-            if (game.getStatus() != GameStatus.游戏结算中) {
-                exitGame(message, chatId.toString(), userId, group);
-            } else {
-                sendGameSettlementMessage(chatId, game);
-            }
+        if (game == null || game.getMember(userId) == null) {
+            return;
         }
+        if (game.getStatus() == GameStatus.游戏结算中) {
+            tgBot.sendMessage(new SendMessage(chatId.toString(), GAME_SETTLEMENT), GameStatus.游戏结算中, game);
+            return;
+        }
+        exitGame(message, chatId, userId);
     }
 
-    private void exitGame(Message message, String chatIdStr, Long userId, WodiGroup group) {
-        Game game = GameListUtil.getGame(message.getChatId());
+    /**
+     * 关闭游戏
+     *
+     * @param message 消息
+     * @param chatId  聊天id
+     * @param userId  用户id
+     */
+    private void exitGame(Message message, Long chatId, Long userId) {
+        Game game = GameListUtil.getGame(chatId);
         if (!game.homeOwner.getId().equals(userId)) {
-            SendMessage sendMessage = SendMessage.builder()
-                    .chatId(chatIdStr)
-                    .text(StrUtil.format(exitGameError, TgUtil.tgNameOnUrl(message.getFrom())))
-                    .build();
-            tgBot.sendMessage(sendMessage, 5 * 1000);
+            tgBot.sendMessage(chatId, EXIT_GAME_ERROR, 5 * 1000);
             return;
         }
         wodiUserDao.upFraction(userId, -3);
         game.setStatus(GameStatus.游戏关闭);
-        SendMessage sendMessage = SendMessage.builder()
-                .chatId(chatIdStr)
-                .text(StrUtil.format(exitGame, TgUtil.tgNameOnUrl(message.getFrom())))
-                .build();
-        tgBot.sendMessage(sendMessage, 30 * 1000);
+        tgBot.sendMessage(chatId, StrUtil.format(EXIT_GAME, message.getFrom().getFirstName()), 15 * 1000);
     }
 }

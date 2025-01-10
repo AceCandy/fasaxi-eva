@@ -11,9 +11,9 @@ import cn.acecandy.fasaxi.eva.dao.service.WodiGroupDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
-import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -26,13 +26,10 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -44,7 +41,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
@@ -140,8 +136,7 @@ public class Game extends Thread {
 
     public void joinGame(User user) {
         Long tgId = user.getId();
-        wodiUserDao.updateUserData(tgId,
-                user.getUserName(), user.getFirstName(), user.getLastName());
+        wodiUserDao.updateUserData(tgId, user.getUserName(), user.getFirstName(), user.getLastName());
         if (null != getMember(tgId) || status != GameStatus.等待加入) {
             return;
         }
@@ -157,7 +152,7 @@ public class Game extends Thread {
             try {
                 long endTime = System.currentTimeMillis();
                 handleWaitingToJoinStatus(endTime);
-                handleDiscussionTimeStatus(endTime);
+                handleSpeakTimeStatus(endTime);
                 handleVotingStatus(endTime);
             } catch (Exception e) {
                 log.warn("定时任务报错!", e);
@@ -168,31 +163,44 @@ public class Game extends Thread {
         GameListUtil.removeGame(this);
     }
 
+    /**
+     * 处理等待加入状态
+     *
+     * @param endTime 结束时间
+     */
     private void handleWaitingToJoinStatus(long endTime) {
         if (status != GameStatus.等待加入) {
             return;
         }
+        // 30s发送一次游戏邀请链接
         if (endTime - sendInviteTime > WaitingYoJoinTimeInterval) {
-            sendInvite();
+            sendInviteMessage = sendInvite();
+            sendInviteTime = System.currentTimeMillis();
         }
+        // 有人进入或者退出、准备状态变化 也进行更新
         if (updateInvitation) {
             editInvite();
             updateInvitation = false;
         }
-        if (CollUtil.size(memberList) == MAX_PLAYER) {
-            if (GameUtil.isAllMemberReady(this)) {
-                startDiscussion(true);
-            }
+
+        // 满员如果所有人都准备 游戏自动开始
+        if (CollUtil.size(memberList) == MAX_PLAYER && GameUtil.isAllMemberReady(this)) {
+            startDiscussion();
         }
-        if (endTime - endActiveTime > MaxActiveTime) {
-            if (!GameUtil.isAllMemberReady(this)) {
-                sendTimeoutShutdownMessage();
-                status = GameStatus.游戏关闭;
-            }
+
+        // 60s时间结束但是有人尚未准备
+        if (endTime - endActiveTime > MaxActiveTime && !GameUtil.isAllMemberReady(this)) {
+            tgBot.sendMessage(chatId, StrUtil.format(TimeoutShutdown, noReadyMember()));
+            status = GameStatus.游戏关闭;
         }
     }
 
-    private void handleDiscussionTimeStatus(long endTime) {
+    /**
+     * 处理发言时间状态
+     *
+     * @param endTime 结束时间
+     */
+    private void handleSpeakTimeStatus(long endTime) {
         if (status != GameStatus.讨论时间) {
             return;
         }
@@ -236,6 +244,11 @@ public class Game extends Thread {
     }
 
 
+    /**
+     * 处理投票状态检测
+     *
+     * @param endTime 结束时间
+     */
     private void handleVotingStatus(long endTime) {
         if (status != GameStatus.投票中) {
             return;
@@ -249,24 +262,11 @@ public class Game extends Thread {
         }
     }
 
-    private void sendTimeoutShutdownMessage() {
-        SendMessage sendMessage = new SendMessage(chatId.toString(),
-                StrUtil.format(TimeoutShutdown, noReadyMember()));
-        tgBot.sendMessage(sendMessage);
-    }
-
-    public void startDiscussion(boolean start) {
-        if (start) {
-            log.warn("定时任务扫描自动开始游戏！");
-        } else {
-            log.warn("手动开始游戏！");
-        }
+    public void startDiscussion() {
+        log.warn("游戏开始！平民词：{}，卧底词：{}", PEOPLE_WORD, SPY_WORD);
         TimeInterval timer = DateUtil.timer();
-        // status = GameStatus.讨论时间;
         embyDao.upIv(homeOwner.getId(), -10);
-        SendMessage sendMessage = new SendMessage(chatId.toString(),
-                StrUtil.format(gameStart, TgUtil.tgNameOnUrl(homeOwner)));
-        tgBot.sendMessage(sendMessage, 5 * 1000);
+        tgBot.sendMessage(chatId, StrUtil.format(GAME_START, TgUtil.tgNameOnUrl(homeOwner)), 5 * 1000);
         log.info("，耗时1：{}ms", timer.intervalMs());
         initWords();
         log.info("发牌初始化，耗时2：{}ms", timer.intervalMs());
@@ -333,42 +333,48 @@ public class Game extends Thread {
         String speechSortStr = GameUtil.buildSpeechSortStr(this);
         boolean isPin = StrUtil.isNotBlank(speechSortStr);
 
-        speechTimeEnd = System.currentTimeMillis() + (speechTime * 1000);
         SendMessage sendMessage = new SendMessage(this.chatId.toString(),
                 StrUtil.format(SPEECH_TIME, getSurvivesUserNames(), speechTime, rotate, speechSortStr));
         sendMessage.setReplyMarkup(TgUtil.getViewWord(tgBot.getBotUsername()));
-
         Message msg = tgBot.sendMessage(sendMessage);
+
+        // 新一轮发言结束时间以及清空之前的发言状态和发言列表
+        speechTimeEnd = System.currentTimeMillis() + (speechTime * 1000);
+        memberList.stream().filter(GameUser::isSurvive).forEach(m -> m.speak = false);
+        CollUtil.clear(speakList);
+
         sendInviteMessage = msg;
+        // 置顶第一轮发言方便回溯
         if (isPin) {
             tgBot.pinMsg(msg.getChatId(), msg.getMessageId());
             firstMsg = msg;
         }
-
-        sendInviteTime = System.currentTimeMillis();
-        memberList.stream().filter(GameUser::isSurvive).forEach(m -> m.speak = false);
     }
 
-    void sendInvite() {
+    /**
+     * 发送游戏邀请
+     */
+    Message sendInvite() {
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(chatId)
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/游戏主图.webp", CURRENT_SEASON)), "游戏主图"))
-                .caption(StrUtil.format(GamePlayerWaiting, memberList.size(), GameUtil.getUserNames(memberList)))
+                .caption(StrUtil.format(GAME_WAITING, memberList.size(),
+                        GameUtil.getWaitingUserNames(memberList)))
                 .replyMarkup(TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this))
-                .parseMode(ParseMode.HTML)
                 .build();
-        sendInviteMessage = tgBot.sendPhoto(sendPhoto, WaitingYoJoinTimeInterval,
-                GameStatus.等待加入, this);
-        sendInviteTime = System.currentTimeMillis();
+        return tgBot.sendPhoto(sendPhoto, WaitingYoJoinTimeInterval, GameStatus.等待加入, this);
     }
 
+    /**
+     * 编辑邀请
+     */
     public void editInvite() {
         if (sendInviteMessage == null) {
             return;
         }
         tgBot.editMessage(sendInviteMessage,
-                StrUtil.format(GamePlayerWaiting, memberList.size(), GameUtil.getUserNames(memberList)),
+                StrUtil.format(GAME_WAITING, memberList.size(), GameUtil.getWaitingUserNames(memberList)),
                 TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this));
     }
 
@@ -386,15 +392,6 @@ public class Game extends Thread {
         GameUser member = getMember(userId);
         return null != member && member.speak;
     }
-
-    public void exitGame(@NotNull Long userId) {
-        memberList.forEach(m -> {
-            if (Objects.equals(m.id, userId)) {
-                memberList.remove(m);
-            }
-        });
-    }
-
 
     /**
      * 未准备成员
@@ -527,11 +524,7 @@ public class Game extends Thread {
         // 淘汰
         stringBuilder.append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
         List<String> surviveStr = execOutMember();
-        if (CollUtil.isNotEmpty(surviveStr)) {
-            stringBuilder.append(StrUtil.join("、", surviveStr));
-        } else {
-            stringBuilder.append("无");
-        }
+        stringBuilder.append(CollUtil.isNotEmpty(surviveStr) ? CollUtil.join(surviveStr, StrUtil.COMMA) : "无");
 
         // 判断游戏结束
         if (GameUtil.isGameOver(this)) {

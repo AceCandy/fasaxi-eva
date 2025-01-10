@@ -1,6 +1,8 @@
 package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
+import cn.acecandy.fasaxi.eva.dao.entity.Emby;
+import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
@@ -18,6 +20,12 @@ import java.util.List;
 
 import static cn.acecandy.fasaxi.eva.utils.GameEventUtil.*;
 
+/**
+ * 游戏 回调事件
+ *
+ * @author AceCandy
+ * @since 2025/01/10
+ */
 @Slf4j
 @Component
 public class GameEvent {
@@ -26,6 +34,8 @@ public class GameEvent {
     private EmbyTelegramBot telegramBot;
     @Resource
     private Command command;
+    @Resource
+    private EmbyDao embyDao;
 
 
     public void onClick(Update update, boolean isGroupMessage) {
@@ -47,7 +57,7 @@ public class GameEvent {
     }
 
     /**
-     * 处理群组行为
+     * 处理群内回调行为
      *
      * @param callbackQuery 回调查询
      * @param callbackJn    回调jn
@@ -66,7 +76,7 @@ public class GameEvent {
     }
 
     /**
-     * 处理 操作
+     * 处理 行为操作
      *
      * @param callbackQuery 回调查询
      * @param game          游戏
@@ -77,14 +87,23 @@ public class GameEvent {
     private void processAction(CallbackQuery callbackQuery, Game game,
                                AnswerCallbackQuery callback, JSONObject callbackJn, String action) {
         User user = callbackQuery.getFrom();
-        Long userId = callbackQuery.getFrom().getId();
+        Long userId = user.getId();
+        Emby embyUser = embyDao.findByTgId(userId);
+        if (null == embyUser) {
+            callback.setText("❌ 当前未在bot开号！");
+        }
+        GameUser gameUser = game.getMember(userId);
+        if (null == gameUser && !ACTION_JOIN_GAME.equals(action)) {
+            callback.setText("❌ 当前未加入游戏！");
+        }
+
         switch (action) {
             case ACTION_JOIN_GAME: {
                 handleJoinGame(game, user, callback);
                 break;
             }
             case ACTION_READY: {
-                handleReadyText(game, userId);
+                handleReadyText(game, gameUser);
                 break;
             }
             case ACTION_OPEN: {
@@ -92,7 +111,7 @@ public class GameEvent {
                 break;
             }
             case ACTION_VIEW_WORD: {
-                handleViewWord(game, userId, callback);
+                // handleViewWord(game, userId, callback);
                 break;
             }
             case ACTION_EXIT: {
@@ -100,8 +119,7 @@ public class GameEvent {
                 break;
             }
             case ACTION_VOTE: {
-                Long voteToId = callbackJn.getLong("to");
-                handleVoteText(game, userId, voteToId, callback);
+                handleVoteText(game, gameUser, callbackJn.getLong("to"), callback);
                 break;
             }
             default:
