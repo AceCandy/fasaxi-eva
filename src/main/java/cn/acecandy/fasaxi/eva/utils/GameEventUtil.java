@@ -77,9 +77,26 @@ public final class GameEventUtil {
      * @param userId 用户id
      */
     public static void handleReadyText(Game game, Long userId) {
-        if (game.getStatus() == GameStatus.等待加入) {
-            game.memberReady(userId);
+        if (game.getStatus() != GameStatus.等待加入) {
+            return;
         }
+        memberReady(game, userId);
+    }
+
+    /**
+     * 成员准备
+     *
+     * @param game   游戏
+     * @param userId 用户id
+     */
+    public static void memberReady(Game game, Long userId) {
+        Game.Member member = game.getMember(userId);
+        if (null == member || member.ready) {
+            return;
+        }
+        member.ready = true;
+        game.endActiveTime = System.currentTimeMillis();
+        game.updateInvitation = true;
     }
 
     /**

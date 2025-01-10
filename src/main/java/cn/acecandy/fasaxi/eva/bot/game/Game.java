@@ -11,6 +11,7 @@ import cn.acecandy.fasaxi.eva.dao.service.WodiGroupDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
+import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
@@ -27,6 +28,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +48,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
-import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.*;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAXIMUM_VOTE;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAX_PLAYER;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MaxActiveTime;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.WaitingYoJoinTimeInterval;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.minMemberSize;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.notVote;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteReminderVote;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteTimeLimit;
 
 /**
  * 游戏
@@ -69,10 +78,11 @@ public class Game extends Thread {
     public Long chatId;
     public User homeOwner;
 
+    @Setter
     @Getter
     GameStatus status;
 
-    public final Set<Member> memberList = new ConcurrentHashSet<>();
+    public final Set<GameUser> memberList = new ConcurrentHashSet<>();
 
     volatile Message sendInviteMessage;
     volatile Message firstMsg;
@@ -83,7 +93,7 @@ public class Game extends Thread {
 
     Chat chat;
     public boolean run = true;
-    volatile boolean updateInvitation = false;
+    public volatile boolean updateInvitation = false;
     public int rotate = 0;
     /**
      * 讨论截止时间
@@ -97,6 +107,8 @@ public class Game extends Thread {
      * 即将开始投票提醒
      */
     boolean voteReminder;
+
+    List<String> speakList = CollUtil.newArrayList();
     String PEOPLE_WORD;
     String SPY_WORD;
 
@@ -133,7 +145,7 @@ public class Game extends Thread {
         if (null != getMember(tgId) || status != GameStatus.等待加入) {
             return;
         }
-        memberList.add(new Member(user, wodiUserDao.findByGroupIdIfExist(tgId)));
+        memberList.add(new GameUser(user, wodiUserDao.findByGroupIdIfExist(tgId)));
         wodiUserDao.upJoinGame(tgId);
         updateInvitation = true;
         endActiveTime = System.currentTimeMillis();
@@ -184,8 +196,8 @@ public class Game extends Thread {
         if (status != GameStatus.讨论时间) {
             return;
         }
-
-        List<Member> boomList = memberList.stream()
+        // 出现白板玩家爆词
+        List<GameUser> boomList = memberList.stream()
                 .filter(m -> m.survive && StrUtil.isNotBlank(m.boom)).toList();
         if (CollUtil.isNotEmpty(boomList)) {
             sendBoom(CollUtil.getFirst(boomList));
@@ -193,16 +205,23 @@ public class Game extends Thread {
 
         if (endTime > speechTimeEnd || memberList.stream()
                 .filter(m -> m.survive).allMatch(m -> m.speak)) {
+            // 发言结束进入投票阶段
             transitionToVoting();
         } else if (!voteReminder && endTime > (speechTimeEnd - voteReminderVote)) {
+            // 即将开始投票提醒
             sendAboutToVote();
         }
     }
 
-    private void sendBoom(Member member) {
+    /**
+     * 白板爆词杀人事件
+     *
+     * @param member 成员
+     */
+    private void sendBoom(GameUser member) {
+        tgBot.muteGroup(chatId);
         SendMessage sendMessage = new SendMessage(chatId.toString(), StrUtil.format(BOOM_WAITING));
         tgBot.sendMessage(sendMessage, 5 * 1000);
-        tgBot.muteGroup(chatId);
         ThreadUtil.safeSleep(4 * 1000);
 
         String boom = member.boom;
@@ -210,9 +229,8 @@ public class Game extends Thread {
             sendBoomGameOver();
         } else {
             member.survive = false;
-            SendMessage failedMsg = new SendMessage(chatId.toString(),
-                    StrUtil.format(BOOM_FAIL, TgUtil.tgNameOnUrl(member)));
-            tgBot.sendMessage(failedMsg, 8 * 1000);
+            tgBot.sendMessage(chatId, StrUtil.format(BOOM_FAIL, TgUtil.tgNameOnUrl(member)));
+            embyDao.upIv(member.id, -2);
         }
         tgBot.unmuteGroup(chatId);
     }
@@ -223,7 +241,9 @@ public class Game extends Thread {
             return;
         }
 
-        boolean isFinishVote = memberList.stream().allMatch(m -> m.survive && m.finishVote);
+        // 存活玩家都投票完成
+        boolean isFinishVote = memberList.stream().filter(m -> m.survive)
+                .allMatch(m -> m.finishVote);
         if (endTime > voteTimeEnd || isFinishVote) {
             processVoteResult(isFinishVote);
         }
@@ -249,25 +269,37 @@ public class Game extends Thread {
         tgBot.sendMessage(sendMessage, 5 * 1000);
         log.info("，耗时1：{}ms", timer.intervalMs());
         initWords();
-        log.info("，耗时2：{}ms", timer.intervalMs());
+        log.info("发牌初始化，耗时2：{}ms", timer.intervalMs());
         sendUserWord();
-        log.info("，耗时3：{}ms", timer.intervalMs());
+        log.info("玩家收到词，耗时3：{}ms", timer.intervalMs());
         sendSpeechPerform();
-        log.info("，耗时4：{}ms", timer.intervalMs());
+        log.info("发送讨论开始tip，耗时4：{}ms", timer.intervalMs());
     }
 
+    /**
+     * 投票开始
+     */
     private void transitionToVoting() {
         status = GameStatus.投票中;
-        sendVote();
+        voteTimeEnd = System.currentTimeMillis() + voteTimeLimit;
+        memberList.stream().filter(member -> member.survive).forEach(member -> {
+            member.voteTime = Long.MAX_VALUE;
+            member.finishVote = false;
+            member.beVoted.set(0);
+            member.toUser = null;
+        });
+        SendMessage sendMessage = new SendMessage(chatId.toString(), VOTING_START);
+        sendMessage.setReplyMarkup(TgUtil.getVoteMarkup(this));
+        tgBot.sendMessage(sendMessage, GameStatus.投票中, this);
     }
 
     public boolean vote(Long userId, Long toUser) {
         boolean ret = false;
-        Member member = getMember(userId);
+        GameUser member = getMember(userId);
         if (null == member || !member.survive) {
             return false;
         }
-        Member toMember = null;
+        GameUser toMember = null;
         if (toUser != -1) {
             toMember = getMember(toUser);
             if (toMember == null || !toMember.survive) {
@@ -290,65 +322,31 @@ public class Game extends Thread {
      * 发送开始讨论
      */
     void sendSpeechPerform() {
-        rotate++;
-        memberList.forEach((m) -> {
-            if (m.survive) {
-                // 更新存活回合数
-                m.round = rotate;
-            }
-        });
         status = GameStatus.讨论时间;
         voteReminder = false;
-        long speechTime = GameSecondsAddedByThePlayer * GameUtil.getSurvivesNumber(this);
-        if (speechTime > DiscussionTimeLimit) {
-            speechTime = DiscussionTimeLimit;
-        }
-        if (speechTime < DiscussionTimeLimitMin) {
-            speechTime = DiscussionTimeLimitMin;
-        }
-        String people = "";
-        boolean isPin = false;
-        if (rotate == 1) {
-            List<Member> members = memberList.stream()
-                    .filter(m -> m.survive && !m.isSpace)
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), l -> {
-                        if (l.size() < 2) {
-                            return CollUtil.newArrayList(); // 如果没有足够的成员，返回 null
-                        }
-                        // 随机选择两个不同的索引
-                        int firstIndex = RandomUtil.randomInt(l.size());
-                        int secondIndex;
-                        do {
-                            secondIndex = RandomUtil.randomInt(l.size());
-                        } while (secondIndex == firstIndex);
+        // 回合数+1
+        rotate++;
+        memberList.stream().filter(GameUser::isSurvive).forEach(m -> m.round = rotate);
 
-                        return List.of(l.get(firstIndex), l.get(secondIndex));
-                    }));
-            people = StrUtil.format(firstSpeak, TgUtil.tgNameOnUrl(CollUtil.getFirst(members)),
-                    TgUtil.tgNameOnUrl(CollUtil.getLast(members)));
-            isPin = true;
-        }
+        // 获取投票时间、第一轮指定发言人
+        long speechTime = GameUtil.getSpeechTime(this);
+        String speechSortStr = GameUtil.buildSpeechSortStr(this);
+        boolean isPin = StrUtil.isNotBlank(speechSortStr);
 
         speechTimeEnd = System.currentTimeMillis() + (speechTime * 1000);
         SendMessage sendMessage = new SendMessage(this.chatId.toString(),
-                StrUtil.format(SPEECH_TIME, getSurvivesUserNames(), speechTime, rotate, people));
+                StrUtil.format(SPEECH_TIME, getSurvivesUserNames(), speechTime, rotate, speechSortStr));
         sendMessage.setReplyMarkup(TgUtil.getViewWord(tgBot.getBotUsername()));
+
+        Message msg = tgBot.sendMessage(sendMessage);
+        sendInviteMessage = msg;
         if (isPin) {
-            Message msg = tgBot.sendMessage(sendMessage);
             tgBot.pinMsg(msg.getChatId(), msg.getMessageId());
-            sendInviteMessage = msg;
             firstMsg = msg;
-        } else {
-            Message msg = tgBot.sendMessage(sendMessage, 0, GameStatus.讨论时间, this);
-            sendInviteMessage = msg;
         }
 
         sendInviteTime = System.currentTimeMillis();
-        memberList.forEach(m -> {
-            if (m.survive) {
-                m.speak = false;
-            }
-        });
+        memberList.stream().filter(GameUser::isSurvive).forEach(m -> m.speak = false);
     }
 
     void sendInvite() {
@@ -356,7 +354,7 @@ public class Game extends Thread {
                 .chatId(chatId)
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/游戏主图.webp", CURRENT_SEASON)), "游戏主图"))
-                .caption(StrUtil.format(GamePlayerWaiting, memberList.size(), getUserNames()))
+                .caption(StrUtil.format(GamePlayerWaiting, memberList.size(), GameUtil.getUserNames(memberList)))
                 .replyMarkup(TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this))
                 .parseMode(ParseMode.HTML)
                 .build();
@@ -369,11 +367,12 @@ public class Game extends Thread {
         if (sendInviteMessage == null) {
             return;
         }
-        tgBot.editMessage(sendInviteMessage, StrUtil.format(GamePlayerWaiting, memberList.size(), getUserNames()),
+        tgBot.editMessage(sendInviteMessage,
+                StrUtil.format(GamePlayerWaiting, memberList.size(), GameUtil.getUserNames(memberList)),
                 TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this));
     }
 
-    public Member getMember(@NotNull Long userId) {
+    public GameUser getMember(@NotNull Long userId) {
         return memberList.stream().filter(m -> m.id.equals(userId)).findFirst().orElse(null);
     }
 
@@ -384,7 +383,7 @@ public class Game extends Thread {
      * @return boolean
      */
     public boolean isSpeakMember(@NotNull Long userId) {
-        Member member = getMember(userId);
+        GameUser member = getMember(userId);
         return null != member && member.speak;
     }
 
@@ -408,20 +407,6 @@ public class Game extends Thread {
                 .collect(Collectors.joining(StrUtil.COMMA));
     }
 
-    /**
-     * 获取用户名
-     *
-     * @return {@link String }
-     */
-    public String getUserNames() {
-        return memberList.stream().map(m -> {
-            String memberStr = TgUtil.tgNameOnUrl(m.user);
-            if (m.ready) {
-                memberStr = StrUtil.format("<b>{}({})</b>", memberStr, READY);
-            }
-            return memberStr;
-        }).collect(Collectors.joining("、"));
-    }
 
     /**
      * 获取存活用户名单
@@ -497,7 +482,7 @@ public class Game extends Thread {
         }*/
 
         // 分配卧底
-        Set<Member> spyMembers = RandomUtil.randomEleSet(memberList, spyCount);
+        Set<GameUser> spyMembers = RandomUtil.randomEleSet(memberList, spyCount);
         spyMembers.forEach(m -> {
             m.word = wordSpy;
             m.isUndercover = true;
@@ -508,7 +493,7 @@ public class Game extends Thread {
             m.isSpace = true;
         });
         // 分配普通单词
-        for (Member m : memberList) {
+        for (GameUser m : memberList) {
             if (!m.isUndercover) {
                 if (specialMode) {
                     m.word = wordBlank;
@@ -527,56 +512,56 @@ public class Game extends Thread {
         });
     }
 
+    /**
+     * 处理投票结果
+     *
+     * @param isFinishVote 是否完成投票
+     */
     void processVoteResult(boolean isFinishVote) {
-        StringBuilder stringBuilder = new StringBuilder();
-        if (isFinishVote) {
-            stringBuilder.append(everyoneVoted);
-        } else {
-            stringBuilder.append(votedTimeEnd);
-        }
+        StringBuilder stringBuilder = new StringBuilder(isFinishVote ? ALL_FINISH_VOTED : TIME_END_VOTED);
         // 最后投票人
-        Member lastVoteMember = memberList.stream().filter(m -> m.survive)
-                .max(Comparator.comparingLong(m -> m.voteTime)).get();
-        stringBuilder.append(StrUtil.format(LAST_VOTE, TgUtil.tgNameOnUrl(lastVoteMember)));
+        stringBuilder.append(StrUtil.format(LAST_VOTE, TgUtil.tgNameOnUrl(GameUtil.lastVoteMember(this))));
+        // 投票结果展示
+        stringBuilder.append(GameUtil.buildVotePublicStr(this));
 
-        // 总人数大于6人时，剩余4人时匿名投票
-        boolean anonymousVote = memberList.size() >= 6 && GameUtil.getSurvivesNumber(this) <= 4;
-        boolean anonymousVote2 = memberList.size() < 6 && GameUtil.getSurvivesNumber(this) <= 3;
-        if (anonymousVote || anonymousVote2) {
-            stringBuilder.append(ANONYMOUS_VOTE).append("\n");
-        }
-        // 投给谁
-        for (Member member : memberList) {
-            if (member.survive && member.toUser != null) {
-                stringBuilder.append(TgUtil.tgNameOnUrl(member.user))
-                        .append(" 👉 [")
-                        .append(anonymousVote ? "🀫🀫🀫🀫" : TgUtil.tgNameOnUrl(member.toUser.user))
-                        .append("]\n");
-                member.notVote = 0;
-            }
-        }
-        // 放弃投
-        for (Member member : memberList) {
-            if (member.survive && member.toUser == null && member.finishVote) {
-                stringBuilder.append(StrUtil.format(ABSTAINED, TgUtil.tgNameOnUrl(member.user)));
-                member.notVote = 0;
-            }
-        }
-        // 没有在时间内投票
-        for (Member member : memberList) {
-            if (member.survive && !member.finishVote) {
-                stringBuilder.append(StrUtil.format(NOT_VOTE, TgUtil.tgNameOnUrl(member.user)));
-                member.notVote++;
-            }
-        }
-
-        long survivesNumber = GameUtil.getSurvivesNumber(this);
-        // 本轮淘汰所需票数
-        long weedOut = survivesNumber / 3 + (survivesNumber % 3 > 0 ? 1 : 0);
-        stringBuilder.append("\n").append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
         // 淘汰
+        stringBuilder.append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
+        List<String> surviveStr = execOutMember();
+        if (CollUtil.isNotEmpty(surviveStr)) {
+            stringBuilder.append(StrUtil.join("、", surviveStr));
+        } else {
+            stringBuilder.append("无");
+        }
+
+        // 判断游戏结束
+        if (GameUtil.isGameOver(this)) {
+            tgBot.sendMessage(chatId, stringBuilder.toString());
+            if (GameUtil.getUndercoverSurvivesNumber(this) != 0) {
+                // 卧底胜利时需要淘汰剩余平民
+                memberList.stream().filter(member -> member.survive && !member.isUndercover)
+                        .forEach(member -> member.survive = false);
+            }
+            sendGameOver();
+        } else {
+            stringBuilder.append(StrUtil.format(SURVIVAL_PERSONNEL, GameUtil.getSurvivesNumber(this),
+                    memberList.size(), getSurvivesUserNames()));
+            tgBot.sendMessage(chatId, stringBuilder.toString());
+            sendSpeechPerform();
+        }
+    }
+
+    /**
+     * 处理淘汰成员
+     *
+     * @return {@link List }<{@link String }>
+     */
+    private List<String> execOutMember() {
+        // 本轮淘汰所需票数
+        long survivesNumber = GameUtil.getSurvivesNumber(this);
+        long weedOut = survivesNumber / 3 + (survivesNumber % 3 > 0 ? 1 : 0);
+
         List<String> surviveStr = CollUtil.newArrayList();
-        List<Member> highMember = getHighestVotedMembers();
+        List<GameUser> highMember = GameUtil.getHighestVotedMembers(this);
         if (CollUtil.size(highMember) == 1) {
             int highVoted = CollUtil.getFirst(highMember).beVoted.get();
             surviveStr.addAll(memberList.stream()
@@ -584,159 +569,83 @@ public class Game extends Thread {
                             (m.beVoted.get() >= MAXIMUM_VOTE || m.beVoted.get() >= weedOut))
                     .map(m -> {
                         m.survive = false;
-                        return TgUtil.tgNameOnUrl(m.user) + StrUtil.format("({}票)", m.beVoted.get());
+                        return StrUtil.format("{}({}票)", TgUtil.tgNameOnUrl(m.user), m.beVoted.get());
                     }).toList());
         }
         surviveStr.addAll(memberList.stream().filter(m -> m.survive && m.notVote >= notVote).map(m -> {
                     m.survive = false;
+                    tgBot.sendMessage(chatId, StrUtil.format(NOT_VOTED_TIP, TgUtil.tgNameOnUrl(m.user)));
+                    embyDao.upIv(m.id, -5);
                     return TgUtil.tgNameOnUrl(m.user) + StrUtil.format("({}票-未投票2次)", m.beVoted.get());
                 }
         ).toList());
-
-        if (CollUtil.isNotEmpty(surviveStr)) {
-            stringBuilder.append(StrUtil.join("、", surviveStr));
-        } else {
-            stringBuilder.append("无");
-        }
-
-        SendMessage sendMessage = new SendMessage(chatId.toString(), stringBuilder.toString());
-        tgBot.sendMessage(sendMessage);
-        // 判断游戏结束
-        if (GameUtil.getUndercoverSurvivesNumber(this) == 0
-                || (GameUtil.getPeopleSurviveNumber(this) == 1
-                && GameUtil.getUndercoverSurvivesNumber(this) >= 0)) {
-            if (GameUtil.getUndercoverSurvivesNumber(this) != 0) {
-                // 淘汰剩余平民
-                for (Member member : memberList) {
-                    if (member.survive && !member.isUndercover) {
-                        member.survive = false;
-                    }
-                }
-            }
-            sendGameOver();
-        } else {
-            SendMessage sendMessage1 = new SendMessage(chatId.toString(),
-                    StrUtil.format(remainingPersonnel, GameUtil.getSurvivesNumber(this),
-                            memberList.size(), getSurvivesUserNames()));
-            tgBot.sendMessage(sendMessage1, DiscussionTimeLimit * 1000);
-            sendSpeechPerform();
-        }
+        return surviveStr;
     }
+
 
     /**
-     * 获得最高票数成员
-     *
-     * @return {@link List }<{@link Member }>
+     * 白板爆词 游戏结束 积分计算
      */
-    public List<Member> getHighestVotedMembers() {
-        // 找到最高投票数
-        int maxVotes = memberList.stream()
-                .filter(m -> m.survive)
-                .mapToInt(member -> member.beVoted.get())
-                .max()
-                .orElse(0);
-
-        // 获取所有投票数等于最高投票数的成员
-        return memberList.stream()
-                .filter(m -> m.survive && m.beVoted.get() == maxVotes)
-                .collect(Collectors.toList());
-    }
-
     void sendBoomGameOver() {
         status = GameStatus.游戏结算中;
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(StrUtil.format(GAME_OVER, "🀫 白板")).append(DIVIDING_LINE);
 
-        long undercoverSurviveNum = memberList.stream().filter(m -> m.isUndercover && m.survive).count();
-        long surviveNum = memberList.stream().filter(m -> m.survive).count();
-        long noSpaceSurviveNum = memberList.stream()
-                .filter(m -> m.survive && m.isUndercover && !m.isSpace).count();
-        long noSpaceNum = memberList.stream()
-                .filter(m -> m.isUndercover && !m.isSpace).count();
+        long surviveNum = GameUtil.getSurvivesNumber(this);
+        long noSpaceSurviveNum = GameUtil.getNoSpaceSurviveNumber(this);
+        long noSpaceNum = GameUtil.getNoSpaceNumber(this);
 
-        Member member = memberList.stream().filter(m -> m.isSpace).findFirst().get();
+        GameUser member = memberList.stream().filter(m -> m.survive && m.isSpace).findFirst().get();
         member.fraction = 8;
-        member.fraction += (8 - memberList.size()) / 2;
-        boolean isOwner = false;
-        if (member.id.equals(homeOwner.getId())) {
-            isOwner = true;
-            member.fraction += 1;
-        }
-        Integer realFraction = member.fraction;
+        // 小于8人 -2分
+        member.fraction += memberList.size() < 8 ? -2 : 0;
+        // 房主+1
+        boolean isOwner = member.id.equals(homeOwner.getId());
+        member.fraction += isOwner ? 1 : 0;
 
-        String boomStr = "";
-        if (surviveNum == 3) {
-            member.fraction += 5;
-            boomStr += "<b> +5</b>";
-            stringBuilder.append(GAME_OVER_BOOM_SPACE3);
-        } else {
-            if (noSpaceSurviveNum == 0) {
-                member.fraction += 4;
-                boomStr += "<b> + 4</b>";
-                stringBuilder.append(GAME_OVER_BOOM_SPACE);
-            }
-            if (noSpaceNum == noSpaceSurviveNum) {
-                member.fraction -= 1;
-                boomStr += "<b> -1</b>";
-                stringBuilder.append(GAME_OVER_BOOM_SPACE2);
-            }
-        }
+        // 构建爆词成就str
+        buildBoomAchievementStr(isOwner, member, stringBuilder, surviveNum, noSpaceSurviveNum, noSpaceNum);
 
-        stringBuilder.append("\n\n");
         // 其它用户全部杀掉
         memberList.stream().filter(m -> m.survive && !m.isSpace).forEach(m -> m.survive = false);
 
-        stringBuilder.append("🏆 ").append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(member), ""))
-                .append(StrUtil.format("🀫 +{}", realFraction))
-                .append(boomStr).append(isOwner ? " 🚩" : "").append("\n");
-
         stringBuilder.append("\n");
         // 淘汰 一视同仁 卧底均+3 平民均+1
-        for (Member m : memberList) {
-            if (!m.survive) {
-                stringBuilder.append("☠️ ").append(StrUtil.format(USER_WORD_IS,
-                        TgUtil.tgNameOnUrl(m.user), m.word));
-                m.fraction = m.isUndercover ? 3 : 1;
-                isOwner = false;
-                if (member.id.equals(homeOwner.getId())) {
-                    isOwner = true;
-                    member.fraction += 2;
-                }
-                stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
-                        .append(m.fraction).append(isOwner ? " 🚩" : "").append("\n");
-            }
-        }
+        memberList.stream().filter(m -> !m.survive).forEach(m -> {
+            stringBuilder.append("☠️ ").append(StrUtil.format(USER_WORD_IS,
+                    TgUtil.tgNameOnUrl(m.user), m.word));
+            m.fraction = m.isUndercover ? 2 : 1;
+            boolean isOwner2 = member.id.equals(homeOwner.getId());
+            member.fraction += isOwner2 ? 2 : 0;
+            stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
+                    .append(m.fraction).append(isOwner2 ? " 🚩" : "").append("\n");
+        });
         tgBot.sendMessage(chatId, stringBuilder.toString());
 
         realSettlement(true);
         status = GameStatus.游戏关闭;
     }
 
+    /**
+     * 游戏结束 积分计算
+     */
     void sendGameOver() {
-        StringBuilder stringBuilder = new StringBuilder();
         status = GameStatus.游戏结算中;
 
         boolean winnerIsUndercover = GameUtil.isUndercoverWin(this);
 
-        String winner = "";
-        if (winnerIsUndercover) {
-            winner = "🤡卧底";
-        } else {
-            winner = "👨‍🌾平民";
-        }
-        stringBuilder.append(StrUtil.format(GAME_OVER, winner)).append(DIVIDING_LINE);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(StrUtil.format(GAME_OVER, winnerIsUndercover ? "🤡卧底" : "👨‍🌾平民"))
+                .append(DIVIDING_LINE);
 
-        long undercoverNum = memberList.stream().filter(m -> m.isUndercover).count();
-        long undercoverSurviveNum = memberList.stream().filter(m -> m.isUndercover && m.survive).count();
-        long spaceNum = memberList.stream().filter(m -> m.isSpace).count();
-        long spaceSurviveNum = memberList.stream().filter(m -> m.isSpace && m.survive).count();
-        long peopleNum = memberList.stream().filter(m -> !m.isUndercover).count();
-        long peopleSurviveNum = memberList.stream().filter(m -> !m.isUndercover && m.survive).count();
-
-        long surviveNum = memberList.stream().filter(m -> m.survive).count();
-        long noSpaceSurviveNum = memberList.stream().filter(m -> m.survive && m.isUndercover && !m.isSpace).count();
-        long noSpaceNum = memberList.stream().filter(m -> m.isUndercover && !m.isSpace).count();
+        long undercoverNum = GameUtil.getUndercoverNumber(this);
+        long undercoverSurviveNum = GameUtil.getUndercoverSurvivesNumber(this);
+        long spaceNum = GameUtil.getSpaceNumber(this);
+        long spaceSurviveNum = GameUtil.getSpaceSurviveNumber(this);
+        long peopleSurviveNum = GameUtil.getPeopleSurviveNumber(this);
+        long surviveNum = GameUtil.getSurvivesNumber(this);
+        long noSpaceNum = GameUtil.getNoSpaceNumber(this);
 
         // 如果卧底全部存活 积分翻倍
         boolean allUnderCoverSurvive = undercoverNum == undercoverSurviveNum;
@@ -775,68 +684,35 @@ public class Game extends Thread {
 
         List<String> surviveStr = CollUtil.newArrayList();
         List<String> noSurviveStr = CollUtil.newArrayList();
-        for (Member m : memberList) {
+        for (GameUser m : memberList) {
             StringBuilder sb = new StringBuilder();
             boolean undercover = m.isUndercover;
-            boolean isOwner = false;
-            if (m.id.equals(homeOwner.getId())) {
-                isOwner = true;
-            }
-            if (undercover) {
-                if (m.isSpace) {
-                    m.fraction = 6;
-                } else {
-                    m.fraction = 5;
-                }
-            } else {
-                m.fraction = 3;
-            }
+            boolean isOwner = m.id.equals(homeOwner.getId());
+
+            // 底分：白板6 卧底5 平民3
+            m.fraction = undercover ? (m.isSpace ? 6 : 5) : 3;
             // 每活2个回合(超过人数回合不算)，积分+1
-            int surviveRound = m.round;
-            if (surviveRound > memberList.size()) {
-                surviveRound = memberList.size();
-            }
-            m.fraction += surviveRound / 2;
+            m.fraction += Math.min(m.round, memberList.size()) / 2;
 
             if (m.survive) {
+                // 加上卧底人数/2的分数（0-2）
                 m.fraction += undercoverNum / 2;
-                if (isOwner) {
-                    m.fraction += 1;
-                }
-                Integer realFraction = m.fraction;
-                String boomStr = "";
+                // 房主加成
+                m.fraction += isOwner ? 1 : 0;
 
-                if (allPeopleSurvive) {
-                    m.fraction *= 1.5;
-                    boomStr += "<b> X 1.5</b>";
-                }
-                if (allUnderCoverSurvive) {
-                    m.fraction *= 2;
-                    boomStr += "<b> X 2</b>";
-                }
-                if (spaceSingleSurvive) {
-                    m.fraction *= 3;
-                    boomStr += "<b> X 3</b>";
-                }
-                if (allUnderCoverSurviveNoSpace) {
-                    m.fraction += 3;
-                    boomStr += "<b> +3</b>";
-                }
-                if (singleUnderCoverSurvive || brotherSurvive) {
-                    m.fraction += 5;
-                    boomStr += "<b> +5</b>";
-                }
+                Integer realFraction = m.fraction;
+                String boomStr = buildAchievementStr(m, allPeopleSurvive, allUnderCoverSurvive,
+                        spaceSingleSurvive, allUnderCoverSurviveNoSpace, singleUnderCoverSurvive, brotherSurvive);
 
                 surviveStr.add(sb.append("🏆 ")
                         .append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
                         .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
-                if (isOwner) {
-                    m.fraction += 2;
-                }
-                if ((m.isUndercover && !winnerIsUndercover)
-                        || (!m.isUndercover && winnerIsUndercover)) {
+                // 房主加成2分
+                m.fraction += isOwner ? 2 : 0;
+                // 输家阵营-2分
+                if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
                 }
                 noSurviveStr.add(sb.append("☠️ ")
@@ -845,14 +721,90 @@ public class Game extends Thread {
                         .append(m.fraction).append(isOwner ? " 🚩" : "").append("\n").toString());
             }
         }
+        // 淘汰
         surviveStr.forEach(stringBuilder::append);
         stringBuilder.append("\n");
         noSurviveStr.forEach(stringBuilder::append);
-        // 淘汰
         tgBot.sendMessage(chatId, stringBuilder.toString());
 
+        // 实际结算
         realSettlement(winnerIsUndercover);
         status = GameStatus.游戏关闭;
+    }
+
+    /**
+     * 构建爆词成就str
+     *
+     * @param isOwner           是所有者
+     * @param member            成员
+     * @param stringBuilder     字符串生成器
+     * @param surviveNum        生存num
+     * @param noSpaceSurviveNum 没有空间生存num
+     * @param noSpaceNum        无空格编号
+     */
+    private void buildBoomAchievementStr(boolean isOwner, GameUser member, StringBuilder stringBuilder,
+                                         long surviveNum, long noSpaceSurviveNum, long noSpaceNum) {
+        Integer realFraction = member.fraction;
+        String boomStr = "";
+        if (surviveNum == 3) {
+            member.fraction += 5;
+            boomStr += "<b> +5</b>";
+            stringBuilder.append(GAME_OVER_BOOM_SPACE3);
+        } else {
+            if (noSpaceSurviveNum == 0) {
+                member.fraction += 4;
+                boomStr += "<b> + 4</b>";
+                stringBuilder.append(GAME_OVER_BOOM_SPACE);
+            }
+            if (noSpaceNum == noSpaceSurviveNum) {
+                member.fraction -= 1;
+                boomStr += "<b> -1</b>";
+                stringBuilder.append(GAME_OVER_BOOM_SPACE2);
+            }
+        }
+        stringBuilder.append("\n\n");
+        stringBuilder.append("🏆 ").append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(member), ""))
+                .append(StrUtil.format("🀫 +{}", realFraction))
+                .append(boomStr).append(isOwner ? " 🚩" : "").append("\n");
+    }
+
+    /**
+     * 构造成就str
+     *
+     * @param m                           m
+     * @param allPeopleSurvive            所有人都能活下来
+     * @param allUnderCoverSurvive        所有被掩盖人都活了下来
+     * @param spaceSingleSurvive          太空单人生存
+     * @param allUnderCoverSurviveNoSpace 所有隐藏东西都没有空间
+     * @param singleUnderCoverSurvive     单人掩护生存
+     * @param brotherSurvive              兄弟幸存
+     * @return {@link String }
+     */
+    private String buildAchievementStr(GameUser m, boolean allPeopleSurvive, boolean allUnderCoverSurvive,
+                                       boolean spaceSingleSurvive, boolean allUnderCoverSurviveNoSpace,
+                                       boolean singleUnderCoverSurvive, boolean brotherSurvive) {
+        String boomStr = "";
+        if (allPeopleSurvive) {
+            m.fraction *= 1.5;
+            boomStr += "<b> X 1.5</b>";
+        }
+        if (allUnderCoverSurvive) {
+            m.fraction *= 2;
+            boomStr += "<b> X 2</b>";
+        }
+        if (spaceSingleSurvive) {
+            m.fraction *= 3;
+            boomStr += "<b> X 3</b>";
+        }
+        if (allUnderCoverSurviveNoSpace) {
+            m.fraction += 3;
+            boomStr += "<b> +3</b>";
+        }
+        if (singleUnderCoverSurvive || brotherSurvive) {
+            m.fraction += 5;
+            boomStr += "<b> +5</b>";
+        }
+        return boomStr;
     }
 
     /**
@@ -928,7 +880,7 @@ public class Game extends Thread {
             tgBot.sendMessage(chatId, mailBuilder.toString());
 
             StringBuilder upBuilder = new StringBuilder();
-            List<Member> upMember = CollUtil.newArrayList();
+            List<GameUser> upMember = CollUtil.newArrayList();
             memberList.forEach(m -> {
                 String oldLevel = m.oldLevel;
                 String newLevel = GameUtil.levelByScore(m.wodiUser.getFraction());
@@ -943,7 +895,7 @@ public class Game extends Thread {
             if (CollUtil.isNotEmpty(upMember)) {
                 tgBot.sendMessage(chatId, upBuilder.toString());
 
-                Member maxMember = upMember.stream()
+                GameUser maxMember = upMember.stream()
                         .max(Comparator.comparingInt(m -> m.wodiUser.getFraction()))
                         .orElse(null);
                 if (null != maxMember) {
@@ -1010,13 +962,33 @@ public class Game extends Thread {
         }
     }
 
-    public void speak(Long userId) {
-        if (status == GameStatus.讨论时间) {
-            Member member = getMember(userId);
-            if (member != null && !member.speak && member.survive) {
-                member.speak = true;
-            }
+    /**
+     * 玩家发言
+     *
+     * @param userId 用户id
+     * @param text   文本
+     */
+    public void speak(Long userId, String text) {
+        if (status != GameStatus.讨论时间) {
+            return;
         }
+        GameUser member = getMember(userId);
+        if (member == null || member.speak || !member.survive) {
+            return;
+        }
+        if (StrUtil.isBlank(text) || CollUtil.contains(speakList, text)) {
+            // 发言为空或重复词语
+            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_REPEAT, TgUtil.tgNameOnUrl(member)));
+            embyDao.upIv(userId, -2);
+            return;
+        }
+        if (StrUtil.containsAnyIgnoreCase(text, member.word, PinYinUtil.getFirstLetters(text))) {
+            // 违禁爆词 本词或者拼音
+            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));
+            embyDao.upIv(userId, -5);
+        }
+        member.speak = true;
+        speakList.add(text);
     }
 
     /**
@@ -1028,7 +1000,7 @@ public class Game extends Thread {
      */
     public void boom(Message message, Long userId, String text) {
         if (status == GameStatus.讨论时间) {
-            Member member = getMember(userId);
+            GameUser member = getMember(userId);
             if (member == null || member.speak || !member.survive || !member.isSpace) {
                 return;
             }
@@ -1037,46 +1009,19 @@ public class Game extends Thread {
         }
     }
 
-    public void memberReady(Long userId) {
-        Game.Member member = getMember(userId);
-        if (null != member && !member.ready) {
-            member.ready = true;
-            endActiveTime = System.currentTimeMillis();
-            updateInvitation = true;
-        }
-    }
-
-    void sendVote() {
-        voteTimeEnd = System.currentTimeMillis() + voteTimeLimit;
-        for (Member member : memberList) {
-            if (member.survive) {
-                member.voteTime = Long.MAX_VALUE;
-                member.finishVote = false;
-                member.beVoted.set(0);
-                member.toUser = null;
-            }
-        }
-        SendMessage sendMessage = new SendMessage(chatId.toString(), votingStart);
-        sendMessage.setReplyMarkup(TgUtil.getVoteMarkup(this));
-        tgBot.sendMessage(sendMessage, 0, GameStatus.投票中, this);
-
-    }
-
+    /**
+     * 即将开始投票
+     */
     void sendAboutToVote() {
         voteReminder = true;
-        boolean someoneSpeaks = false;
         int speaks = 0;
         StringBuilder stringBuilder = new StringBuilder();
-        for (Member member : memberList) {
-            if (member.survive && member.speak) {
-                someoneSpeaks = true;
-                break;
-            }
-        }
+        // 有人发言
+        boolean someoneSpeaks = memberList.stream().anyMatch(member -> member.survive && member.speak);
         if (someoneSpeaks) {
-            stringBuilder.append(StrUtil.format(aboutToVoteL, voteReminderVote / 1000));
+            stringBuilder.append(StrUtil.format(VOTE_COUNT_DOWN, voteReminderVote / 1000));
             boolean b = false;
-            for (Member member : memberList) {
+            for (GameUser member : memberList) {
                 if (member.survive && !member.speak) {
                     if (b) stringBuilder.append("、");
                     if (!b) b = true;
@@ -1093,17 +1038,9 @@ public class Game extends Thread {
         tgBot.sendMessage(sendMessage, voteReminderVote);
     }
 
-    public void setStatus(GameStatus status) {
-        this.status = status;
-    }
-
-    @ToString
+    /*@ToString
     @EqualsAndHashCode
     public static class Member {
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
 
         public User user;
         public WodiUser wodiUser;
@@ -1112,52 +1049,56 @@ public class Game extends Thread {
 
         public String oldLevel;
 
-        /**
-         * 被投票
-         */
+        *//**
+     * 被投票
+     *//*
         public AtomicInteger beVoted = new AtomicInteger(0);
-        /**
-         * 完成投票
-         */
+        *//**
+     * 完成投票
+     *//*
         public boolean finishVote;
-        /**
-         * 是卧底
-         */
+        *//**
+     * 是卧底
+     *//*
         public boolean isUndercover;
-        /**
-         * 是白板
-         */
+        *//**
+     * 是白板
+     *//*
         public boolean isSpace;
-        /**
-         * 准备
-         */
+        *//**
+     * 准备
+     *//*
         public boolean ready = false;
-        /**
-         * 存活
-         */
+        *//**
+     * 存活
+     *//*
+        @Getter
         public boolean survive = true;
-        /**
-         * 没有投票
-         */
+        *//**
+     * 没有投票
+     *//*
         public int notVote = 0;
 
-        /**
-         * 本轮投票时间
-         */
+        *//**
+     * 本轮投票时间
+     *//*
         public long voteTime = Long.MAX_VALUE;
 
-        /**
-         * 存活回合
-         */
+        *//**
+     * 存活回合
+     *//*
         public int round = 0;
-        /**
-         * 投票给
-         */
-        Member toUser;
-        /**
-         * 游戏结算分
-         */
+        *//**
+     * 投票给
+     *//*
+        public Member toUser;
+        *//**
+     * 游戏结算分
+     *//*
         public int fraction = 0;
+        *//**
+     * dmail结算分
+     *//*
         public int dmailUp = 0;
 
         public boolean speak = false;
@@ -1169,5 +1110,5 @@ public class Game extends Thread {
             this.wodiUser = wodiUser;
             this.oldLevel = GameUtil.levelByScore(wodiUser.getFraction());
         }
-    }
+    }*/
 }

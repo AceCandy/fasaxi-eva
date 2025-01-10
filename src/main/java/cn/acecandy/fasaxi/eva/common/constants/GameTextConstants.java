@@ -28,13 +28,15 @@ public interface GameTextConstants {
                       6. 某些特殊模式下，按照人多的阵营属于平民这个规则来说，白板会属于平民方，所以不要被词所限制。
                       
                       <b>规则说明:</b>
-                      1. <b>游戏限制</b>：游戏最多10人参与，通过“，XXX”（中文逗号前缀）此种方式先进行发言，所有人发言完成后进入投票环节。未发言玩家无法参与投票环节，两次不参与投票（弃票不算）的玩家将会被系统kill。
+                      1. <b>游戏限制</b>：游戏最多10人参与，通过发言描述自己的词语，所有人发言完成后进入投票环节。对内包含平票或高票不超过全对存活人数1/3则继续，否则最高票被淘汰出局。重复轮次直到达成一方胜利条件。
                       2. <b>胜利条件</b>：平民<b>找出所有卧底</b>时平民胜利。当<b>场上只剩下1名平民</b>时，如果卧底存在，则卧底获得胜利。
-                      3. <b>白板附加胜利条件（特殊模式不可用）</b>：白板在<b>除第一轮外</b>的每一轮的讨论环节（自己未发言状态下）可以通过“，。XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则直接获胜，猜词失败则自己暴毙，游戏继续。（注意此方式威力极大且人畜不分，队友也杀，请慎用！）
+                      3. <b>白板附加胜利条件（特殊模式无效）</b>：白板在<b>除第一轮外</b>的每一轮的讨论环节（自己未发言状态下）可以通过“，。XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则直接获胜，猜词失败则自己暴毙(扣除2Dmail)，游戏继续。此方式威力极大且人畜不分，队友也杀，慎用！
                       4. <b>发言顺序</b>：第一轮由<b>系统通知</b>前两名玩家进行发言描述，后续无顺序要求。
-                      5. <b>房主优劣</b>：阵营获胜房主积分底分+1（享受成就加成），获得12封Dmail。阵营失败房主积分底分+2，回收6封Dmail。
-                      6. <b>积分成就</b>：每把游戏其中无论输赢游戏积分均会增长，Dmail则根据胜负情况增减。根据游戏情况积分的获取多少有不同，获得成就会有额外的积分奖励。短时间内Dmail减少很正常，不必惊慌，尽量多获得积分才重要。
-                      6. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
+                      5. <b>发言规则</b>：通过“，XXX”（中文逗号前缀）此种方式正常描述自己的词，但是禁止无发言、本轮重复发言（扣除2Dmail），另外严禁拼音缩写及爆本家词（扣除5Dmail）
+                      6. <b>投票规则</b>：有投票权的玩家需要在规定时间内投票，未发言玩家无法参与投票环节，两次不参与投票（弃票不算）的玩家将会被系统kill（扣除5Dmail）。
+                      7. <b>房主优劣</b>：阵营获胜房主积分底分+1（享受成就加成），获得12封Dmail。阵营失败房主积分底分+2，回收6封Dmail。
+                      8. <b>积分成就</b>：每把游戏其中无论输赢游戏积分均会增长，Dmail则根据胜负情况增减。根据游戏情况积分的获取多少有不同，获得成就会有额外的积分奖励。短时间内Dmail减少很正常，不必惊慌，尽量多获得积分才重要。
+                      9. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
                       
                       /wodi 创建游戏（10Dmail 成功开局后扣取）
                       /wodi_record 查看自身记录（2Dmail）
@@ -77,21 +79,22 @@ public interface GameTextConstants {
                          <b>{}</b>秒后将开始第<b>{}</b> 轮投票。\n
                          {}
                          """;
-    String firstSpeak = "请由 <b>{}</b> 先进行首位发言；\n<b>{}</b> 进行第二位发言";
+    String SPEAK_ORDER = "请由 <b>{}</b> 先进行首位发言；\n<b>{}</b> 进行第二位发言";
     String ViewWord = "查看词语";
     String gameStart = "房主{}扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
-    String votingStart = "现在开始投票，你想淘汰谁？";
+    String VOTING_START = "现在开始投票，你想淘汰谁？";
     String notVoteSelf = "❌ 不能投自己";
     String notSpeakVote = "❌ 未发言玩家禁止投票";
     String abstain = "放弃投票 🏳️";
     String success = "✅ 成功";
     String OPERATED_BEFORE = "❌ 已经操作过了";
     String failure = "失败";
-    String ABSTAINED = "{} 放弃了这一票\n";
+    String VOTE_PUBLICITY = "{} 👉 [{}]\n";
+    String VOTE_ABSTAINED = "{} 放弃了这一票\n";
     String NOT_VOTE = "{} 没有在时间内进行投票\n";
     String ANONYMOUS_VOTE = "️🎭 由于不可抗力发生，本轮投票将匿名进行";
-    String votedTimeEnd = "️⌛️投票时间到：\n";
-    String everyoneVoted = "✅ 所有人都完成了投票：\n";
+    String TIME_END_VOTED = "️⌛️投票时间到，投票结束！";
+    String ALL_FINISH_VOTED = "✅ 所有人都完成了投票！";
     String LAST_VOTE = "👀 本轮最后投票人: {}\n\n";
     String GAME_OVER = "🎇 游戏结束 <b>{}</b> 胜利！！！🎇\n";
     String DIVIDING_LINE = "------------------------\n";
@@ -104,7 +107,7 @@ public interface GameTextConstants {
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER2 = "<b>🤡卧底 达成【我是荒原上的一匹孤狼】成就，奖励积分+5！</b>\n";
     String GAME_OVER_BOOM_SINGLE_PEOPLE = "<b>👨‍🌾平民 阵营达成【兄弟，不愧是你】成就，奖励积分+5！</b>\n";
     String GAME_OVER_BOOM3 = "<b>{}屠夫 达成【哈哈哈哈哈，都没想到吧】成就，奖励积分三倍！！！</b>\n";
-    String aboutToVoteL = "即将开始投票, 倒计时{}s, ";
+    String VOTE_COUNT_DOWN = "即将开始投票, 倒计时{}s, ";
     String aboutToVoteR = "还没有发言";
     String notAdmin = """
                       <i>没有看到有人说话，我可能没有权限</i>
@@ -144,7 +147,10 @@ public interface GameTextConstants {
 
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
     String GAME_SETTLEMENT = "游戏正在结算中，请稍候";
-    String remainingPersonnel = "剩余人员({}/{}):\n{}";
+    String SURVIVAL_PERSONNEL = "\n剩余人员({}/{}):\n{}";
+    String NOT_VOTED_TIP = "🎃{} 两轮连续跑路，扣除5封Dmail🫶\n";
+    String SPEAK_REPEAT = "🎃{} 无发言或重复发言，扣除2封Dmail🫶\n";
+    String SPEAK_NOWAY = "🎃{} 违禁爆词，扣除5封Dmail🫶\n";
 
     String RIGISTER_TIPS = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";
     String RIGISTER_CODE1 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";
@@ -159,7 +165,7 @@ public interface GameTextConstants {
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
 
     String BOOM_WAITING = "🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪\n🌌\n🌌嘘～噤声！神秘的屠夫悄悄从屁股中缓缓地抽出了五米长的钢刀…………\n🌌\n🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪";
-    String BOOM_FAIL = "☠️❌☠️❌☠️ 玩家【{}】突然暴毙，没人知道发生了没什么。剩余玩家游戏继续…………";
+    String BOOM_FAIL = "☠️❌☠️❌☠️ 玩家【{}】突然暴毙，没人知道发生了没什么（并且丢失了2Dmail）。剩余玩家游戏继续…………";
 
     String SEASON0 = "零化域的缺失之环";
     String SEASON1 = "闭时曲线的碑文";

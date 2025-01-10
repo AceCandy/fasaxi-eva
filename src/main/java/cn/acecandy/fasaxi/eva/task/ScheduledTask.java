@@ -67,6 +67,10 @@ public class ScheduledTask {
         addAutoDeleteMessage(message, deleteTime, null, null);
     }
 
+    public static void addAutoDeleteMessage(Message message, GameStatus status, Game game) {
+        addAutoDeleteMessage(message, 0, status, game);
+    }
+
     public static void addAutoDeleteMessage(Message message, long deleteTime,
                                             GameStatus status, Game game) {
         AutoDeleteMessage autoDeleteMessage = new AutoDeleteMessage();

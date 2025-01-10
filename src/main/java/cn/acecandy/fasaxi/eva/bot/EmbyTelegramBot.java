@@ -195,6 +195,13 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         return execute;
     }
 
+    public Message sendMessage(SendMessage message, GameStatus status, Game game) {
+        message.setParseMode(ParseMode.HTML);
+        Message execute = executeTg(() -> tgClient.execute(message));
+        ScheduledTask.addAutoDeleteMessage(execute, status, game);
+        return execute;
+    }
+
     public void muteGroup(Long chatId) {
         ChatPermissions permissions = ChatPermissions.builder()
                 .canSendMessages(false).build();

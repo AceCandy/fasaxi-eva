@@ -1,8 +1,9 @@
 package cn.acecandy.fasaxi.eva.utils;
 
+import cn.acecandy.fasaxi.eva.bot.game.Game;
+import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
-import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
@@ -51,8 +52,8 @@ public final class TgUtil {
         return StrUtil.format("<a href='tg://user?id={}'>{}</a>", user.getTelegramId(), tgName(user));
     }
 
-    public static String tgNameOnUrl(Game.Member user) {
-        return StrUtil.format("<a href=\"tg://user?id={}\">{}</a>", user.id, tgName(user.user));
+    public static String tgNameOnUrl(GameUser user) {
+        return tgNameOnUrl(user.user);
     }
 
     /**
@@ -101,7 +102,7 @@ public final class TgUtil {
                     text = StrUtil.removeAllPrefix(text, "。");
                     game.boom(message, message.getFrom().getId(), text);
                 } else {
-                    game.speak(message.getFrom().getId());
+                    game.speak(message.getFrom().getId(), text);
                 }
             }
         }
