@@ -1,10 +1,10 @@
 package cn.acecandy.fasaxi.eva.bot;
 
-import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
-import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
+import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.bot.game.GameEvent;
-import cn.acecandy.fasaxi.eva.bot.game.Command;
+import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
+import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
 import cn.acecandy.fasaxi.eva.task.ScheduledTask;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.util.StrUtil;
@@ -20,6 +20,7 @@ import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPermissions;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.PinChatMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -29,6 +30,8 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCa
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.ChatPermissions;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeAllGroupChats;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -245,4 +248,17 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         executeTg(() -> tgClient.executeAsync(callback));
     }
 
+    public void setCommand() {
+        SetMyCommands setMyCommands = new SetMyCommands(List.of(
+                new BotCommand("/wd", "创建游戏(10Dmail)"),
+                new BotCommand("/wd_info", "查看自身游戏积分记录(2Dmail)"),
+                new BotCommand("/wd_rank", "翻阅游戏积分排行榜(15Dmail)"),
+                new BotCommand("/wd_top", "翻阅首飞霸王榜(10Dmail)"),
+                new BotCommand("/wd_exit", "关闭游戏(3Dmail)"),
+                new BotCommand("/wd_help", "获取帮助")
+        ));
+        setMyCommands.setScope(new BotCommandScopeAllGroupChats());
+        executeTg(() -> tgClient.executeAsync(setMyCommands));
+        log.info("初始化bot指令成功！");
+    }
 }

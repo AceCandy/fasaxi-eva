@@ -13,6 +13,7 @@ public interface GameTextConstants {
      */
     Integer CURRENT_SEASON = 2;
 
+    String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前已被发现！当前群组信息已上传云端！";
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
@@ -43,7 +44,7 @@ public interface GameTextConstants {
                       /wd 创建游戏（10Dmail 成功开局后扣取）
                       /wd_info 查看自身游戏积分记录（2Dmail）
                       /wd_rank 翻阅游戏积分排行榜（15Dmail）
-                      /wd_top 翻阅首飞升霸王榜（10Dmail）
+                      /wd_top 翻阅首飞霸王榜（10Dmail）
                       /wd_exit 关闭游戏（3Dmail）
                       """;
     String SPEAK_TIME_LIMIT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";

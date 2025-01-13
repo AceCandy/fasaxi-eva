@@ -29,20 +29,22 @@ import java.util.concurrent.TimeUnit;
 public class ScheduledTask {
 
     @Resource
-    private EmbyTelegramBot embyTelegramBot;
+    private EmbyTelegramBot tgBot;
 
     private static final Set<AutoDeleteMessage> AUTO_DEL_MSG_SET = new ConcurrentHashSet<>();
 
     private final ScheduledExecutorService scheduler = ThreadUtil.createScheduledExecutor(4);
 
     public void run() {
+        tgBot.setCommand();
+
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 Iterator<AutoDeleteMessage> iterator = AUTO_DEL_MSG_SET.iterator();
                 while (iterator.hasNext()) {
                     AutoDeleteMessage next = iterator.next();
                     if (shouldDeleteMessage(next)) {
-                        embyTelegramBot.deleteMessage(next.message);
+                        tgBot.deleteMessage(next.message);
                         iterator.remove();
                     }
                 }

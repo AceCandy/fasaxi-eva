@@ -20,6 +20,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -38,6 +39,7 @@ import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
 /**
  * 命令处理类，转入命令 仅命令名 （无‘/’，无‘@****’）
  */
+@Slf4j
 @Component
 public class Command {
 
@@ -217,6 +219,11 @@ public class Command {
      * @param userId 用户id
      */
     private void handleNewGameCommand(User user, Chat chat, Long userId) {
+        if (!StrUtil.equals(chat.getId().toString(), tgBot.getGroup())) {
+            tgBot.sendMessage(chat.getId(), NO_AUTH_GROUP);
+            log.error("非授权群组私自拉bot入群已被发现：{}, chat: {}", chat.getId(), chat);
+            return;
+        }
         Game game = GameListUtil.getGame(chat.getId());
         if (game == null) {
             // 发言结束或者管理可以直接开
