@@ -55,9 +55,9 @@ public final class GameUtil extends GameSubUtil {
         int totalVictory = wordPeopleVictory + wordSpyVictory;
         String recordTxt = RECORD_TXT
                 .replace("{userName}", TgUtil.tgNameOnUrl(user))
-                .replace("{joinGame}", user.getJoinGame() + "")
                 .replace("{completeGame}", completeGame + "")
-                .replace("{exitGame}", user.getExitGame() + "")
+                .replace("{total_percentage}", NumberUtil.formatPercent(
+                        totalVictory / NumberUtil.toDouble(completeGame), 1))
                 .replace("{word_people}", wordPeople + "")
                 .replace("{word_spy}", wordSpy + "")
                 .replace("{word_people_victory}", wordPeopleVictory + "")
@@ -66,14 +66,12 @@ public final class GameUtil extends GameSubUtil {
                         wordPeopleVictory / NumberUtil.toDouble(wordPeople), 1))
                 .replace("{spy_percentage}", NumberUtil.formatPercent(
                         wordSpyVictory / NumberUtil.toDouble(wordSpy), 1))
-                .replace("{total_percentage}", NumberUtil.formatPercent(
-                        totalVictory / NumberUtil.toDouble(completeGame), 1))
                 .replace("{fraction}", user.getFraction() + "")
                 .replace("{level}", levelByScore(user.getFraction()))
                 .replace("{dm}", embyUser.getIv() + "");
         Integer level = level(user.getFraction());
         if (level > 0) {
-            recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍Dmail加成");
+            recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍加成");
         }
         return recordTxt;
     }
@@ -301,6 +299,17 @@ public final class GameUtil extends GameSubUtil {
     }
 
     /**
+     * 特殊游戏结束
+     *
+     * @param game 游戏
+     * @return boolean
+     */
+    public static boolean isSpecialGameOver(Game game) {
+        return getUndercoverSurvivesNumber(game) == 0
+                || (getSurvivesNumber(game) <= 3 && getUndercoverSurvivesNumber(game) >= 0);
+    }
+
+    /**
      * 存活人数
      *
      * @return int
@@ -358,7 +367,7 @@ public final class GameUtil extends GameSubUtil {
     }
 
     /**
-     * 获取非白板人数
+     * 获取非白板卧底人数
      *
      * @param game 游戏
      * @return long

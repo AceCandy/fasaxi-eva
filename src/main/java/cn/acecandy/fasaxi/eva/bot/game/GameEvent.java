@@ -18,6 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.List;
 
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.NO_EMBY_USER_TIP;
 import static cn.acecandy.fasaxi.eva.utils.GameEventUtil.*;
 
 /**
@@ -90,11 +91,13 @@ public class GameEvent {
         Long userId = user.getId();
         Emby embyUser = embyDao.findByTgId(userId);
         if (null == embyUser) {
-            callback.setText("❌ 当前未在bot开号！");
+            callback.setText(NO_EMBY_USER_TIP);
+            return;
         }
         GameUser gameUser = game.getMember(userId);
         if (null == gameUser && !ACTION_JOIN_GAME.equals(action)) {
             callback.setText("❌ 当前未加入游戏！");
+            return;
         }
 
         switch (action) {

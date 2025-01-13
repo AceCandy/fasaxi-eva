@@ -15,6 +15,7 @@ public interface GameTextConstants {
 
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
+    String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
     String TIP_IN_RANK = "您花费15封Dmail进行开启榜单";
     String TIP_IN_TOP = "您花费10封Dmail进行开启榜单";
     String TIP_HELP = """
@@ -33,28 +34,28 @@ public interface GameTextConstants {
                       2. <b>胜利条件</b>：平民<b>找出所有卧底</b>时平民胜利。当<b>场上只剩下1名平民</b>时，如果卧底存在，则卧底获得胜利。
                       3. <b>白板附加胜利条件（特殊模式无效）</b>：白板在<b>除第一轮外</b>的每一轮的讨论环节（自己未发言状态下）可以通过“，。XXX”（前缀两个标点均为中文标点）进行猜平民词，猜词成功则直接获胜，猜词失败则自己暴毙(扣除2Dmail)，游戏继续。此方式威力极大且人畜不分，队友也杀，慎用！
                       4. <b>发言顺序</b>：第一轮由<b>系统通知</b>前两名玩家进行发言描述，后续无顺序要求。
-                      5. <b>发言规则</b>：通过“，XXX”（中文逗号前缀）此种方式正常描述自己的词，但是禁止无发言、本轮重复发言（扣除2Dmail），另外严禁拼音缩写及爆本家词（扣除5Dmail）
+                      5. <b>发言规则</b>：通过“，XXX”（中文逗号前缀）此种方式正常描述自己的词，但是禁止无发言、本轮重复发言（扣除2Dmail），另外严禁包括谐音等方式爆本家词（扣除5Dmail）
                       6. <b>投票规则</b>：有投票权的玩家需要在规定时间内投票，未发言玩家无法参与投票环节，两次不参与投票（弃票不算）的玩家将会被系统kill（扣除5Dmail）。
                       7. <b>房主优劣</b>：阵营获胜房主积分底分+1（享受成就加成），获得12封Dmail。阵营失败房主积分底分+2，回收6封Dmail。
                       8. <b>积分成就</b>：每把游戏其中无论输赢游戏积分均会增长，Dmail则根据胜负情况增减。根据游戏情况积分的获取多少有不同，获得成就会有额外的积分奖励。短时间内Dmail减少很正常，不必惊慌，尽量多获得积分才重要。
                       9. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
                       
-                      /wodi 创建游戏（10Dmail 成功开局后扣取）
-                      /wodi_record 查看自身游戏积分记录（2Dmail）
-                      /wodi_rank 翻阅游戏积分排行榜（15Dmail）
-                      /wodi_top 翻阅首飞升霸王榜（10Dmail）
-                      /wodi_exit 关闭游戏（3Dmail）
+                      /wd 创建游戏（10Dmail 成功开局后扣取）
+                      /wd_info 查看自身游戏积分记录（2Dmail）
+                      /wd_rank 翻阅游戏积分排行榜（15Dmail）
+                      /wd_top 翻阅首飞升霸王榜（10Dmail）
+                      /wd_exit 关闭游戏（3Dmail）
                       """;
     String SPEAK_TIME_LIMIT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
     String userCreateGame = "{} 花费10封Dmail（成功开局后才扣取），创建了一个新游戏";
     String RECORD_TXT = """
                         \n
-                        👑 <b>用户名</b>: {userName}
-                        🎮 <b>游戏场次</b>：{completeGame} ({total_percentage})
+                        ◎ <b>{level}</b> {userName} ({fraction})
+                        
+                        🎮 <b>竞技场次</b>：{completeGame} ({total_percentage})
                         👨‍🌾 <b>平民场次</b>：{word_people_victory} / {word_people} ({people_percentage})
                         🤡 <b>卧底场次</b>：{word_spy_victory} / {word_spy} ({spy_percentage})
-                        🏆 <b>等级积分</b>：<b>{level}</b>（{fraction}）
-                        💰 <b>Dmail/特权</b>：{dm}<b>无加成</b>
+                        💰 <b>流通货币</b>：{dm}<b> (无加成)</b>
                         """;
     String RANK = "\n<b>▎🏆 [谁是卧底] 无限远点的牵牛星 S{}赛季 ♪</b>\n\n";
     String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
@@ -97,17 +98,19 @@ public interface GameTextConstants {
     String TIME_END_VOTED = "️⌛️投票时间到，投票结束！";
     String ALL_FINISH_VOTED = "✅ 所有人都完成了投票！";
     String LAST_VOTE = "👀 本轮最后投票人: {}\n\n";
-    String GAME_OVER = "🎇 游戏结束 <b>{}</b> 胜利！！！🎇\n";
+    String GAME_OVER = "🎇 {}游戏结束 <b>{}</b> 胜利！！！🎇\n";
     String DIVIDING_LINE = "------------------------\n";
     String GAME_OVER_BOOM_SPACE = "<b>🀫 白板 达成【只能孤注一掷了不然我怎么活】成就，奖励积分+4！！</b>\n";
     String GAME_OVER_BOOM_SPACE2 = "<b>🀫 白板 达成【对不起我是个警察】成就，奖励积分-1！！</b>\n";
     String GAME_OVER_BOOM_SPACE3 = "<b>🀫 白板 达成【兄弟我不敢赌】成就，奖励积分+5！！</b>\n";
     String GAME_OVER_BOOM_UNDERCOVER = "<b>🤡卧底 阵营达成【全员恶人你怕了吗】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_PEOPLE = "<b>👨‍🌾平民 阵营达成【坚决肃清黑恶势力】成就，奖励积分1.5倍！！</b>\n";
+    String GAME_OVER_BOOM_PEOPLE_SPECIAL = "<b>👨‍🌾平民 阵营达成【空白的世界】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER = "<b>🤡卧底 阵营达成【白板怎么能算我们的人】成就，奖励积分+3！</b>\n";
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER2 = "<b>🤡卧底 达成【我是荒原上的一匹孤狼】成就，奖励积分+5！</b>\n";
     String GAME_OVER_BOOM_SINGLE_PEOPLE = "<b>👨‍🌾平民 阵营达成【兄弟，不愧是你】成就，奖励积分+5！</b>\n";
     String GAME_OVER_BOOM3 = "<b>{}屠夫 达成【哈哈哈哈哈，都没想到吧】成就，奖励积分三倍！！！</b>\n";
+    String GAME_OVER_BOOM3_SPECIAL = "<b>{}屠夫 达成【神不在的日子】成就，奖励积分三倍！！！</b>\n";
     String VOTE_COUNT_DOWN = "即将开始投票, 倒计时{}s, ";
     String aboutToVoteR = "还没有发言";
     String notAdmin = """
@@ -116,10 +119,10 @@ public interface GameTextConstants {
     String USER_WORD_IS = "<s>{}</s> 的词语是 【{}】";
     // String killUserWordIs = "<s>{}</s> 的词语是 【{}】";
     String USER_DMAIL = "🎉 恭喜[Lv{}]{}本次赢得 <b>{}</b> 封Dmail \n";
-    String USER_DMAIL_OWNER_WIN = "🎉💓 房主{}阵营获胜！奖励 <b>{}</b> 封Dmail \n";
-    String USER_DMAIL_OWNER_FAIL = "🎉☠️ 房主{}阵营失败！回收 <b>{}</b> 封Dmail \n";
-    String USER_FULL = "💓 参加人数达到{}人！全体增加 <b>{}</b> 封Dmail \n";
-    String RORATE_FULL = "💓 激战回合数达到{}轮！全体增加 <b>{}</b> 封Dmail \n";
+    String USER_DMAIL_OWNER_WIN = "🚩💓 房主{}阵营获胜！奖励 <b>{}</b> 封Dmail \n";
+    String USER_DMAIL_OWNER_FAIL = "🚩☠️ 房主{}阵营失败！回收 <b>{}</b> 封Dmail \n";
+    String USER_FULL = "✅ 参加人数达到{}人！全体增加 <b>{}</b> 封Dmail \n";
+    String RORATE_FULL = "✅ 激战回合数达到{}轮！全体增加 <b>{}</b> 封Dmail \n";
     String USER_LEVEL_UP = "🚀 祝贺{} 飞升为 <b>【{}】</b>，收获礼包 <b>{}</b> 封Dmail！\n";
     // String USER_LEVEL_UP_FIRST = "🏆🚀🚀🚀 {} 成为<b>首个</b>飞升至 <b>【{}】</b>的超级大牛, 额外收获 <b>{}</b> 封Dmail！大家快来膜拜他！！！\n";
     String USER_LEVEL_UP_FIRST = """

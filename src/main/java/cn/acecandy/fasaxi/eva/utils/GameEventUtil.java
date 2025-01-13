@@ -51,7 +51,7 @@ public final class GameEventUtil {
      * 处理 投票
      *
      * @param game     游戏
-     * @param gameUser   用户
+     * @param gameUser 用户
      * @param voteToId 投票给id
      * @param callback 回拨
      */
@@ -93,22 +93,6 @@ public final class GameEventUtil {
     }
 
     /**
-     * 成员准备
-     *
-     * @param game   游戏
-     * @param userId 用户id
-     */
-    public static void memberReady(Game game, Long userId) {
-        GameUser member = game.getMember(userId);
-        if (null == member || member.ready) {
-            return;
-        }
-        member.ready = true;
-        game.endActiveTime = System.currentTimeMillis();
-        game.updateInvitation = true;
-    }
-
-    /**
      * 处理 开始游戏
      *
      * @param game     游戏
@@ -145,6 +129,8 @@ public final class GameEventUtil {
             callback.setText("❌ 房主不能退出");
         } else {
             game.memberList.removeIf(m -> Objects.equals(m.id, userId));
+            game.endActiveTime = System.currentTimeMillis();
+            game.updateInvitation = true;
         }
     }
 

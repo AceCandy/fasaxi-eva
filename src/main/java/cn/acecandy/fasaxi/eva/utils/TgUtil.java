@@ -159,7 +159,7 @@ public final class TgUtil {
         int counter = 0;
         InlineKeyboardRow rowInline = new InlineKeyboardRow();
 
-        for (Game.Member member : game.memberList) {
+        for (GameUser member : game.memberList) {
             if (member.survive) {
                 InlineKeyboardButton button = new InlineKeyboardButton(TgUtil.tgName(member.user));
                 JSONObject data = new JSONObject();

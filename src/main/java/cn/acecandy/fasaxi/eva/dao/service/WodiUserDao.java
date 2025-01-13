@@ -142,23 +142,6 @@ public class WodiUserDao {
         wodiUserMapper.update(null, updateWrapper);
     }
 
-    public void upJoinGame(List<Long> telegramIds) {
-        if (CollUtil.isEmpty(telegramIds)) {
-            return;
-        }
-        LambdaUpdateWrapper<WodiUser> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.in(WodiUser::getTelegramId, telegramIds);
-        updateWrapper.setSql("join_game = join_game + 1");
-        wodiUserMapper.update(null, updateWrapper);
-    }
-
-    public void upJoinGame(Long telegramId) {
-        if (null == telegramId) {
-            return;
-        }
-        upJoinGame(CollUtil.newArrayList(telegramId));
-    }
-
     public void updateUserData(Long telegramId, String userName, String firstName, String lastName) {
         if (null == telegramId) {
             return;

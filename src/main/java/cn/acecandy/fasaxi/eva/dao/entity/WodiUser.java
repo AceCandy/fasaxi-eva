@@ -32,14 +32,8 @@ public class WodiUser {
     @Schema(name = "用户名")
     private String userName;
 
-    @Schema(name = "加入游戏次数")
-    private Integer joinGame;
-
     @Schema(name = "完成游戏次数")
     private Integer completeGame;
-
-    @Schema(name = "离开游戏次数")
-    private Integer exitGame;
 
     @Schema(name = "平民场次")
     private Integer wordPeople;

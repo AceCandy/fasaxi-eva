@@ -58,12 +58,12 @@ public class Command {
     public volatile TimedCache<String, List<WodiUser>> rankUserListMap
             = CacheUtil.newTimedCache(600 * 1000);
 
-    private final static String NEW_GAME = "/wodi";
-    private final static String HELP = "/wodi_help";
-    private final static String EXIT = "/wodi_exit";
-    private final static String RECORD = "/wodi_record";
-    private final static String RANK = "/wodi_rank";
-    private final static String TOP = "/wodi_top";
+    private final static String NEW_GAME = "/wd";
+    private final static String RECORD = "/wd_info";
+    private final static String RANK = "/wd_rank";
+    private final static String TOP = "/wd_top";
+    private final static String EXIT = "/wd_exit";
+    private final static String HELP = "/wd_help";
 
     @Resource
     private EmbyDao embyDao;
@@ -217,15 +217,15 @@ public class Command {
      * @param userId 用户id
      */
     private void handleNewGameCommand(User user, Chat chat, Long userId) {
-        // 发言结束或者管理可以直接开
-        if (!CollUtil.contains(tgBot.getAdmins(), userId) && SPEAK_TIME_CNT.get() > 0) {
-            tgBot.sendMessage(chat.getId(),
-                    StrUtil.format(SPEAK_TIME_LIMIT, SPEAK_TIME_CNT.get()), 15 * 1000);
-            return;
-        }
-
         Game game = GameListUtil.getGame(chat.getId());
         if (game == null) {
+            // 发言结束或者管理可以直接开
+            if (!CollUtil.contains(tgBot.getAdmins(), userId) && SPEAK_TIME_CNT.get() > 0) {
+                tgBot.sendMessage(chat.getId(),
+                        StrUtil.format(SPEAK_TIME_LIMIT, SPEAK_TIME_CNT.get()), 15 * 1000);
+                return;
+            }
+
             // 不存在则创建新游戏
             tgBot.sendMessage(chat.getId(),
                     StrUtil.format(userCreateGame, TgUtil.tgNameOnUrl(user)), 5 * 1000);
