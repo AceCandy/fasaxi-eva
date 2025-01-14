@@ -96,8 +96,8 @@ public interface GameTextConstants {
     String VOTE_ABSTAINED = "{} 放弃了这一票\n";
     String NOT_VOTE = "{} 没有在时间内进行投票\n";
     String ANONYMOUS_VOTE = "️🎭 由于不可抗力发生，本轮投票将匿名进行";
-    String TIME_END_VOTED = "️⌛️投票时间到，投票结束！";
-    String ALL_FINISH_VOTED = "✅ 所有人都完成了投票！";
+    String TIME_END_VOTED = "️⌛️投票时间到，投票结束！\n";
+    String ALL_FINISH_VOTED = "✅ 所有人都完成了投票！\n";
     String LAST_VOTE = "👀 本轮最后投票人: {}\n\n";
     String GAME_OVER = "🎇 {}游戏结束 <b>{}</b> 胜利！！！🎇\n";
     String DIVIDING_LINE = "------------------------\n";
@@ -117,7 +117,8 @@ public interface GameTextConstants {
     String notAdmin = """
                       <i>没有看到有人说话，我可能没有权限</i>
                       """;
-    String USER_WORD_IS = "<s>{}</s> 的词语是 【{}】";
+    String USER_WORD_IS = "{} 的词语是 【{}】";
+    String KILL_USER_WORD_IS = "<s>{}</s> 的词语是 【{}】";
     // String killUserWordIs = "<s>{}</s> 的词语是 【{}】";
     String USER_DMAIL = "🎉 恭喜[Lv{}]{}本次赢得 <b>{}</b> 封Dmail \n";
     String USER_DMAIL_OWNER_WIN = "🚩💓 房主{}阵营获胜！奖励 <b>{}</b> 封Dmail \n";

@@ -7,7 +7,6 @@ import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -15,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -214,9 +212,9 @@ public final class GameUtil extends GameSubUtil {
                 member.notVote++;
             }
         }
-        stringBuilder.append(StrUtil.join("、", finishVoteStr))
-                .append(StrUtil.join("、", abstainVoteStr))
-                .append(StrUtil.join("、", notVoteStr)).append("\n");
+        stringBuilder.append(StrUtil.join("", finishVoteStr))
+                .append(StrUtil.join("", abstainVoteStr))
+                .append(StrUtil.join("", notVoteStr)).append("\n");
         return stringBuilder.toString();
     }
 
@@ -337,6 +335,15 @@ public final class GameUtil extends GameSubUtil {
     }
 
     /**
+     * 获取卧底人数
+     *
+     * @return int
+     */
+    public static long getPeopleNumber(Game game) {
+        return game.memberList.stream().filter(m -> !m.isUndercover).count();
+    }
+
+    /**
      * 获取平民存活人数
      *
      * @param game 游戏
@@ -422,11 +429,5 @@ public final class GameUtil extends GameSubUtil {
             }
             return memberStr;
         }).collect(Collectors.joining("、"));
-    }
-
-    public static void main(String[] args) {
-        List<String> upTimeList = StrUtil.splitTrim(DateUtil.formatChineseDate(
-                new Date(), false, true), "分");
-        Console.log(upTimeList);
     }
 }

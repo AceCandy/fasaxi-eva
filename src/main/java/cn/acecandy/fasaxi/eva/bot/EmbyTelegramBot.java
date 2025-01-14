@@ -228,7 +228,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
 
     public void unmuteGroup(Long chatId) {
         ChatPermissions permissions = ChatPermissions.builder()
-                .canSendMessages(true).build();
+                .canSendMessages(true).canSendPhotos(true).canSendOtherMessages(true).build();
         SetChatPermissions setChatPermissions = new SetChatPermissions(chatId.toString(), permissions);
         executeTg(() -> tgClient.executeAsync(setChatPermissions));
     }

@@ -44,7 +44,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
@@ -112,6 +111,7 @@ public class Game {
     List<String> speakList = CollUtil.newArrayList();
     String PEOPLE_WORD;
     String SPY_WORD;
+    public String SPACE_MEMBER;
 
     private boolean specialMode = false;
 
@@ -288,12 +288,12 @@ public class Game {
     }
 
     public void startDiscussion() {
-        log.warn("游戏开始！平民词：{}，卧底词：{}", PEOPLE_WORD, SPY_WORD);
         TimeInterval timer = DateUtil.timer();
         embyDao.upIv(homeOwner.getId(), -10);
         tgBot.sendMessage(chatId, StrUtil.format(GAME_START, TgUtil.tgNameOnUrl(homeOwner)), 5 * 1000);
         log.info("，耗时1：{}ms", timer.intervalMs());
         initWords();
+        log.warn("游戏开始！平民词：{}，卧底词：{}，白板：{}", PEOPLE_WORD, SPY_WORD, SPACE_MEMBER);
         log.info("发牌初始化，耗时2：{}ms", timer.intervalMs());
         sendUserWord();
         log.info("玩家收到词，耗时3：{}ms", timer.intervalMs());
@@ -316,6 +316,7 @@ public class Game {
         SendMessage sendMessage = new SendMessage(chatId.toString(), VOTING_START);
         sendMessage.setReplyMarkup(TgUtil.getVoteMarkup(this));
         tgBot.sendMessage(sendMessage, GameStatus.投票中, this);
+        tgBot.muteGroup(chatId);
     }
 
     public boolean vote(Long userId, Long toUser) {
@@ -517,6 +518,7 @@ public class Game {
         RandomUtil.randomEleSet(spyMembers, blankCount).forEach(m -> {
             m.word = wordBlank;
             m.isSpace = true;
+            SPACE_MEMBER = m.user.getFirstName();
         });
         // 分配普通单词
         for (GameUser m : memberList) {
@@ -553,7 +555,8 @@ public class Game {
         // 淘汰
         stringBuilder.append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
         List<String> surviveStr = execOutMember();
-        stringBuilder.append(CollUtil.isNotEmpty(surviveStr) ? CollUtil.join(surviveStr, StrUtil.COMMA) : "无");
+        stringBuilder.append(CollUtil.isNotEmpty(surviveStr) ? CollUtil.join(surviveStr, StrUtil.COMMA) : "无")
+                .append("\n");
 
         // 判断游戏结束
         if (specialMode && isSpecialGameOver(this)) {
@@ -578,6 +581,7 @@ public class Game {
             tgBot.sendMessage(chatId, stringBuilder.toString());
             sendSpeechPerform();
         }
+        tgBot.unmuteGroup(chatId);
     }
 
     /**
@@ -645,13 +649,13 @@ public class Game {
         stringBuilder.append("\n");
         // 淘汰 一视同仁 卧底均+2 平民均+1
         memberList.stream().filter(m -> !m.survive).forEach(m -> {
-            stringBuilder.append("☠️ ").append(StrUtil.format(USER_WORD_IS,
+            stringBuilder.append("☠️ ").append(StrUtil.format(KILL_USER_WORD_IS,
                     TgUtil.tgNameOnUrl(m.user), m.word));
             m.fraction = m.isUndercover ? 2 : 1;
-            boolean isOwner2 = member.id.equals(homeOwner.getId());
+            boolean isOwner2 = m.id.equals(homeOwner.getId());
             m.fraction += isOwner2 ? 2 : 0;
             // 存活1回合+1分
-            m.fraction += m.round;
+            m.fraction += m.round / 2;
             stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
                     .append(m.fraction).append(isOwner2 ? " 🚩" : "").append("\n");
         });
@@ -678,6 +682,7 @@ public class Game {
         long spaceNum = GameUtil.getSpaceNumber(this);
         long spaceSurviveNum = GameUtil.getSpaceSurviveNumber(this);
         long peopleSurviveNum = GameUtil.getPeopleSurviveNumber(this);
+        long peopleNum = GameUtil.getPeopleNumber(this);
         long surviveNum = GameUtil.getSurvivesNumber(this);
         long noSpaceNum = GameUtil.getNoSpaceNumber(this);
 
@@ -705,7 +710,7 @@ public class Game {
         }
 
         // 平民全部存活 积分1.5倍（卧底人数需＞1）
-        boolean allPeopleSurvive = peopleSurviveNum == surviveNum && undercoverNum > 1;
+        boolean allPeopleSurvive = peopleNum == surviveNum && !winnerIsUndercover && undercoverNum > 1;
         if (allPeopleSurvive) {
             stringBuilder.append(GAME_OVER_BOOM_PEOPLE);
         }
@@ -750,9 +755,9 @@ public class Game {
                     m.fraction -= 2;
                 }
                 noSurviveStr.add(sb.append("☠️ ")
-                        .append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
+                        .append(StrUtil.format(KILL_USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
                         .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
-                        .append(m.fraction).append(isOwner ? " 🚩" : "").append("\n").toString());
+                        .append(isOwner ? " 🚩" : "").append("\n").toString());
             }
         }
         // 淘汰
@@ -829,7 +834,7 @@ public class Game {
                     m.fraction -= 2;
                 }
                 noSurviveStr.add(sb.append("☠️ ")
-                        .append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
+                        .append(StrUtil.format(KILL_USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
                         .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
                         .append(m.fraction).append(isOwner ? " 🚩" : "").append("\n").toString());
             }
@@ -1121,8 +1126,9 @@ public class Game {
             return;
         }
         String pinyin = PinYinUtil.getFirstLetters(text);
-        String wordPinyin = PinYinUtil.getPingYin(member.word);
-        if (StrUtil.containsAnyIgnoreCase(text, member.word, pinyin)
+        String wordPinyin = PinYinUtil.getFirstLetters(member.word);
+        if (StrUtil.containsIgnoreCase(text, member.word)
+                || StrUtil.containsIgnoreCase(text, wordPinyin)
                 || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)) {
             // 违禁爆词 本词或者拼音
             tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));
@@ -1255,10 +1261,16 @@ public class Game {
         }
     }*/
     public static void main(String[] args) {
-        AtomicInteger a = new AtomicInteger(10);
-        a.getAndAdd(RandomUtil.randomInt(10, 50));
-        Console.log(a);
-        a.getAndAdd(RandomUtil.randomInt(10, 50));
-        Console.log(a);
+
+        String text = "7";
+        String word = "坐忘道";
+        String pinyin = PinYinUtil.getFirstLetters(text);
+        Console.log(pinyin);
+        String wordPinyin = PinYinUtil.getFirstLetters(word);
+        Console.log(wordPinyin);
+        Console.log(StrUtil.containsAnyIgnoreCase(text, word, pinyin));
+        Console.log(StrUtil.containsIgnoreCase("7", "ZWD"));
+        Console.log(StrUtil.containsIgnoreCase("7", "坐忘道"));
+        Console.log(StrUtil.equalsIgnoreCase(pinyin, wordPinyin));
     }
 }

@@ -14,6 +14,7 @@ import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.cache.CacheUtil;
 import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -224,6 +225,7 @@ public class Command {
             log.error("非授权群组私自拉bot入群已被发现：{}, chat: {}", chat.getId(), chat);
             return;
         }
+        if(DateUtil.isIn())
         Game game = GameListUtil.getGame(chat.getId());
         if (game == null) {
             // 发言结束或者管理可以直接开
