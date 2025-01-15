@@ -14,7 +14,6 @@ import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.cache.CacheUtil;
 import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -74,9 +73,10 @@ public class Command {
     public void process(@NotNull String command, Message message, boolean groupMessage) {
         Long chatId = message.getChatId();
         Long userId = message.getFrom().getId();
+        Integer msgId = message.getMessageId();
 
         if (!groupMessage && command.equals(NEW_GAME)) {
-            tgBot.sendMessage(chatId, TIP_IN_GROUP, 10 * 1000);
+            tgBot.sendMessage(msgId, chatId, TIP_IN_GROUP, 10 * 1000);
             return;
         }
 
@@ -225,7 +225,10 @@ public class Command {
             log.error("非授权群组私自拉bot入群已被发现：{}, chat: {}", chat.getId(), chat);
             return;
         }
-        if(DateUtil.isIn())
+        if (!GameUtil.isInGameTime()) {
+            tgBot.sendMessage(chat.getId(), CURFEW_GAME_TIME);
+            return;
+        }
         Game game = GameListUtil.getGame(chat.getId());
         if (game == null) {
             // 发言结束或者管理可以直接开

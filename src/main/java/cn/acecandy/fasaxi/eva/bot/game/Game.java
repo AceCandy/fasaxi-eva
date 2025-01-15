@@ -98,11 +98,11 @@ public class Game {
     /**
      * 讨论截止时间
      */
-    long speechTimeEnd;
+    long speechTimeEnd = Long.MAX_VALUE;
     /**
      * 投票截止时间
      */
-    long voteTimeEnd;
+    long voteTimeEnd = Long.MAX_VALUE;
     /**
      * 即将开始投票提醒
      */
@@ -168,17 +168,19 @@ public class Game {
     }
 
     private void startGameLoop() {
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                long endTime = System.currentTimeMillis();
-                handleWaitingToJoinStatus(endTime);
-                handleSpeakTimeStatus(endTime);
-                handleVotingStatus(endTime);
-                checkGameEndCondition(); // 检查游戏是否结束
-            } catch (Exception e) {
-                log.warn("定时任务报错!", e);
-            }
-        }, 0, 250, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this::gameStatusCheck, 0, 250, TimeUnit.MILLISECONDS);
+    }
+
+    private synchronized void gameStatusCheck() {
+        try {
+            long endTime = System.currentTimeMillis();
+            handleWaitingToJoinStatus(endTime);
+            handleSpeakTimeStatus(endTime);
+            handleVotingStatus(endTime);
+            checkGameEndCondition(); // 检查游戏是否结束
+        } catch (Exception e) {
+            log.warn("定时任务报错!", e);
+        }
     }
 
     private void checkGameEndCondition() {
@@ -655,7 +657,7 @@ public class Game {
             boolean isOwner2 = m.id.equals(homeOwner.getId());
             m.fraction += isOwner2 ? 2 : 0;
             // 存活1回合+1分
-            m.fraction += m.round / 2;
+            m.fraction += (m.round - 1) / 2;
             stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
                     .append(m.fraction).append(isOwner2 ? " 🚩" : "").append("\n");
         });
@@ -731,7 +733,7 @@ public class Game {
             // 底分：白板6 卧底5 平民3
             m.fraction = undercover ? (m.isSpace ? 6 : 5) : 3;
             // 每活2个回合(超过人数回合不算)，积分+1
-            m.fraction += Math.min(m.round, memberList.size()) / 2;
+            m.fraction += Math.min(m.round - 1, memberList.size() - undercoverNum + 1) / 2;
 
             if (m.survive) {
                 // 加上卧底人数/2的分数（0-2）
@@ -811,7 +813,7 @@ public class Game {
             // 底分：白板6 卧底5 平民3
             m.fraction = undercover ? 5 : 3;
             // 每活2个回合(超过人数回合不算)，积分+1
-            m.fraction += Math.min(m.round, memberList.size()) / 2;
+            m.fraction += Math.min(m.round - 1, memberList.size() - undercoverNum + 1) / 2;
 
             if (m.survive) {
                 // 加上卧底人数/2的分数（0-2）
@@ -1007,7 +1009,7 @@ public class Game {
                 memberList.forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
             if (rotate > memberSize) {
-                int upRotate = NumberUtil.min(rotate - memberSize, memberSize);
+                int upRotate = NumberUtil.min(rotate - memberSize - 1, memberSize);
                 mailBuilder.append("\n").append(StrUtil.format(RORATE_FULL, rotate, upRotate));
                 memberList.forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
@@ -1098,7 +1100,7 @@ public class Game {
                 if (seasonEnds) {
                     Command.SPEAK_TIME_CNT.set(999);
                 }
-                tgBot.deleteMessage(firstMsg);
+                tgBot.unPinMsg(firstMsg.getChatId(), firstMsg.getMessageId());
             }
         }
     }
@@ -1125,11 +1127,15 @@ public class Game {
             embyDao.upIv(userId, -2);
             return;
         }
-        String pinyin = PinYinUtil.getFirstLetters(text);
-        String wordPinyin = PinYinUtil.getFirstLetters(member.word);
+        String pinyinFirst = PinYinUtil.getFirstLetters(text);
+        String pinyin = PinYinUtil.getPingYin(text);
+        String wordPinyinFirst = PinYinUtil.getFirstLetters(member.word);
+        String wordPinyin = PinYinUtil.getPingYin(member.word);
         if (StrUtil.containsIgnoreCase(text, member.word)
+                || StrUtil.containsIgnoreCase(text, wordPinyinFirst)
                 || StrUtil.containsIgnoreCase(text, wordPinyin)
-                || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)) {
+                || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)
+                || StrUtil.equalsIgnoreCase(pinyinFirst, wordPinyinFirst)) {
             // 违禁爆词 本词或者拼音
             tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));
             embyDao.upIv(userId, -5);

@@ -6,7 +6,9 @@ import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -429,5 +432,44 @@ public final class GameUtil extends GameSubUtil {
             }
             return memberStr;
         }).collect(Collectors.joining("、"));
+    }
+
+    /**
+     * 处于游戏时间(早上10点～晚上10点)
+     *
+     * @return boolean
+     */
+    public static boolean isInGameTime() {
+        // 获取当前时间
+        Date now = DateUtil.date();
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date am10 = DateUtil.beginOfDay(now);
+        am10 = DateUtil.offset(am10, DateField.HOUR_OF_DAY, 10);
+        // 获取当天的10:00 AM和10:00 PM
+        Date am12 = DateUtil.beginOfDay(now);
+        am12 = DateUtil.offset(am12, DateField.HOUR_OF_DAY, 12);
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date pm14 = DateUtil.beginOfDay(now);
+        pm14 = DateUtil.offset(pm14, DateField.HOUR_OF_DAY, 14);
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date pm18 = DateUtil.beginOfDay(now);
+        pm18 = DateUtil.offset(pm18, DateField.HOUR_OF_DAY, 18);
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date pm19 = DateUtil.beginOfDay(now);
+        pm19 = DateUtil.offset(pm19, DateField.HOUR_OF_DAY, 19);
+
+        Date pm22 = DateUtil.beginOfDay(now);
+        pm22 = DateUtil.offset(pm22, DateField.HOUR_OF_DAY, 22);
+
+        // 判断当前时间是否在10:00 AM到10:00 PM之间
+        return DateUtil.isIn(now, am10, am12) || DateUtil.isIn(now, pm14, pm18) || DateUtil.isIn(now, pm19, pm22);
+    }
+
+    public static void main(String[] args) {
+        Console.log(isInGameTime());
     }
 }

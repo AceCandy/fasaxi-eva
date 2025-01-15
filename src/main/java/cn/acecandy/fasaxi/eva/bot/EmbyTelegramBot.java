@@ -177,6 +177,21 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         return executeTg(() -> tgClient.execute(message));
     }
 
+    public Message sendMessage(Integer replyId, Long chatId, String text) {
+        SendMessage message = new SendMessage(chatId.toString(), text);
+        message.setReplyToMessageId(replyId);
+        message.setParseMode(ParseMode.HTML);
+        return executeTg(() -> tgClient.execute(message));
+    }
+
+    public void sendMessage(Integer replyId, Long chatId, String text, long autoDeleteTime) {
+        SendMessage message = new SendMessage(chatId.toString(), text);
+        message.setReplyToMessageId(replyId);
+        message.setParseMode(ParseMode.HTML);
+        Message execute = executeTg(() -> tgClient.execute(message));
+        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
+    }
+
     public void sendMessage(Long chatId, String text, long autoDeleteTime) {
         SendMessage message = new SendMessage(chatId.toString(), text);
         message.setParseMode(ParseMode.HTML);
@@ -236,6 +251,12 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     public void pinMsg(Long chatId, Integer msgId) {
         PinChatMessage msg = new PinChatMessage(chatId.toString(), msgId);
         msg.setDisableNotification(true);
+        executeTg(() -> tgClient.executeAsync(msg));
+    }
+
+    public void unPinMsg(Long chatId, Integer msgId) {
+        PinChatMessage msg = new PinChatMessage(chatId.toString(), msgId);
+        msg.setDisableNotification(false);
         executeTg(() -> tgClient.executeAsync(msg));
     }
 

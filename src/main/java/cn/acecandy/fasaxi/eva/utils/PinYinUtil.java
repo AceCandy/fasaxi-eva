@@ -36,7 +36,7 @@ public final class PinYinUtil extends PinyinUtil {
         if (isBlank(chinese)) {
             return EMPTY;
         }
-        return PinyinUtil.getPinyin(chinese).toUpperCase(Locale.ROOT);
+        return PinyinUtil.getPinyin(chinese).replace(" ", "").toUpperCase(Locale.ROOT);
     }
 
     /**
@@ -102,7 +102,7 @@ public final class PinYinUtil extends PinyinUtil {
         speakList.add("");
         speakList.add("");
         Console.log(speakList);
-        if (CollUtil.contains(speakList,"")) {
+        if (CollUtil.contains(speakList, "")) {
             Console.log("contains");
         }
     }
