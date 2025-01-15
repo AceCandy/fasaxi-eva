@@ -23,6 +23,7 @@ import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPermissions;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.PinChatMessage;
+import org.telegram.telegrambots.meta.api.methods.pinnedmessages.UnpinChatMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -199,6 +200,11 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
     }
 
+    public Message sendPhoto(SendPhoto photo) {
+        photo.setParseMode(ParseMode.HTML);
+        return executeTg(() -> tgClient.execute(photo));
+    }
+
     public Message sendPhoto(SendPhoto photo, long autoDeleteTime) {
         photo.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(photo));
@@ -250,13 +256,13 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
 
     public void pinMsg(Long chatId, Integer msgId) {
         PinChatMessage msg = new PinChatMessage(chatId.toString(), msgId);
-        msg.setDisableNotification(true);
+        msg.setDisableNotification(false);
         executeTg(() -> tgClient.executeAsync(msg));
     }
 
     public void unPinMsg(Long chatId, Integer msgId) {
-        PinChatMessage msg = new PinChatMessage(chatId.toString(), msgId);
-        msg.setDisableNotification(false);
+        UnpinChatMessage msg = new UnpinChatMessage(chatId.toString());
+        msg.setMessageId(msgId);
         executeTg(() -> tgClient.executeAsync(msg));
     }
 

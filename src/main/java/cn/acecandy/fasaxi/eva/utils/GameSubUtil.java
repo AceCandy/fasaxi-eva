@@ -109,27 +109,27 @@ public class GameSubUtil {
     }
 
     public static Integer level2(Integer score) {
-        if (score >= 0 && score < 80) {
+        if (score >= 0 && score < 80) { // 80
             return 0;
-        } else if (score >= 80 && score < 180) {
+        } else if (score >= 80 && score < 180) {// 100
             return 1;
-        } else if (score >= 180 && score < 300) {
+        } else if (score >= 180 && score < 320) { // 140
             return 2;
-        } else if (score >= 300 && score < 440) {
+        } else if (score >= 320 && score < 480) {// 160
             return 3;
-        } else if (score >= 440 && score < 600) {
+        } else if (score >= 480 && score < 660) {// 180
             return 4;
-        } else if (score >= 600 && score < 780) {
+        } else if (score >= 660 && score < 860) {// 200
             return 5;
-        } else if (score >= 780 && score < 980) {
+        } else if (score >= 860 && score < 1100) {// 240
             return 6;
-        } else if (score >= 980 && score < 1200) {
+        } else if (score >= 1100 && score < 1360) {// 260
             return 7;
-        } else if (score >= 1200 && score < 1521) {
+        } else if (score >= 1360 && score < 1640) {// 280
             return 8;
-        } else if (score >= 1521 && score < 1999) {
+        } else if (score >= 1640 && score < 2025) {// 385
             return 9;
-        } else if (score >= 1999) {
+        } else if (score >= 2025) {
             return 10;
         }
         return -1;

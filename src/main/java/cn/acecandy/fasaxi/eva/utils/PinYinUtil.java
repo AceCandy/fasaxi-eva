@@ -2,6 +2,7 @@ package cn.acecandy.fasaxi.eva.utils;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Console;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.pinyin.PinyinUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 
 import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
+import static cn.hutool.core.text.CharSequenceUtil.SPACE;
 import static cn.hutool.core.text.CharSequenceUtil.isBlank;
 import static cn.hutool.core.text.CharSequenceUtil.subPre;
 import static cn.hutool.core.text.CharSequenceUtil.upperFirst;
@@ -36,7 +38,14 @@ public final class PinYinUtil extends PinyinUtil {
         if (isBlank(chinese)) {
             return EMPTY;
         }
-        return PinyinUtil.getPinyin(chinese).replace(" ", "").toUpperCase(Locale.ROOT);
+        return PinyinUtil.getPinyin(chinese, EMPTY).toUpperCase(Locale.ROOT);
+    }
+
+    public static List<String> getPingYinList(String chinese) {
+        if (isBlank(chinese)) {
+            return CollUtil.newArrayList();
+        }
+        return StrUtil.splitTrim(PinyinUtil.getPinyin(chinese), SPACE);
     }
 
     /**
@@ -89,7 +98,8 @@ public final class PinYinUtil extends PinyinUtil {
         List<String> sl = CollUtil.newArrayList("宝马", "包离", "报天", "宝俊", "包天田");
         sl.sort((o1, o2) -> Collator.getInstance(Locale.CHINA).compare(o1, o2));
 
-        Console.log(getPingYin("重庆"));
+        Console.log(getPingYinList("重庆").contains("qing"));
+        Console.log(getPingYinList("重庆"));
         Console.log(getPingYin("蔚来"));
         Console.log(getPingYin("007车"));
         Console.log(getFirstLetter("重庆"));

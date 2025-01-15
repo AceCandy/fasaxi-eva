@@ -54,7 +54,7 @@ public class Command {
      * 全局发言时间数量
      */
     public final static AtomicInteger SPEAK_TIME_CNT =
-            new AtomicInteger(RandomUtil.randomInt(50, 150));
+            new AtomicInteger(RandomUtil.randomInt(50, 80));
 
     public volatile Message rankMsg;
     public volatile TimedCache<String, List<WodiUser>> rankUserListMap

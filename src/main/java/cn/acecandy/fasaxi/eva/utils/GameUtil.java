@@ -234,9 +234,11 @@ public final class GameUtil extends GameSubUtil {
         // 第一名发言指定：从不为space的survive成员中选一个
         GameUser firstMember = RandomUtil.randomEle(game.memberList.stream()
                 .filter(m -> m.survive && !m.isSpace).toList());
+        game.firstSpeakUserId = firstMember.id;
         // 第二名发言指定：从剩下所有人中随机选一个
         GameUser secondMember = RandomUtil.randomEle(game.memberList.stream()
                 .filter(m -> m.survive && !m.id.equals(firstMember.id)).toList());
+        game.secondSpeakUserId = secondMember.id;
         return StrUtil.format(SPEAK_ORDER, TgUtil.tgNameOnUrl(firstMember), TgUtil.tgNameOnUrl(secondMember));
     }
 

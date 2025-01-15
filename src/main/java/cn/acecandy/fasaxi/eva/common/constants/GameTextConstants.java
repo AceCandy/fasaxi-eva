@@ -96,7 +96,7 @@ public interface GameTextConstants {
     String VOTE_PUBLICITY = "{} 👉 [{}]\n";
     String VOTE_ABSTAINED = "{} 放弃了这一票\n";
     String NOT_VOTE = "{} 没有在时间内进行投票\n";
-    String ANONYMOUS_VOTE = "️🎭 由于不可抗力发生，本轮投票将匿名进行";
+    String ANONYMOUS_VOTE = "️🎭 由于不可抗力发生，本轮将匿名不进行公布";
     String TIME_END_VOTED = "️⌛️投票时间到，投票结束！\n";
     String ALL_FINISH_VOTED = "✅ 所有人都完成了投票！\n";
     String LAST_VOTE = "👀 本轮最后投票人: {}\n\n";
@@ -155,9 +155,10 @@ public interface GameTextConstants {
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
     String GAME_SETTLEMENT = "游戏正在结算中，无法退出";
     String SURVIVAL_PERSONNEL = "\n剩余人员({}/{}):\n{}";
-    String NOT_VOTED_TIP = "🎃{} 两轮连续跑路，扣除5封Dmail🫶\n";
-    String SPEAK_REPEAT = "🎃{} 无发言或重复发言，扣除2封Dmail🫶\n";
-    String SPEAK_NOWAY = "🎃{} 违禁爆词，扣除5封Dmail🫶\n";
+    String RUN_AWAY_QUICKLY = "❗️{} 抢跑发言位，此次发言无效并扣除5封Dmail🫶\n";
+    String NOT_VOTED_TIP = "❗️{} 两轮连续跑路，扣除5封Dmail🫶\n";
+    String SPEAK_REPEAT = "❓️{} 无发言或重复发言，此次发言无效并扣除2封Dmail🫶\n";
+    String SPEAK_NOWAY = "❓️{} 违禁爆词，扣除5封Dmail🫶\n";
 
     String RIGISTER_TIPS = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";
     String RIGISTER_CODE1 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";

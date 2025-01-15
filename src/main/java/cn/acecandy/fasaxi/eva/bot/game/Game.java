@@ -86,6 +86,9 @@ public class Game {
 
     volatile Message sendInviteMessage;
     volatile Message firstMsg;
+
+    public Long firstSpeakUserId;
+    public Long secondSpeakUserId;
     /**
      * 发送邀请时间
      */
@@ -1008,8 +1011,8 @@ public class Game {
                 mailBuilder.append("\n").append(StrUtil.format(USER_FULL, memberSize, upRotate));
                 memberList.forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
-            if (rotate > memberSize) {
-                int upRotate = NumberUtil.min(rotate - memberSize - 1, memberSize);
+            if (rotate > memberSize + 1) {
+                int upRotate = NumberUtil.min(rotate - memberSize - 1, memberSize / 2);
                 mailBuilder.append("\n").append(StrUtil.format(RORATE_FULL, rotate, upRotate));
                 memberList.forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
@@ -1076,7 +1079,15 @@ public class Game {
                         wodiTop.setSeason(CURRENT_SEASON);
                         wodiTopDao.insertOrUpdate(wodiTop);
 
-                        Message msg = tgBot.sendMessage(chatId, upFirst);
+
+                        SendPhoto sendPhoto = SendPhoto.builder()
+                                .chatId(chatId.toString()).caption(upFirst)
+                                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
+                                        "static/pic/s{}/lv{}.webp", CURRENT_SEASON, lv)),
+                                        "谁是卧底个人信息"))
+                                .build();
+                        // Message msg = tgBot.sendMessage(chatId, upFirst);
+                        Message msg = tgBot.sendPhoto(sendPhoto);
                         tgBot.pinMsg(msg.getChatId(), msg.getMessageId());
                     }
                 }
@@ -1090,11 +1101,13 @@ public class Game {
             if (null != firstMsg) {
                 Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(50, 80));
                 // 重置需要发言的条数
-                if (memberList.size() < 8) {
-                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 50));
+                if (memberList.size() < 6) {
+                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 40));
+                } else if (memberList.size() < 8) {
+                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 40));
                 }
                 if (rotate < memberList.size() - 2) {
-                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 50));
+                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 40));
                 }
 
                 if (seasonEnds) {
@@ -1119,9 +1132,27 @@ public class Game {
         if (member == null || member.speak || !member.survive) {
             return;
         }
+        if (rotate == 1) {
+            if (CollUtil.size(speakList) == 0) {
+                if (!userId.equals(firstSpeakUserId)) {
+                    tgBot.sendMessage(chatId, StrUtil.format(RUN_AWAY_QUICKLY, TgUtil.tgNameOnUrl(member)));
+                    embyDao.upIv(userId, -5);
+                    return;
+                }
+            } else if (CollUtil.size(speakList) == 1) {
+                if (!userId.equals(secondSpeakUserId)) {
+                    tgBot.sendMessage(chatId, StrUtil.format(RUN_AWAY_QUICKLY, TgUtil.tgNameOnUrl(member)));
+                    embyDao.upIv(userId, -5);
+                    return;
+                }
+            }
+        }
+
         text = StrUtil.trim(text);
         text = StrUtil.removeAll(text, StrUtil.SPACE);
-        if (StrUtil.isBlank(text) || CollUtil.contains(speakList, text)) {
+        String finalText = text;
+        if (StrUtil.isBlank(text) || CollUtil.contains(speakList, text)
+                || speakList.stream().anyMatch(s -> StrUtil.containsIgnoreCase(s, finalText))) {
             // 发言为空或重复词语
             tgBot.sendMessage(chatId, StrUtil.format(SPEAK_REPEAT, TgUtil.tgNameOnUrl(member)));
             embyDao.upIv(userId, -2);
@@ -1134,8 +1165,11 @@ public class Game {
         if (StrUtil.containsIgnoreCase(text, member.word)
                 || StrUtil.containsIgnoreCase(text, wordPinyinFirst)
                 || StrUtil.containsIgnoreCase(text, wordPinyin)
+                || StrUtil.containsIgnoreCase(wordPinyin, text)
+                || StrUtil.containsIgnoreCase(wordPinyinFirst, text)
                 || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)
-                || StrUtil.equalsIgnoreCase(pinyinFirst, wordPinyinFirst)) {
+            // || StrUtil.equalsIgnoreCase(pinyinFirst, wordPinyinFirst)
+        ) {
             // 违禁爆词 本词或者拼音
             tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));
             embyDao.upIv(userId, -5);

@@ -16,6 +16,6 @@ import java.util.List;
 @Mapper
 public interface WodiWordMapper extends BaseMapper<WodiWord> {
 
-    @Select("SELECT * FROM wodi_word ORDER BY RAND() / (play_time + 1) LIMIT 10")
+    @Select("SELECT * FROM wodi_word ORDER BY RAND() / (play_time + 1) LIMIT 20")
     List<WodiWord> selectRandomWord10();
 }
