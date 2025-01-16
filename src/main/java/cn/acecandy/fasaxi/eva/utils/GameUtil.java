@@ -471,7 +471,18 @@ public final class GameUtil extends GameSubUtil {
         return DateUtil.isIn(now, am10, am12) || DateUtil.isIn(now, pm14, pm18) || DateUtil.isIn(now, pm19, pm22);
     }
 
+    /**
+     * 有效游戏场次
+     *
+     * @return long
+     */
+    public static long effectiveGameFreq() {
+        long day = DateUtil.betweenDay(DateUtil.date(), DateUtil.parse("2025-01-14"), true) + 1;
+        return day * 25;
+    }
+
     public static void main(String[] args) {
         Console.log(isInGameTime());
+        Console.log(DateUtil.betweenDay(DateUtil.date(), DateUtil.parse("2025-01-14"), true) + 1);
     }
 }

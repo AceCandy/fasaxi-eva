@@ -115,21 +115,21 @@ public class GameSubUtil {
             return 1;
         } else if (score >= 180 && score < 320) { // 140
             return 2;
-        } else if (score >= 320 && score < 480) {// 160
+        } else if (score >= 320 && score < 500) {// 180
             return 3;
-        } else if (score >= 480 && score < 660) {// 180
+        } else if (score >= 500 && score < 700) {// 200
             return 4;
-        } else if (score >= 660 && score < 860) {// 200
+        } else if (score >= 700 && score < 940) {// 240
             return 5;
-        } else if (score >= 860 && score < 1100) {// 240
+        } else if (score >= 940 && score < 1220) {// 280
             return 6;
-        } else if (score >= 1100 && score < 1360) {// 260
+        } else if (score >= 1220 && score < 1520) {// 300
             return 7;
-        } else if (score >= 1360 && score < 1640) {// 280
+        } else if (score >= 1520 && score < 1860) {// 340
             return 8;
-        } else if (score >= 1640 && score < 2025) {// 385
+        } else if (score >= 1860 && score < 2222) {// 362
             return 9;
-        } else if (score >= 2025) {
+        } else if (score >= 2222) {
             return 10;
         }
         return -1;

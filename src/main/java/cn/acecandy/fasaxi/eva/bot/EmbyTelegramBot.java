@@ -151,7 +151,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     }
 
     @SneakyThrows
-    @Retryable(retryFor = {TelegramApiException.class}, maxAttempts = 2, backoff = @Backoff(delay = 300))
+    @Retryable(retryFor = {TelegramApiException.class}, maxAttempts = 2, backoff = @Backoff(delay = 1000))
     private <T> T executeTg(TelegramOperation<T> operation) {
         return operation.execute();
     }

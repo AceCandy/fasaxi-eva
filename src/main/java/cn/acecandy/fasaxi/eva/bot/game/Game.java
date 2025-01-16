@@ -661,9 +661,16 @@ public class Game {
             m.fraction += isOwner2 ? 2 : 0;
             // 存活1回合+1分
             m.fraction += (m.round - 1) / 2;
+
+            Integer realFraction = m.fraction;
+            if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                realFraction = 1;
+            }
             stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
-                    .append(m.fraction).append(isOwner2 ? " 🚩" : "").append("\n");
+                    .append(realFraction).append(isOwner2 ? " 🚩" : "").append("\n");
         });
+
+
         tgBot.sendMessage(chatId, stringBuilder.toString());
 
         realSettlement(true);
@@ -745,6 +752,10 @@ public class Game {
                 m.fraction += isOwner ? 1 : 0;
 
                 Integer realFraction = m.fraction;
+                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                    realFraction = 1;
+                }
+
                 String boomStr = buildAchievementStr(m, allPeopleSurvive, allUnderCoverSurvive,
                         spaceSingleSurvive, allUnderCoverSurviveNoSpace, singleUnderCoverSurvive, brotherSurvive);
 
@@ -759,9 +770,13 @@ public class Game {
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
                 }
+                Integer realFraction = m.fraction;
+                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                    realFraction = 1;
+                }
                 noSurviveStr.add(sb.append("☠️ ")
                         .append(StrUtil.format(KILL_USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
-                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
+                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
                         .append(isOwner ? " 🚩" : "").append("\n").toString());
             }
         }
@@ -825,7 +840,12 @@ public class Game {
                 m.fraction += isOwner ? 1 : 0;
 
                 Integer realFraction = m.fraction;
-                String boomStr = buildSpecialAchievementStr(m, allPeopleSurvive, winnerIsUndercover);
+                String boomStr = "";
+                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                    realFraction = 1;
+                } else {
+                    boomStr = buildSpecialAchievementStr(m, allPeopleSurvive, winnerIsUndercover);
+                }
 
                 surviveStr.add(sb.append("🏆 ")
                         .append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
@@ -838,10 +858,15 @@ public class Game {
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
                 }
+                Integer realFraction = m.fraction;
+                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                    realFraction = 1;
+                }
+
                 noSurviveStr.add(sb.append("☠️ ")
                         .append(StrUtil.format(KILL_USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
-                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
-                        .append(m.fraction).append(isOwner ? " 🚩" : "").append("\n").toString());
+                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
+                        .append(isOwner ? " 🚩" : "").append("\n").toString());
             }
         }
         // 淘汰
@@ -867,22 +892,26 @@ public class Game {
      */
     private void buildBoomAchievementStr(boolean isOwner, GameUser member, StringBuilder stringBuilder,
                                          long surviveNum, long noSpaceSurviveNum, long noSpaceNum) {
-        Integer realFraction = member.fraction;
         String boomStr = "";
-        if (surviveNum == 3) {
-            member.fraction += 5;
-            boomStr += "<b> +5</b>";
-            stringBuilder.append(GAME_OVER_BOOM_SPACE3);
+        Integer realFraction = member.fraction;
+        if (member.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+            realFraction = 1;
         } else {
-            if (noSpaceSurviveNum == 0 && noSpaceNum > 0) {
-                member.fraction += 4;
-                boomStr += "<b> + 4</b>";
-                stringBuilder.append(GAME_OVER_BOOM_SPACE);
-            }
-            if (noSpaceNum > 0 && noSpaceNum == noSpaceSurviveNum) {
-                member.fraction -= 1;
-                boomStr += "<b> -1</b>";
-                stringBuilder.append(GAME_OVER_BOOM_SPACE2);
+            if (surviveNum == 3) {
+                member.fraction += 5;
+                boomStr += "<b> +5</b>";
+                stringBuilder.append(GAME_OVER_BOOM_SPACE3);
+            } else {
+                if (noSpaceSurviveNum == 0 && noSpaceNum > 0) {
+                    member.fraction += 4;
+                    boomStr += "<b> + 4</b>";
+                    stringBuilder.append(GAME_OVER_BOOM_SPACE);
+                }
+                if (noSpaceNum > 0 && noSpaceNum == noSpaceSurviveNum) {
+                    member.fraction -= 1;
+                    boomStr += "<b> -1</b>";
+                    stringBuilder.append(GAME_OVER_BOOM_SPACE2);
+                }
             }
         }
         stringBuilder.append("\n\n");
@@ -972,9 +1001,13 @@ public class Game {
                 if (m.isUndercover && winnerIsUndercover) {
                     wordSpyVictoryId.add(userId);
                 }
-                wodiUserDao.upFraction(userId, m.fraction);
+                Integer realFraction = m.fraction;
+                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                    realFraction = 1;
+                }
+                wodiUserDao.upFraction(userId, realFraction);
                 // 将增加后的积分设置设置到当前变量wodiUser中
-                m.wodiUser.setFraction(m.wodiUser.getFraction() + m.fraction);
+                m.wodiUser.setFraction(m.wodiUser.getFraction() + realFraction);
             });
             wodiUserDao.upCompleteGame(completeGameId);
             wodiUserDao.upWordPeople(wordPeopleId);
