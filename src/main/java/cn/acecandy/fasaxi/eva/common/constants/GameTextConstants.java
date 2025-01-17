@@ -14,7 +14,7 @@ public interface GameTextConstants {
     Integer CURRENT_SEASON = 2;
 
     String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前已被发现！当前群组信息已上传云端！";
-    String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，限制可游戏时间10～22点(剔除吃饭午休时间)！";
+    String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，游戏开放时间9～12、14～18、19～22点！";
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";

@@ -420,17 +420,6 @@ public class Game {
     }
 
     /**
-     * 是发言成员
-     *
-     * @param userId 用户id
-     * @return boolean
-     */
-    public boolean isSpeakMember(@NotNull Long userId) {
-        GameUser member = getMember(userId);
-        return null != member && member.speak;
-    }
-
-    /**
      * 未准备成员
      *
      * @return {@link String }
@@ -699,7 +688,7 @@ public class Game {
         long noSpaceNum = GameUtil.getNoSpaceNumber(this);
 
         // 如果卧底全部存活 积分翻倍
-        boolean allUnderCoverSurvive = undercoverNum == undercoverSurviveNum;
+        boolean allUnderCoverSurvive = undercoverNum > 1 && undercoverNum == undercoverSurviveNum;
         if (allUnderCoverSurvive) {
             stringBuilder.append(GAME_OVER_BOOM_UNDERCOVER);
         }
@@ -743,7 +732,11 @@ public class Game {
             // 底分：白板6 卧底5 平民3
             m.fraction = undercover ? (m.isSpace ? 6 : 5) : 3;
             // 每活2个回合(超过人数回合不算)，积分+1
-            m.fraction += Math.min(m.round - 1, memberList.size() - undercoverNum + 1) / 2;
+            if (undercoverNum == 1) {
+                m.fraction += Math.min(m.round, memberList.size() - undercoverNum + 1) / 2;
+            } else {
+                m.fraction += Math.min(m.round - 1, memberList.size() - undercoverNum + 1) / 2;
+            }
 
             if (m.survive) {
                 // 加上卧底人数/2的分数（0-2）
@@ -1182,7 +1175,8 @@ public class Game {
         }
 
         text = StrUtil.trim(text);
-        text = StrUtil.removeAll(text, StrUtil.SPACE);
+        text = StrUtil.cleanBlank(text);
+        text = StrUtil.removeAny(text, ",", "，", ".", "。", "!", "！", ";", "“", "”");
         String finalText = text;
         if (StrUtil.isBlank(text) || CollUtil.contains(speakList, text)
                 || speakList.stream().anyMatch(s -> StrUtil.containsIgnoreCase(s, finalText))) {
@@ -1258,81 +1252,6 @@ public class Game {
         tgBot.sendMessage(sendMessage, voteReminderVote);
     }
 
-    /*@ToString
-    @EqualsAndHashCode
-    public static class Member {
-
-        public User user;
-        public WodiUser wodiUser;
-        public Long id;
-        String word;
-
-        public String oldLevel;
-
-        *//**
-     * 被投票
-     *//*
-        public AtomicInteger beVoted = new AtomicInteger(0);
-        *//**
-     * 完成投票
-     *//*
-        public boolean finishVote;
-        *//**
-     * 是卧底
-     *//*
-        public boolean isUndercover;
-        *//**
-     * 是白板
-     *//*
-        public boolean isSpace;
-        *//**
-     * 准备
-     *//*
-        public boolean ready = false;
-        *//**
-     * 存活
-     *//*
-        @Getter
-        public boolean survive = true;
-        *//**
-     * 没有投票
-     *//*
-        public int notVote = 0;
-
-        *//**
-     * 本轮投票时间
-     *//*
-        public long voteTime = Long.MAX_VALUE;
-
-        *//**
-     * 存活回合
-     *//*
-        public int round = 0;
-        *//**
-     * 投票给
-     *//*
-        public Member toUser;
-        *//**
-     * 游戏结算分
-     *//*
-        public int fraction = 0;
-        */
-
-    /**
-     * dmail结算分
-     *//*
-        public int dmailUp = 0;
-
-        public boolean speak = false;
-        public String boom = "";
-
-        public Member(User user, WodiUser wodiUser) {
-            this.user = user;
-            this.id = user.getId();
-            this.wodiUser = wodiUser;
-            this.oldLevel = GameUtil.levelByScore(wodiUser.getFraction());
-        }
-    }*/
     public static void main(String[] args) {
 
         String text = "7";

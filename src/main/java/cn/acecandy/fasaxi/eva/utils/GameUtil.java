@@ -298,7 +298,8 @@ public final class GameUtil extends GameSubUtil {
      */
     public static boolean isGameOver(Game game) {
         return getUndercoverSurvivesNumber(game) == 0
-                || (getPeopleSurviveNumber(game) == 1 && getUndercoverSurvivesNumber(game) >= 0);
+                || (getPeopleSurviveNumber(game) == 1 && getUndercoverSurvivesNumber(game) >= 0)
+                || (getUndercoverNumber(game) == 1 && getSurvivesNumber(game) <= 3);
     }
 
     /**
@@ -340,7 +341,7 @@ public final class GameUtil extends GameSubUtil {
     }
 
     /**
-     * 获取卧底人数
+     * 获取平民人数
      *
      * @return int
      */
@@ -446,8 +447,8 @@ public final class GameUtil extends GameSubUtil {
         Date now = DateUtil.date();
 
         // 获取当天的10:00 AM和10:00 PM
-        Date am10 = DateUtil.beginOfDay(now);
-        am10 = DateUtil.offset(am10, DateField.HOUR_OF_DAY, 10);
+        Date am9 = DateUtil.beginOfDay(now);
+        am9 = DateUtil.offset(am9, DateField.HOUR_OF_DAY, 9);
         // 获取当天的10:00 AM和10:00 PM
         Date am12 = DateUtil.beginOfDay(now);
         am12 = DateUtil.offset(am12, DateField.HOUR_OF_DAY, 12);
@@ -468,7 +469,7 @@ public final class GameUtil extends GameSubUtil {
         pm22 = DateUtil.offset(pm22, DateField.HOUR_OF_DAY, 22);
 
         // 判断当前时间是否在10:00 AM到10:00 PM之间
-        return DateUtil.isIn(now, am10, am12) || DateUtil.isIn(now, pm14, pm18) || DateUtil.isIn(now, pm19, pm22);
+        return DateUtil.isIn(now, am9, am12) || DateUtil.isIn(now, pm14, pm18) || DateUtil.isIn(now, pm19, pm22);
     }
 
     /**
