@@ -9,6 +9,7 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiGroupDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
@@ -125,6 +126,7 @@ public class Game {
     public WodiWordDao wodiWordDao;
     public WodiTopDao wodiTopDao;
     public EmbyDao embyDao;
+    public WodiUserLogDao wodiUserLogDao;
 
     private final ScheduledExecutorService scheduler = ThreadUtil.createScheduledExecutor(1);
 
@@ -148,6 +150,7 @@ public class Game {
         wodiWordDao = SpringUtil.getBean(WodiWordDao.class);
         wodiTopDao = SpringUtil.getBean(WodiTopDao.class);
         embyDao = SpringUtil.getBean(EmbyDao.class);
+        wodiUserLogDao = SpringUtil.getBean(WodiUserLogDao.class);
     }
 
     public void joinGame(User user) {
@@ -647,7 +650,7 @@ public class Game {
                     TgUtil.tgNameOnUrl(m.user), m.word));
             m.fraction = m.isUndercover ? 2 : 1;
             boolean isOwner2 = m.id.equals(homeOwner.getId());
-            m.fraction += isOwner2 ? 2 : 0;
+            m.fraction += isOwner2 ? 1 : 0;
             // 存活1回合+1分
             m.fraction += (m.round - 1) / 2;
 
@@ -730,7 +733,7 @@ public class Game {
             boolean isOwner = m.id.equals(homeOwner.getId());
 
             // 底分：白板6 卧底5 平民3
-            m.fraction = undercover ? (m.isSpace ? 6 : 5) : 3;
+            m.fraction = undercover ? (m.isSpace ? 5 : 4) : 3;
             // 每活2个回合(超过人数回合不算)，积分+1
             if (undercoverNum == 1) {
                 m.fraction += Math.min(m.round, memberList.size() - undercoverNum + 1) / 2;
@@ -758,7 +761,7 @@ public class Game {
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
                 // 房主加成2分
-                m.fraction += isOwner ? 2 : 0;
+                m.fraction += isOwner ? 1 : 0;
                 // 输家阵营-2分
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
@@ -821,7 +824,7 @@ public class Game {
             boolean undercover = m.isUndercover;
             boolean isOwner = m.id.equals(homeOwner.getId());
 
-            // 底分：白板6 卧底5 平民3
+            // 底分：卧底5 平民3
             m.fraction = undercover ? 5 : 3;
             // 每活2个回合(超过人数回合不算)，积分+1
             m.fraction += Math.min(m.round - 1, memberList.size() - undercoverNum + 1) / 2;
@@ -846,7 +849,7 @@ public class Game {
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
                 // 房主加成2分
-                m.fraction += isOwner ? 2 : 0;
+                m.fraction += isOwner ? 1 : 0;
                 // 输家阵营-2分
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
@@ -988,11 +991,14 @@ public class Game {
                 } else {
                     wordSpyId.add(userId);
                 }
+                boolean isVictory = false;
                 if (!m.isUndercover && !winnerIsUndercover) {
                     wordPeopleVictoryId.add(userId);
+                    isVictory = true;
                 }
                 if (m.isUndercover && winnerIsUndercover) {
                     wordSpyVictoryId.add(userId);
+                    isVictory = true;
                 }
                 Integer realFraction = m.fraction;
                 if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
@@ -1001,6 +1007,8 @@ public class Game {
                 wodiUserDao.upFraction(userId, realFraction);
                 // 将增加后的积分设置设置到当前变量wodiUser中
                 m.wodiUser.setFraction(m.wodiUser.getFraction() + realFraction);
+                // 写入日志
+                wodiUserLogDao.addLog(m.id, realFraction, isVictory);
             });
             wodiUserDao.upCompleteGame(completeGameId);
             wodiUserDao.upWordPeople(wordPeopleId);
@@ -1019,11 +1027,11 @@ public class Game {
                 if (m.id.equals(homeOwner.getId())) {
                     String ownerStr = "";
                     if ((m.isUndercover && winnerIsUndercover) || (!m.isUndercover && !winnerIsUndercover)) {
-                        m.dmailUp = 12;
+                        m.dmailUp = 11;
                         ownerStr = StrUtil.format(USER_DMAIL_OWNER_WIN,
                                 TgUtil.tgNameOnUrl(m.user), m.dmailUp);
                     } else {
-                        m.dmailUp = 6;
+                        m.dmailUp = 7;
                         ownerStr = StrUtil.format(USER_DMAIL_OWNER_FAIL,
                                 TgUtil.tgNameOnUrl(m.user), m.dmailUp);
                     }
@@ -1071,7 +1079,7 @@ public class Game {
                         Integer upScore = GameUtil.levelUpScoreByLv(lv);
                         String registerMsg = "";
                         String registerCode = "";
-                        if (lv >= 10) {
+                        if (lv >= 9) {
                             registerMsg = StrUtil.format(USER_LEVEL_UP_HIGH, 1);
                             registerCode = RIGISTER_CODE;
                         }
@@ -1084,7 +1092,8 @@ public class Game {
                             upFirst = StrUtil.format(SEASON_ENDS,
                                     TgUtil.tgNameOnUrl(maxMember.user),
                                     GameUtil.levelByLv(lv), upScore, registerMsg);
-                            embyDao.allUpIv(10);
+                            embyDao.upIv(maxMember.id, -50);
+                            embyDao.allUpIv(50);
                             seasonEnds = true;
                         }
                         embyDao.upIv(maxMember.user.getId(), upScore);
@@ -1092,7 +1101,7 @@ public class Game {
 
                         if (StrUtil.isNotBlank(registerCode)) {
                             SendMessage sendMessage = new SendMessage(maxMember.id.toString(),
-                                    StrUtil.format("您获得了{}: \n{}", USER_LEVEL_UP_HIGH, registerCode));
+                                    StrUtil.format("您获得了{}: \n{}", registerMsg, registerCode));
                             Message message = tgBot.sendMessage(sendMessage);
                         }
 

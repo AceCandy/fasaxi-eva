@@ -68,10 +68,6 @@ public class GameUser {
      * 游戏结算分
      */
     public int fraction = 0;
-    /**
-     * 真实结算分数
-     */
-    public int realFraction = 0;
     public int dmailUp = 0;
 
     public boolean speak = false;

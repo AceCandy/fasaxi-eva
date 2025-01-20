@@ -125,7 +125,7 @@ public final class GameUtil extends GameSubUtil {
         topList.forEach(t -> {
             List<String> upTimeList = StrUtil.splitTrim(DateUtil.formatChineseDate(
                     t.getUpTime(), false, true), "分");
-            rankFinal.append(StrUtil.format(topSingle, levelByLv(t.getLevel()),
+            rankFinal.append(StrUtil.format(topSingle, levelByLv(t.getLevel(), season),
                     TgUtil.tgNameOnUrl(t), CollUtil.getFirst(upTimeList) + "分"));
         });
         rankFinal.append(StrUtil.format("\n#WodiTop {}", DateUtil.now()));
@@ -162,6 +162,15 @@ public final class GameUtil extends GameSubUtil {
         if (CURRENT_SEASON == 1) {
             return levelByLv1(lv);
         } else if (CURRENT_SEASON == 2) {
+            return levelByLv2(lv);
+        }
+        throw new RuntimeException("未知赛季");
+    }
+
+    public static String levelByLv(Integer lv, Integer season) {
+        if (season == 1) {
+            return levelByLv1(lv);
+        } else if (season == 2) {
             return levelByLv2(lv);
         }
         throw new RuntimeException("未知赛季");
@@ -478,7 +487,7 @@ public final class GameUtil extends GameSubUtil {
      * @return long
      */
     public static long effectiveGameFreq() {
-        long day = DateUtil.betweenDay(DateUtil.date(), DateUtil.parse("2025-01-14"), true) + 1;
+        long day = DateUtil.betweenDay(DateUtil.date(), DateUtil.parse("2025-01-14"), true);
         return day * 25;
     }
 
