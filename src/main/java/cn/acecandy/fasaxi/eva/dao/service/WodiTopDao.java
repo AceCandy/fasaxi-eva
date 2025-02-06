@@ -2,6 +2,7 @@ package cn.acecandy.fasaxi.eva.dao.service;
 
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.mapper.WodiTopMapper;
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,24 @@ public class WodiTopDao {
         LambdaQueryWrapper<WodiTop> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(WodiTop::getSeason, season).orderByAsc(WodiTop::getLevel);
         return wodiTopMapper.selectList(queryWrapper);
+    }
+
+
+    public WodiTop selectByLevel(Integer level) {
+        return selectByLevel(level, CURRENT_SEASON);
+    }
+
+    /**
+     * 按级别获取
+     *
+     * @param level  水平
+     * @param season 季节
+     * @return {@link WodiTop }
+     */
+    public WodiTop selectByLevel(Integer level, Integer season) {
+        LambdaQueryWrapper<WodiTop> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(WodiTop::getSeason, season).eq(WodiTop::getLevel, level);
+        return CollUtil.getFirst(wodiTopMapper.selectList(queryWrapper));
     }
 
     /**

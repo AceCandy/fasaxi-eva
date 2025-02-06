@@ -3,7 +3,6 @@ package cn.acecandy.fasaxi.eva.bot.game;
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
-import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiGroupDao;
@@ -696,7 +695,7 @@ public class Game {
             stringBuilder.append(GAME_OVER_BOOM_UNDERCOVER);
         }
         // 如果卧底全部存活 但是白板死亡 积分+3
-        boolean allUnderCoverSurviveNoSpace = spaceNum > 0
+        boolean allUnderCoverSurviveNoSpace = winnerIsUndercover && spaceNum > 0
                 && spaceSurviveNum == 0 && undercoverSurviveNum == noSpaceNum;
         if (allUnderCoverSurviveNoSpace) {
             stringBuilder.append(GAME_OVER_BOOM_SINGLE_UNDERCOVER);
@@ -1067,15 +1066,14 @@ public class Game {
             });
             if (CollUtil.isNotEmpty(upMember)) {
                 tgBot.sendMessage(chatId, upBuilder.toString());
-
                 GameUser maxMember = upMember.stream()
                         .max(Comparator.comparingInt(m -> m.wodiUser.getFraction()))
                         .orElse(null);
                 if (null != maxMember) {
-                    List<WodiUser> gtF = wodiUserDao.findGtFraction(maxMember.wodiUser.getFraction());
-                    if (CollUtil.isEmpty(gtF)) {
-                        Integer userScore = maxMember.wodiUser.getFraction();
-                        Integer lv = GameUtil.level(maxMember.wodiUser.getFraction());
+                    Integer lv = GameUtil.level(maxMember.wodiUser.getFraction());
+                    WodiTop top = wodiTopDao.selectByLevel(lv);
+                    // List<WodiUser> gtF = wodiUserDao.findGtFraction(maxMember.wodiUser.getFraction());
+                    if (null == top) {
                         Integer upScore = GameUtil.levelUpScoreByLv(lv);
                         String registerMsg = "";
                         String registerCode = "";
@@ -1113,7 +1111,6 @@ public class Game {
                         wodiTop.setUpTime(new DateTime());
                         wodiTop.setSeason(CURRENT_SEASON);
                         wodiTopDao.insertOrUpdate(wodiTop);
-
 
                         SendPhoto sendPhoto = SendPhoto.builder()
                                 .chatId(chatId.toString()).caption(upFirst)
@@ -1199,11 +1196,13 @@ public class Game {
         String wordPinyinFirst = PinYinUtil.getFirstLetters(member.word);
         String wordPinyin = PinYinUtil.getPingYin(member.word);
         if (StrUtil.containsIgnoreCase(text, member.word)
+                || StrUtil.containsIgnoreCase(member.word, text)
                 || StrUtil.containsIgnoreCase(text, wordPinyinFirst)
                 || StrUtil.containsIgnoreCase(text, wordPinyin)
                 || StrUtil.containsIgnoreCase(wordPinyin, text)
                 || StrUtil.containsIgnoreCase(wordPinyinFirst, text)
                 || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)
+                || PinYinUtil.findAllChar(text, member.word)
             // || StrUtil.equalsIgnoreCase(pinyinFirst, wordPinyinFirst)
         ) {
             // 违禁爆词 本词或者拼音

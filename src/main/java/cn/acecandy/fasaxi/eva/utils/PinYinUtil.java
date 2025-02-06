@@ -6,7 +6,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.pinyin.PinyinUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.text.Collator;
 import java.util.List;
 import java.util.Locale;
 
@@ -94,26 +93,26 @@ public final class PinYinUtil extends PinyinUtil {
         return letterStr.toUpperCase();
     }
 
-    public static void main(String[] args) {
-        List<String> sl = CollUtil.newArrayList("宝马", "包离", "报天", "宝俊", "包天田");
-        sl.sort((o1, o2) -> Collator.getInstance(Locale.CHINA).compare(o1, o2));
-
-        Console.log(getPingYinList("重庆").contains("qing"));
-        Console.log(getPingYinList("重庆"));
-        Console.log(getPingYin("蔚来"));
-        Console.log(getPingYin("007车"));
-        Console.log(getFirstLetter("重庆"));
-        Console.log(getFirstLetters("重庆"));
-        Console.log(getFirstLetters("007车"));
-        Console.log(PinyinUtil.getPinyin("重庆"));
-        Console.log(PinyinUtil.getFirstLetter("重庆", EMPTY));
-        Console.log(PinyinUtil.getFirstLetter("重庆", EMPTY));
-        List<String> speakList = CollUtil.newArrayList();
-        speakList.add("");
-        speakList.add("");
-        Console.log(speakList);
-        if (CollUtil.contains(speakList, "")) {
-            Console.log("contains");
+    /**
+     * 查找字符在所有文字中存在
+     *
+     * @param text 文本
+     * @param have 有
+     * @return boolean
+     */
+    public static boolean findAllChar(String text, String have) {
+        if (isBlank(text)) {
+            return false;
         }
+        for (char c : have.toCharArray()) {
+            if (!StrUtil.contains(text, c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static void main(String[] args) {
+        Console.log(findAllChar("奇奇怪怪的曲","曲奇1"));
     }
 }
