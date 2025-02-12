@@ -75,7 +75,8 @@ public class Command {
         Long userId = message.getFrom().getId();
         Integer msgId = message.getMessageId();
 
-        if (!groupMessage && !CollUtil.contains(tgBot.getAdmins(), userId)) {
+        if (StrUtil.startWithIgnoreCase(command, "/wd") &&
+                !groupMessage && !CollUtil.contains(tgBot.getAdmins(), userId)) {
             // tgBot.sendMessage(msgId, chatId, TIP_IN_GROUP, 10 * 1000);
             tgBot.sendMessage(chatId, TIP_IN_GROUP, 10 * 1000);
             return;
