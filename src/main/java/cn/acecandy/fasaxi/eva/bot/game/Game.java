@@ -1195,8 +1195,11 @@ public class Game {
         String pinyin = PinYinUtil.getPingYin(text);
         String wordPinyinFirst = PinYinUtil.getFirstLetters(member.word);
         String wordPinyin = PinYinUtil.getPingYin(member.word);
-        if (StrUtil.containsIgnoreCase(text, member.word)
-                || StrUtil.containsIgnoreCase(member.word, text)
+        if (StrUtil.containsIgnoreCase(text, member.word)) {
+            // 违禁爆词 本词或者拼音
+            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY_BIG, TgUtil.tgNameOnUrl(member)));
+            embyDao.upIv(userId, -20);
+        } else if (StrUtil.containsIgnoreCase(member.word, text)
                 || StrUtil.containsIgnoreCase(text, wordPinyinFirst)
                 || StrUtil.containsIgnoreCase(text, wordPinyin)
                 || StrUtil.containsIgnoreCase(wordPinyin, text)

@@ -159,6 +159,7 @@ public interface GameTextConstants {
     String NOT_VOTED_TIP = "❗️{} 两轮连续跑路，扣除5封Dmail🫶\n";
     String SPEAK_REPEAT = "❓️{} 无发言或重复发言，此次发言无效并扣除2封Dmail🫶\n";
     String SPEAK_NOWAY = "❓️{} 违禁爆词，扣除5封Dmail🫶\n";
+    String SPEAK_NOWAY_BIG = "❗️❗️❗️{} 严重违禁爆词，受到天罚，扣除20封Dmail🤡\n";
 
     String RIGISTER_TIPS = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";
     String RIGISTER_CODE1 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";
