@@ -72,6 +72,7 @@ public interface GameTextConstants {
     String EXIT = "退出";
     String START = "开始";
     String TimeoutShutdown = "{}长时间无操作，游戏已自动关闭！";
+    String WattingTimeoutShutdown = "房主6min无动作，怀疑已经挂掉，游戏自动关闭！";
     String sendWord = """
                             你在<b>{}</b>群组中的游戏词语是: <b>{}</b>
                       """;

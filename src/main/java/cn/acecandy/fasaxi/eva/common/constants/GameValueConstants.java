@@ -25,6 +25,10 @@ public interface GameValueConstants {
      */
     long MaxActiveTime = 1000 * 60;
     /**
+     * 超时关闭游戏时间 （仅在游戏未开始有效)
+     */
+    long MaxWattingTime = 1000 * 360;
+    /**
      * 讨论时间每位玩家增加的游戏(秒数 )
      */
     long GameSecondsAddedByThePlayer = 20;

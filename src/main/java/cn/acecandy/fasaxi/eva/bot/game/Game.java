@@ -50,6 +50,7 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAXIMUM_VOTE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAX_PLAYER;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MaxActiveTime;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MaxWattingTime;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.WaitingYoJoinTimeInterval;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.minMemberSize;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.notVote;
@@ -223,6 +224,11 @@ public class Game {
         // 60s时间结束但是有人尚未准备
         if (endTime - endActiveTime > MaxActiveTime && !GameUtil.isAllMemberReady(this)) {
             tgBot.sendMessage(chatId, StrUtil.format(TimeoutShutdown, noReadyMember()), 30 * 1000);
+            status = GameStatus.游戏关闭;
+        }
+        // 360s时间结束但是有人尚未准备
+        if (endTime - endActiveTime > MaxWattingTime) {
+            tgBot.sendMessage(chatId, WattingTimeoutShutdown, 30 * 1000);
             status = GameStatus.游戏关闭;
         }
     }

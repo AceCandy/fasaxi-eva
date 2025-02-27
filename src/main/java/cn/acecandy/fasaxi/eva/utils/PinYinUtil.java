@@ -114,5 +114,6 @@ public final class PinYinUtil extends PinyinUtil {
 
     public static void main(String[] args) {
         Console.log(findAllChar("奇奇怪怪的曲","曲奇1"));
+        Console.log(PinYinUtil.findAllChar("白色板子", "白板"));
     }
 }
