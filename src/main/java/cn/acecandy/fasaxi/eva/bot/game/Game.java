@@ -1149,7 +1149,7 @@ public class Game {
                 }
 
                 if (seasonEnds) {
-                    Command.SPEAK_TIME_CNT.set(999);
+                    Command.SPEAK_TIME_CNT.set(1199);
                 }
                 tgBot.unPinMsg(firstMsg.getChatId(), firstMsg.getMessageId());
             }
