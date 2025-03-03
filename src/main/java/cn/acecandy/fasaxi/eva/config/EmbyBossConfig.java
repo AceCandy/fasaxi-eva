@@ -35,7 +35,7 @@ public class EmbyBossConfig {
     /**
      * 群组 暂时只允许一个
      */
-    private String group;
+    private Long group;
 
     /**
      * 定时任务线程池

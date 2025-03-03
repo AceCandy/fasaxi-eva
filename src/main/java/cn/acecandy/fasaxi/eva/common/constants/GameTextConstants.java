@@ -190,4 +190,8 @@ public interface GameTextConstants {
     String SEASON10 = "盟誓的文艺复兴";
     String SEASON11 = "无限远点的牵牛星";
     String SEASON12 = "交叉坐标的星辰";
+
+    // 看图猜成语------------------
+    String COMMON_WIN = "✅ 回答正确！\n收获宝箱📦 {}封Dmail~\n";
+    String KTCCY_TIP = "<b>🌸[成语猜猜看]🌸</b>\n\n回答时请加上<b>‘。’中文句号前缀</b>，才算一次有效回答。";
 }

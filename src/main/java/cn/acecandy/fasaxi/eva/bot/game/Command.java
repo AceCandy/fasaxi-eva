@@ -16,6 +16,7 @@ import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
@@ -222,7 +223,7 @@ public class Command {
      * @param userId 用户id
      */
     private void handleNewGameCommand(User user, Chat chat, Long userId) {
-        if (!StrUtil.equals(chat.getId().toString(), tgBot.getGroup())) {
+        if (ObjectUtil.notEqual(chat.getId(), tgBot.getGroup())) {
             tgBot.sendMessage(chat.getId(), NO_AUTH_GROUP);
             log.error("非授权群组私自拉bot入群已被发现：{}, chat: {}", chat.getId(), chat);
             return;

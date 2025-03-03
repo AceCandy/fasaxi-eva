@@ -5,8 +5,11 @@ import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.bot.game.GameEvent;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
+import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
 import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
 
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.COMMON_WIN;
 import static cn.hutool.core.text.StrPool.COMMA;
 
 /**
@@ -58,12 +62,14 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     public final Command command;
     public final GameEvent gameEvent;
     public final EmbyBossConfig embyBossConfig;
+    public final EmbyDao embyDao;
 
     public EmbyTelegramBot(@Lazy EmbyBossConfig embyBossConfig,
-                           @Lazy Command command, @Lazy GameEvent gameEvent) {
+                           @Lazy Command command, @Lazy GameEvent gameEvent, @Lazy EmbyDao embyDao) {
         this.embyBossConfig = embyBossConfig;
         this.command = command;
         this.gameEvent = gameEvent;
+        this.embyDao = embyDao;
         this.tgClient = new OkHttpTelegramClient(getBotToken());
     }
 
@@ -85,7 +91,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
                 .stream().map(Long::parseLong).toList();
     }
 
-    public String getGroup() {
+    public Long getGroup() {
         return embyBossConfig.getGroup();
     }
 
@@ -126,9 +132,15 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         if (isCommand) {
             command.process(msg, message, isGroupMessage);
         } else {
-            if (!atBotUsername && isGroupMessage) {
-                Command.SPEAK_TIME_CNT.getAndDecrement();
+            if (isGroupMessage) {
+                // 看图猜成语
+                if (CommonGameUtil.ktccySpeak(message)) {
+                    commonWin(getGroup(), message, RandomUtil.randomInt(5, 15));
+                }
                 TgUtil.gameSpeak(message);
+                if (!atBotUsername) {
+                    Command.SPEAK_TIME_CNT.getAndDecrement();
+                }
             }
         }
     }
@@ -287,5 +299,16 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         setMyCommands.setScope(new BotCommandScopeAllGroupChats());
         executeTg(() -> tgClient.executeAsync(setMyCommands));
         log.info("初始化bot指令成功！");
+    }
+
+    /**
+     * 用于通用游戏 获取奖励
+     *
+     * @param message 消息
+     * @param lv      胜利奖励
+     */
+    private void commonWin(Long groupId, Message message, Integer lv) {
+        sendMessage(message.getMessageId(), groupId, StrUtil.format(COMMON_WIN, lv));
+        embyDao.upIv(message.getFrom().getId(), lv);
     }
 }

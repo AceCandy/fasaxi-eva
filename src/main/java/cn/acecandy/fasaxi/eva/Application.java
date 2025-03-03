@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.InetAddress;
@@ -20,6 +21,7 @@ import java.net.InetAddress;
  * @since 2025/01/03
  */
 @Slf4j
+@EnableScheduling
 @EnableRetry
 @RestController
 @ConfigurationPropertiesScan
