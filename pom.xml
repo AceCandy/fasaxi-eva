@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.5</version>
+    <version>3.4.1</version>
     <relativePath/>
   </parent>
 
@@ -86,27 +86,27 @@
     <dependency>
       <groupId>org.telegram</groupId>
       <artifactId>telegrambots-springboot-longpolling-starter</artifactId>
-      <version>7.9.1</version>
+      <version>8.2.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.telegram</groupId>
       <artifactId>telegrambots-client</artifactId>
-      <version>7.9.1</version>
+      <version>8.2.0</version>
     </dependency>
 
     <!-- json -->
     <dependency>
       <groupId>com.alibaba</groupId>
       <artifactId>fastjson</artifactId>
-      <version>2.0.53</version>
+      <version>2.0.54</version>
     </dependency>
 
     <!-- hutool -->
     <dependency>
       <groupId>cn.hutool</groupId>
       <artifactId>hutool-all</artifactId>
-      <version>5.8.34</version>
+      <version>5.8.35</version>
     </dependency>
     <dependency>
       <groupId>com.github.stuxuhai</groupId>
@@ -119,19 +119,19 @@
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
-      <version>9.0.0</version>
+      <version>9.2.0</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.baomidou</groupId>
       <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-      <version>3.5.7</version>
+      <version>3.5.10</version>
     </dependency>
 
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.34</version>
+      <version>1.18.36</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
