@@ -5,7 +5,7 @@ import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.bot.game.GameEvent;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
-import cn.acecandy.fasaxi.eva.task.ScheduledTask;
+import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
@@ -190,14 +190,14 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         message.setReplyToMessageId(replyId);
         message.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(message));
-        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime);
     }
 
     public void sendMessage(Long chatId, String text, long autoDeleteTime) {
         SendMessage message = new SendMessage(chatId.toString(), text);
         message.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(message));
-        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime);
     }
 
     public Message sendPhoto(SendPhoto photo) {
@@ -208,35 +208,35 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     public Message sendPhoto(SendPhoto photo, long autoDeleteTime) {
         photo.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(photo));
-        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime);
         return execute;
     }
 
     public Message sendPhoto(SendPhoto photo, long autoDeleteTime, GameStatus status, Game game) {
         photo.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(photo));
-        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime, status, game);
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime, status, game);
         return execute;
     }
 
     public void sendMessage(SendMessage message, long autoDeleteTime) {
         message.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(message));
-        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime);
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime);
     }
 
     public Message sendMessage(SendMessage message, long autoDeleteTime,
                                GameStatus status, Game game) {
         message.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(message));
-        ScheduledTask.addAutoDeleteMessage(execute, autoDeleteTime, status, game);
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime, status, game);
         return execute;
     }
 
     public Message sendMessage(SendMessage message, GameStatus status, Game game) {
         message.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(message));
-        ScheduledTask.addAutoDeleteMessage(execute, status, game);
+        MsgDelUtil.addAutoDeleteMessage(execute, status, game);
         return execute;
     }
 

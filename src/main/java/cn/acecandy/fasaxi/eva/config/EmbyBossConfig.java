@@ -2,7 +2,10 @@ package cn.acecandy.fasaxi.eva.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 /**
  * @author tangningzhu
@@ -33,4 +36,17 @@ public class EmbyBossConfig {
      * 群组 暂时只允许一个
      */
     private String group;
+
+    /**
+     * 定时任务线程池
+     *
+     * @return {@link TaskScheduler }
+     */
+    @Bean
+    public TaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(4);
+        scheduler.setThreadNamePrefix("task-");
+        return scheduler;
+    }
 }

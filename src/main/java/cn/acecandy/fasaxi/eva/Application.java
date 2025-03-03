@@ -1,9 +1,6 @@
 package cn.acecandy.fasaxi.eva;
 
-import cn.acecandy.fasaxi.eva.task.ScheduledTask;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -54,6 +51,6 @@ public class Application {
      * 提前初始化一些数据
      */
     private static void init() {
-        ThreadUtil.execAsync(() -> SpringUtil.getBean(ScheduledTask.class).run());
+        // ThreadUtil.execAsync(() -> SpringUtil.getBean(ScheduledTask.class).run());
     }
 }
