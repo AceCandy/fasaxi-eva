@@ -1,9 +1,11 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
+import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
+import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import jakarta.annotation.Resource;
@@ -37,9 +39,20 @@ public class CommonGameService {
      * exec ktccy
      */
     public void execKtccy() {
-        if (StrUtil.isNotBlank(CommonGameUtil.KTCCY_ANSWER)) {
+        // 未猜完无法出题
+        if (StrUtil.isBlank(CommonGameUtil.GAME_CACHE.get("KTCCY"))) {
             return;
         }
+        // 游戏存在无法出题
+        Game game = GameListUtil.getGame(tgBot.getGroup());
+        if (game != null) {
+            return;
+        }
+        // 大于1小时无人回答出题 否则静置
+        if (System.currentTimeMillis() - tgBot.endSpeakTime < 60 * 60 * 1000) {
+            return;
+        }
+
         GameKtccy ktccy = gameKtccyDao.getRandom2();
         if (ktccy == null) {
             return;
@@ -50,7 +63,7 @@ public class CommonGameService {
                         HttpUtil.downloadBytes(ktccy.getPicUrl())), "ktccy.jpg"))
                 .build();
         tgBot.sendPhoto(sendPhoto);
-        CommonGameUtil.KTCCY_ANSWER = ktccy.getAnswer();
+        CommonGameUtil.GAME_CACHE.put("KTCCY", ktccy.getAnswer());
         log.warn("[成语猜猜看] {}", ktccy.getAnswer());
         gameKtccyDao.upPlayTime(ktccy.getId());
     }

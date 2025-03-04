@@ -1,6 +1,7 @@
 package cn.acecandy.fasaxi.eva.utils;
 
 import cn.acecandy.fasaxi.eva.bot.game.Game;
+import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.util.StrUtil;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
@@ -17,7 +18,8 @@ public final class CommonGameUtil {
     /**
      * 看图猜成语 答案
      */
-    public static String KTCCY_ANSWER = "";
+    public static TimedCache<String, String> GAME_CACHE
+            = CacheUtil.newTimedCache(6 * 60 * 60 * 1000);
 
     /**
      * 看图猜成语 发言
@@ -34,8 +36,8 @@ public final class CommonGameUtil {
             return false;
         }
         text = StrUtil.removeAllPrefix(text, "。");
-        if (StrUtil.equals(text, KTCCY_ANSWER)) {
-            KTCCY_ANSWER = "";
+        if (StrUtil.isNotBlank(text) && StrUtil.equals(text, GAME_CACHE.get("KTCCY"))) {
+            GAME_CACHE.remove("KTCCY");
             return true;
         }
         return false;
