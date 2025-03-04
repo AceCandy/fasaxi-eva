@@ -115,11 +115,6 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     }
 
     /**
-     * 最后发言时间
-     */
-    public volatile long endSpeakTime = System.currentTimeMillis() + 5 * 60 * 1000;
-
-    /**
      * 处理传入消息
      *
      * @param message 消息
@@ -138,7 +133,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
             command.process(msg, message, isGroupMessage);
         } else {
             if (isGroupMessage) {
-                endSpeakTime = System.currentTimeMillis();
+                CommonGameUtil.endSpeakTime = System.currentTimeMillis();
                 // 看图猜成语
                 if (CommonGameUtil.ktccySpeak(message)) {
                     commonWin(getGroup(), message, RandomUtil.randomInt(5, 15));

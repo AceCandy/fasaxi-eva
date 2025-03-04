@@ -16,6 +16,11 @@ public final class CommonGameUtil {
     }
 
     /**
+     * 最后发言时间
+     */
+    public static long endSpeakTime = System.currentTimeMillis() + 5 * 60 * 1000;
+
+    /**
      * 看图猜成语 答案
      */
     public static TimedCache<String, String> GAME_CACHE

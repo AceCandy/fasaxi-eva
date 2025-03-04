@@ -40,7 +40,7 @@ public class CommonGameService {
      */
     public void execKtccy() {
         // 未猜完无法出题
-        if (StrUtil.isBlank(CommonGameUtil.GAME_CACHE.get("KTCCY"))) {
+        if (StrUtil.isNotBlank(CommonGameUtil.GAME_CACHE.get("KTCCY"))) {
             return;
         }
         // 游戏存在无法出题
@@ -49,7 +49,7 @@ public class CommonGameService {
             return;
         }
         // 大于1小时无人回答出题 否则静置
-        if (System.currentTimeMillis() - tgBot.endSpeakTime < 60 * 60 * 1000) {
+        if (System.currentTimeMillis() - CommonGameUtil.endSpeakTime < 60 * 60 * 1000) {
             return;
         }
 
