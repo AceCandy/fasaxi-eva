@@ -483,6 +483,49 @@ public final class GameUtil extends GameSubUtil {
     }
 
     /**
+     * 处于禁止通用游戏时间(1:00-3:00 5:00-6:00 7:00-8:00 21:00-23:00)
+     *
+     * @return boolean
+     */
+    public static boolean isInNotCommonGameTime() {
+        // 获取当前时间
+        Date now = DateUtil.date();
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date am1 = DateUtil.beginOfDay(now);
+        am1 = DateUtil.offset(am1, DateField.HOUR_OF_DAY, 1);
+        // 获取当天的10:00 AM和10:00 PM
+        Date am3 = DateUtil.beginOfDay(now);
+        am3 = DateUtil.offset(am3, DateField.HOUR_OF_DAY, 3);
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date pm5 = DateUtil.beginOfDay(now);
+        pm5 = DateUtil.offset(pm5, DateField.HOUR_OF_DAY, 5);
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date pm6 = DateUtil.beginOfDay(now);
+        pm6 = DateUtil.offset(pm6, DateField.HOUR_OF_DAY, 6);
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date pm7 = DateUtil.beginOfDay(now);
+        pm7 = DateUtil.offset(pm7, DateField.HOUR_OF_DAY, 7);
+
+        Date pm8 = DateUtil.beginOfDay(now);
+        pm8 = DateUtil.offset(pm8, DateField.HOUR_OF_DAY, 8);
+
+        // 获取当天的10:00 AM和10:00 PM
+        Date pm21 = DateUtil.beginOfDay(now);
+        pm21 = DateUtil.offset(pm21, DateField.HOUR_OF_DAY, 21);
+
+        Date pm23 = DateUtil.beginOfDay(now);
+        pm23 = DateUtil.offset(pm23, DateField.HOUR_OF_DAY, 23);
+
+        // 判断当前时间是否在10:00 AM到10:00 PM之间
+        return DateUtil.isIn(now, am1, am3) || DateUtil.isIn(now, pm5, pm6)
+                || DateUtil.isIn(now, pm7, pm8)|| DateUtil.isIn(now, pm21, pm23);
+    }
+
+    /**
      * 有效游戏场次
      *
      * @return long

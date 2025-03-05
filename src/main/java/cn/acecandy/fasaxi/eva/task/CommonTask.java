@@ -25,7 +25,7 @@ public class CommonTask {
      * 看图猜成语
      * exec ktccy
      */
-    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.MINUTES)
+    @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
     public void execKtccy() {
         try {
             service.execKtccy();
