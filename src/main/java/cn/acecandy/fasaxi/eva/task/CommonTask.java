@@ -33,4 +33,17 @@ public class CommonTask {
             log.error("执行异常-看图猜成语 ", e);
         }
     }
+
+    /**
+     * 看图猜番号
+     * exec ktccy
+     */
+    @Scheduled(cron = "0 13 4,16 * * ?")
+    public void execKtcfh() {
+        try {
+            service.execKtcfh();
+        } catch (Exception e) {
+            log.error("执行异常-看图猜番号 ", e);
+        }
+    }
 }

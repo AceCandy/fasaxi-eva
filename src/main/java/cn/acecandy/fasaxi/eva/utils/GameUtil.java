@@ -11,15 +11,26 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.ANONYMOUS_VOTE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
@@ -522,7 +533,7 @@ public final class GameUtil extends GameSubUtil {
 
         // 判断当前时间是否在10:00 AM到10:00 PM之间
         return DateUtil.isIn(now, am1, am3) || DateUtil.isIn(now, pm5, pm6)
-                || DateUtil.isIn(now, pm7, pm8)|| DateUtil.isIn(now, pm21, pm23);
+                || DateUtil.isIn(now, pm7, pm8) || DateUtil.isIn(now, pm21, pm23);
     }
 
     /**
@@ -535,8 +546,95 @@ public final class GameUtil extends GameSubUtil {
         return day * 25;
     }
 
+
+    /**
+     * 搜索海报
+     *
+     * @param root 根
+     * @return {@link Path }
+     */
+    @SneakyThrows
+    public static Path searchPoster(String root) {
+        final AtomicInteger counter = new AtomicInteger(0);
+        final Path[] result = new Path[1];
+        try (Stream<Path> stream = Files.find(Paths.get(root), Integer.MAX_VALUE,
+                (p, a) -> a.isRegularFile() && p.endsWith("poster.jpg")).parallel()) {
+            stream.forEach(file -> reservoirSampling(file, counter, result));
+        }
+        return counter.get() == 0 ? null : result[0];
+    }
+
+    private static final Lock LOCK = new ReentrantLock();
+
+    private static void reservoirSampling(Path file, AtomicInteger counter, Path[] result) {
+        int count = counter.getAndIncrement();
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+
+        // 无锁优化：使用CAS减少竞争
+        if (count == 0) {
+            LOCK.lock();
+            try {
+                result[0] = file;
+            } finally {
+                LOCK.unlock();
+            }
+        } else if (rand.nextInt(count + 1) == 0) {
+            LOCK.lock();
+            try {
+                result[0] = file;
+            } finally {
+                LOCK.unlock();
+            }
+        }
+    }
+
+    /**
+     * 番号 匹配正则
+     */
+    private static final Pattern FH_PATTERN =
+            Pattern.compile("^([A-Z0-9]+[-_][A-Z0-9\\d]{2,})(?:[-_][A-Z]+)?\\b.*");
+
+    /**
+     * 提取标准番号
+     *
+     * @param original 原来
+     * @return {@link String }
+     */
+    public static String standardFhName(String original) {
+        if (StrUtil.isBlank(original)) {
+            return original;
+        }
+        return CollUtil.getFirst(ReUtil.findAll(FH_PATTERN, StrUtil.trim(original), 1));
+    }
+
+    /**
+     * 获取番号名称
+     *
+     * @param filePath 文件路径
+     * @return {@link String }
+     */
+    public static String getFhName(String filePath) {
+        int end = StrUtil.lastIndexOfIgnoreCase(filePath, "/");
+        if (end == -1) {
+            // Windows兼容
+            end = StrUtil.lastIndexOfIgnoreCase(filePath, "\\");
+        }
+
+        if (end > 0) {
+            int start = StrUtil.lastIndexOfIgnoreCase(filePath, "/", end - 1);
+            if (start == -1) {
+                start = StrUtil.lastIndexOfIgnoreCase(filePath, "\\", end - 1);
+            }
+            String fhName = StrUtil.sub(filePath, (start != -1) ? start + 1 : 0, end);
+            return standardFhName(fhName);
+        }
+        return null;
+    }
+
     public static void main(String[] args) {
-        Console.log(isInGameTime());
-        Console.log(DateUtil.betweenDay(DateUtil.date(), DateUtil.parse("2025-01-14"), true) + 1);
+        String filePath = "/private/tmp/test/104DANDY/104DANDY-818-C 座ったままの男を一切动かさないS字尻振り骑乘位で骨抜きにする美尻キャビンアテンダント/poster.jpg";
+        Console.log(getFhName(filePath));
+        Console.log(StrUtil.lastIndexOfIgnoreCase(filePath, "/vvvv"));
+        Console.log(filePath.lastIndexOf('/'));
     }
 }

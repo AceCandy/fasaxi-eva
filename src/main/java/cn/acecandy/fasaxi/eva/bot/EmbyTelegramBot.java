@@ -135,10 +135,18 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
             if (isGroupMessage) {
                 CommonGameUtil.endSpeakTime = System.currentTimeMillis();
                 // 看图猜成语
-                if (CommonGameUtil.ktccySpeak(message)) {
-                    commonWin(getGroup(), message, RandomUtil.randomInt(5, 15));
+                String commonGameType = CommonGameUtil.commonGameSpeak(message);
+                if (StrUtil.isNotBlank(commonGameType)) {
+                    Integer lv = null;
+                    if ("KTCCY".equals(commonGameType)) {
+                        lv = RandomUtil.randomInt(4, 8);
+                    } else if ("KTCFH".equals(commonGameType)) {
+                        lv = RandomUtil.randomInt(10, 15);
+                    }
+                    commonWin(getGroup(), message, lv);
+                } else {
+                    TgUtil.gameSpeak(message);
                 }
-                TgUtil.gameSpeak(message);
                 if (!atBotUsername) {
                     Command.SPEAK_TIME_CNT.getAndDecrement();
                 }
@@ -309,6 +317,9 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
      * @param lv      胜利奖励
      */
     private void commonWin(Long groupId, Message message, Integer lv) {
+        if (lv == null) {
+            return;
+        }
         sendMessage(message.getMessageId(), groupId, StrUtil.format(COMMON_WIN, lv));
         embyDao.upIv(message.getFrom().getId(), lv);
     }
