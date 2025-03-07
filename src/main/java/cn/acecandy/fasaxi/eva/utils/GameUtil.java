@@ -506,33 +506,37 @@ public final class GameUtil extends GameSubUtil {
         Date am1 = DateUtil.beginOfDay(now);
         am1 = DateUtil.offset(am1, DateField.HOUR_OF_DAY, 1);
         // 获取当天的10:00 AM和10:00 PM
-        Date am3 = DateUtil.beginOfDay(now);
-        am3 = DateUtil.offset(am3, DateField.HOUR_OF_DAY, 3);
+        Date am2 = DateUtil.beginOfDay(now);
+        am2 = DateUtil.offset(am2, DateField.HOUR_OF_DAY, 2)
+                .offset(DateField.MINUTE, RandomUtil.randomInt(12, 24));
 
         // 获取当天的10:00 AM和10:00 PM
-        Date pm5 = DateUtil.beginOfDay(now);
-        pm5 = DateUtil.offset(pm5, DateField.HOUR_OF_DAY, 5);
+        Date pm4 = DateUtil.beginOfDay(now);
+        pm4 = DateUtil.offset(pm4, DateField.HOUR_OF_DAY, 4);
 
         // 获取当天的10:00 AM和10:00 PM
         Date pm6 = DateUtil.beginOfDay(now);
-        pm6 = DateUtil.offset(pm6, DateField.HOUR_OF_DAY, 6);
+        pm6 = DateUtil.offset(pm6, DateField.HOUR_OF_DAY, 6)
+                .offset(DateField.MINUTE, RandomUtil.randomInt(9, 33));
 
         // 获取当天的10:00 AM和10:00 PM
         Date pm7 = DateUtil.beginOfDay(now);
         pm7 = DateUtil.offset(pm7, DateField.HOUR_OF_DAY, 7);
 
         Date pm8 = DateUtil.beginOfDay(now);
-        pm8 = DateUtil.offset(pm8, DateField.HOUR_OF_DAY, 8);
+        pm8 = DateUtil.offset(pm8, DateField.HOUR_OF_DAY, 8)
+                .offset(DateField.MINUTE, RandomUtil.randomInt(42, 51));
 
         // 获取当天的10:00 AM和10:00 PM
         Date pm21 = DateUtil.beginOfDay(now);
         pm21 = DateUtil.offset(pm21, DateField.HOUR_OF_DAY, 21);
 
         Date pm23 = DateUtil.beginOfDay(now);
-        pm23 = DateUtil.offset(pm23, DateField.HOUR_OF_DAY, 23);
+        pm23 = DateUtil.offset(pm23, DateField.HOUR_OF_DAY, 23)
+                .offset(DateField.MINUTE, RandomUtil.randomInt(31, 38));
 
         // 判断当前时间是否在10:00 AM到10:00 PM之间
-        return DateUtil.isIn(now, am1, am3) || DateUtil.isIn(now, pm5, pm6)
+        return DateUtil.isIn(now, am1, am2) || DateUtil.isIn(now, pm4, pm6)
                 || DateUtil.isIn(now, pm7, pm8) || DateUtil.isIn(now, pm21, pm23);
     }
 

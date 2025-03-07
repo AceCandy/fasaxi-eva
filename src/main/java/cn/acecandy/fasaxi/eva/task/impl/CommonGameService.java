@@ -8,7 +8,6 @@ import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -60,9 +59,9 @@ public class CommonGameService {
         if (GameUtil.isInNotCommonGameTime()) {
             return;
         }
-        // 大于1小时无人回答出题 否则静置
+        // 大于50min无人回答出题 否则静置
         if (System.currentTimeMillis() -
-                CommonGameUtil.endSpeakTime < RandomUtil.randomInt(55 * 60 * 1000, 65 * 60 * 1000)) {
+                CommonGameUtil.endSpeakTime < 50 * 60 * 1000) {
             return;
         }
 

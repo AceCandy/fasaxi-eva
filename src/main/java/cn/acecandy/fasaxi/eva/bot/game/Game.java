@@ -2,6 +2,7 @@ package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
+import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
@@ -1202,9 +1203,19 @@ public class Game {
         String wordPinyinFirst = PinYinUtil.getFirstLetters(member.word);
         String wordPinyin = PinYinUtil.getPingYin(member.word);
         if (StrUtil.containsIgnoreCase(text, member.word)) {
-            // 违禁爆词 本词或者拼音
-            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY_BIG, TgUtil.tgNameOnUrl(member)));
-            embyDao.upIv(userId, -20);
+            // 违禁爆词 全称
+            Emby emby = embyDao.findByTgId(member.id);
+            Integer currentIv = emby.getIv();
+            if (currentIv < 0) {
+                currentIv = 20;
+            } else {
+                currentIv /= 10;
+                if (currentIv < 20) {
+                    currentIv = 20;
+                }
+            }
+            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY_BIG, TgUtil.tgNameOnUrl(member), currentIv));
+            embyDao.upIv(userId, -currentIv);
         } else if (StrUtil.containsIgnoreCase(member.word, text)
                 || StrUtil.containsIgnoreCase(text, wordPinyinFirst)
                 || StrUtil.containsIgnoreCase(text, wordPinyin)
