@@ -1,6 +1,9 @@
 package cn.acecandy.fasaxi.eva.utils;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.lang.Console;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,12 +31,14 @@ public final class ImgUtil {
     private ImgUtil() {
     }
 
-    @SneakyThrows
     public static InputStream protectPic(File file) {
         try (InputStream input = addAdversarialNoise(FileUtil.getInputStream(file), 0.35f)) {
             return addProportionalWatermark(input,
                     "/Users/mac/Downloads/浏览器/Steins_Gate_Elite_Teaser.jpg", 0.25f);
             // return compressImage(input2, 0.5f);
+        } catch (Exception e) {
+            log.error("图片保护失败", e);
+            return null;
         }
     }
 
@@ -258,10 +263,10 @@ public final class ImgUtil {
         // FileUtil.writeFromStream(addAdversarialNoise("/Users/mac/Downloads/浏览器/wdzsj.jpg", 0.6f),
         //         "/Users/mac/Downloads/浏览器/output1.png");
 
-        /*TimeInterval timer = DateUtil.timer();
-        FileUtil.writeFromStream(protectPic("/Users/mac/Downloads/浏览器/wdzsj.jpg"),
+        TimeInterval timer = DateUtil.timer();
+        FileUtil.writeFromStream(protectPic(FileUtil.file("/Users/mac/Downloads/浏览器/wdzsj.jpg")),
                 "/Users/mac/Downloads/浏览器/output.png");
-        Console.log("2，耗时：{}ms", timer.intervalMs());*/
+        Console.log("2，耗时：{}ms", timer.intervalMs());
 
     }
 }

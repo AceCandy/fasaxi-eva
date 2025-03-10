@@ -11,6 +11,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpUtil;
 import jakarta.annotation.Resource;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.file.Path;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCCY_TIP;
@@ -81,7 +83,7 @@ public class CommonGameService {
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(tgBot.getGroup()).caption(KTCCY_TIP)
                 .photo(new InputFile(new ByteArrayInputStream(
-                        HttpUtil.downloadBytes(ktccy.getPicUrl())), "ktccy.jpg"))
+                        HttpUtil.downloadBytes(ktccy.getPicUrl())), "ktccy.png"))
                 .build();
         tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
         CommonGameUtil.GAME_CACHE.put("KTCCY", ktccy.getAnswer());
@@ -93,6 +95,7 @@ public class CommonGameService {
      * 看图猜成语
      * exec ktccy
      */
+    @SneakyThrows
     public void execKtcfh() {
         // 未猜完无法出题
         if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
@@ -103,15 +106,17 @@ public class CommonGameService {
         if (path == null) {
             return;
         }
-        SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(tgBot.getGroup()).caption(KTCFH_TIP)
-                .photo(new InputFile(ImgUtil.protectPic(path.toFile()), "ktcfh.jpg"))
-                .hasSpoiler(true)
-                .build();
-        tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
-        String filePath = GameUtil.getFhName(path.toString());
-        CommonGameUtil.GAME_CACHE.put("KTCFH", filePath);
-        log.warn("[道观我最强] {}", filePath);
-        // gameKtccyDao.upPlayTime(ktccy.getId());
+        try (InputStream input = ImgUtil.protectPic(path.toFile())) {
+            if (null == input) {
+                return;
+            }
+            SendPhoto sendPhoto = SendPhoto.builder()
+                    .chatId(tgBot.getGroup()).caption(KTCFH_TIP)
+                    .photo(new InputFile(input, "ktcfh.jpg")).hasSpoiler(true).build();
+            tgBot.sendPhoto(sendPhoto, 55 * 60 * 1000);
+            String filePath = GameUtil.getFhName(path.toString());
+            CommonGameUtil.GAME_CACHE.put("KTCFH", filePath);
+            log.warn("[道观我最强] {}", filePath);
+        }
     }
 }

@@ -106,7 +106,7 @@ public final class TgUtil {
             text = StrUtil.removeAllPrefix(text, "。");
             game.boom(message, message.getFrom().getId(), text);
         } else {
-            game.speak(message.getFrom().getId(), text);
+            game.speak(message, message.getFrom().getId(), text);
         }
     }
 

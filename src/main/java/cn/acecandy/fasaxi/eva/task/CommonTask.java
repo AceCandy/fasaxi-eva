@@ -38,8 +38,8 @@ public class CommonTask {
      * 看图猜番号
      * exec ktccy
      */
-    @Scheduled(cron = "0 7 4,13,23 * * ?")
-    // @Scheduled(cron = "* * * * * ?")
+    // @Scheduled(cron = "0 7 4,13,23 * * ?")
+    @Scheduled(cron = "* * * * * ?")
     public void execKtcfh() {
         try {
             service.execKtcfh();

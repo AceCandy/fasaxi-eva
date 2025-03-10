@@ -32,6 +32,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -1163,7 +1164,7 @@ public class Game {
      * @param userId 用户id
      * @param text   文本
      */
-    public void speak(Long userId, String text) {
+    public void speak(Message message, Long userId, String text) {
         if (status != GameStatus.讨论时间) {
             return;
         }
@@ -1214,7 +1215,12 @@ public class Game {
                     currentIv = 20;
                 }
             }
-            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY_BIG, TgUtil.tgNameOnUrl(member), currentIv));
+            tgBot.sendAnimation(SendAnimation.builder().chatId(chatId)
+                    .replyToMessageId(message.getMessageId())
+                    .caption(StrUtil.format(SPEAK_NOWAY_BIG, TgUtil.tgNameOnUrl(member), currentIv))
+                    .animation(new InputFile(
+                            ResourceUtil.getStream("static/pic/核爆.gif"), "hebao.gif"))
+                    .build());
             embyDao.upIv(userId, -currentIv);
         } else if (StrUtil.containsIgnoreCase(member.word, text)
                 || StrUtil.containsIgnoreCase(text, wordPinyinFirst)

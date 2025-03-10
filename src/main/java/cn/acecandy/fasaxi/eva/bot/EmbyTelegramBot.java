@@ -27,6 +27,7 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPermissions;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.PinChatMessage;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.UnpinChatMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -219,6 +220,11 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         message.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(message));
         MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime);
+    }
+
+    public Message sendAnimation(SendAnimation photo) {
+        photo.setParseMode(ParseMode.HTML);
+        return executeTg(() -> tgClient.execute(photo));
     }
 
     public Message sendPhoto(SendPhoto photo) {
