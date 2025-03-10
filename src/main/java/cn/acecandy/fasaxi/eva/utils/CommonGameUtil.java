@@ -23,7 +23,7 @@ public final class CommonGameUtil {
      * 看图猜成语 答案
      */
     public static TimedCache<String, String> GAME_CACHE
-            = CacheUtil.newTimedCache(2 * 60 * 60 * 1000);
+            = CacheUtil.newTimedCache(60 * 60 * 1000);
 
     /**
      * 通用游戏 发言

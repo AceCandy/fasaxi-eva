@@ -1,8 +1,12 @@
 package cn.acecandy.fasaxi.eva.utils;
 
 import cn.hutool.core.io.FileUtil;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -10,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 import java.util.Random;
 
 /**
@@ -18,50 +23,97 @@ import java.util.Random;
  * @author tangningzhu
  * @since 2025/3/3
  */
+@Slf4j
 public final class ImgUtil {
     private ImgUtil() {
     }
 
-    public static InputStream addAdversarialNoise(String imagePath, float intensity) {
-        try {
-            File file = new File(imagePath);
-            BufferedImage originalImage = ImageIO.read(file);
-            int width = originalImage.getWidth();
-            int height = originalImage.getHeight();
-
-            BufferedImage noisyImage = new BufferedImage(width, height, originalImage.getType());
-            Random random = new Random();
-
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    int pixel = originalImage.getRGB(x, y);
-                    int alpha = (pixel >> 24) & 0xff;
-                    int red = (pixel >> 16) & 0xff;
-                    int green = (pixel >> 8) & 0xff;
-                    int blue = pixel & 0xff;
-
-                    // 为每个颜色通道生成独立噪声
-                    int deltaRed = (int) ((random.nextFloat() * 2 - 1) * intensity * 255);
-                    int deltaGreen = (int) ((random.nextFloat() * 2 - 1) * intensity * 255);
-                    int deltaBlue = (int) ((random.nextFloat() * 2 - 1) * intensity * 255);
-
-                    red = clamp(red + deltaRed, 0, 255);
-                    green = clamp(green + deltaGreen, 0, 255);
-                    blue = clamp(blue + deltaBlue, 0, 255);
-
-                    int newPixel = (alpha << 24) | (red << 16) | (green << 8) | blue;
-                    noisyImage.setRGB(x, y, newPixel);
-                }
-            }
-
-            // 将处理后的图像写入内存流
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            ImageIO.write(noisyImage, "png", outputStream);
-            return new ByteArrayInputStream(outputStream.toByteArray());
-
-        } catch (IOException e) {
-            throw new RuntimeException("Error processing image: " + e.getMessage(), e);
+    @SneakyThrows
+    public static InputStream protectPic(File file) {
+        try (InputStream input = addAdversarialNoise(FileUtil.getInputStream(file), 0.35f)) {
+            return addProportionalWatermark(input,
+                    "/Users/mac/Downloads/浏览器/Steins_Gate_Elite_Teaser.jpg", 0.25f);
+            // return compressImage(input2, 0.5f);
         }
+    }
+
+    @SneakyThrows
+    public static InputStream compressImage(InputStream inputStream, float compressionQuality) {
+        if (inputStream == null) {
+            throw new IllegalArgumentException("输入流不能为空");
+        }
+
+        // 从输入流中读取图像
+        BufferedImage image = ImageIO.read(inputStream);
+        if (image == null) {
+            throw new IOException("无法读取图像，请检查图像文件是否存在、格式是否支持或是否损坏");
+        }
+
+        // 获取 JPEG 图像写入器
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("png");
+        if (!writers.hasNext()) {
+            throw new IllegalStateException("No JPEG image writer found.");
+        }
+        ImageWriter writer = writers.next();
+
+        // 获取图像写入参数
+        ImageWriteParam param = writer.getDefaultWriteParam();
+        // 设置压缩模式为有损耗压缩
+        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        // 设置压缩质量
+        param.setCompressionQuality(compressionQuality);
+
+        // 创建字节数组输出流，用于存储压缩后的图像数据
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        try {
+            // 将图像写入字节数组输出流
+            writer.setOutput(ImageIO.createImageOutputStream(outputStream));
+            writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+        } finally {
+            writer.dispose();
+        }
+
+        // 将字节数组输出流中的数据转换为字节数组输入流
+        return new ByteArrayInputStream(outputStream.toByteArray());
+    }
+
+
+    @SneakyThrows
+    public static InputStream addAdversarialNoise(InputStream input, float intensity) {
+        BufferedImage originalImage = ImageIO.read(input);
+        int width = originalImage.getWidth();
+        int height = originalImage.getHeight();
+
+        BufferedImage noisyImage = new BufferedImage(width, height, originalImage.getType());
+        Random random = new Random();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int pixel = originalImage.getRGB(x, y);
+                int alpha = (pixel >> 24) & 0xff;
+                int red = (pixel >> 16) & 0xff;
+                int green = (pixel >> 8) & 0xff;
+                int blue = pixel & 0xff;
+
+                // 为每个颜色通道生成独立噪声
+                int deltaRed = (int) ((random.nextFloat() * 2 - 1) * intensity * 255);
+                int deltaGreen = (int) ((random.nextFloat() * 2 - 1) * intensity * 255);
+                int deltaBlue = (int) ((random.nextFloat() * 2 - 1) * intensity * 255);
+
+                red = clamp(red + deltaRed, 0, 255);
+                green = clamp(green + deltaGreen, 0, 255);
+                blue = clamp(blue + deltaBlue, 0, 255);
+
+                int newPixel = (alpha << 24) | (red << 16) | (green << 8) | blue;
+                noisyImage.setRGB(x, y, newPixel);
+            }
+        }
+
+        // 将处理后的图像写入内存流
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(noisyImage, "jpg", outputStream);
+        return new ByteArrayInputStream(outputStream.toByteArray());
     }
 
     private static int clamp(int value, int min, int max) {
@@ -79,16 +131,14 @@ public final class ImgUtil {
     /**
      * 添加比例缩放水印（默认宽度比例50%）
      *
-     * @param imagePath     原始图片路径
+     * @param input         原始图片路径
      * @param watermarkPath 水印图片路径
      * @param opacity       透明度 0.0-1.0
-     * @param scale         缩放比例 (0-1)
      */
-    public static InputStream addProportionalWatermark(String imagePath,
+    public static InputStream addProportionalWatermark(InputStream input,
                                                        String watermarkPath,
-                                                       float opacity,
-                                                       float scale) {
-        return addProportionalWatermark(imagePath, watermarkPath, opacity, scale, ScaleMode.WIDTH, null);
+                                                       float opacity) {
+        return addProportionalWatermark(input, watermarkPath, opacity, 1, ScaleMode.COVER, null);
     }
 
     /**
@@ -98,77 +148,69 @@ public final class ImgUtil {
      * @param mode   缩放模式
      * @param offset 位置偏移量（基于居中后的坐标）
      */
-    public static InputStream addProportionalWatermark(String imagePath,
-                                                       String watermarkPath,
-                                                       float opacity,
-                                                       float scale,
-                                                       ScaleMode mode,
-                                                       Point offset) {
-        try {
-            BufferedImage original = ImageIO.read(new File(imagePath));
-            BufferedImage watermark = ImageIO.read(new File(watermarkPath));
+    @SneakyThrows
+    public static InputStream addProportionalWatermark(InputStream input, String watermarkPath,
+                                                       float opacity, float scale, ScaleMode mode, Point offset) {
+        BufferedImage original = ImageIO.read(input);
+        BufferedImage watermark = ImageIO.read(new File(watermarkPath));
 
-            // 计算缩放后尺寸
-            Dimension scaledSize = calculateScaledSize(
-                    new Dimension(original.getWidth(), original.getHeight()),
-                    new Dimension(watermark.getWidth(), watermark.getHeight()),
-                    scale,
-                    mode
-            );
+        // 计算缩放后尺寸
+        Dimension scaledSize = calculateScaledSize(
+                new Dimension(original.getWidth(), original.getHeight()),
+                new Dimension(watermark.getWidth(), watermark.getHeight()),
+                scale,
+                mode
+        );
 
-            // 缩放水印
-            Image scaledWatermark = watermark.getScaledInstance(
-                    scaledSize.width,
-                    scaledSize.height,
-                    Image.SCALE_SMOOTH
-            );
+        // 缩放水印
+        Image scaledWatermark = watermark.getScaledInstance(
+                scaledSize.width,
+                scaledSize.height,
+                Image.SCALE_SMOOTH
+        );
 
-            // 转换为BufferedImage
-            BufferedImage scaledBuffered = new BufferedImage(
-                    scaledSize.width,
-                    scaledSize.height,
-                    BufferedImage.TYPE_INT_ARGB
-            );
-            scaledBuffered.getGraphics().drawImage(scaledWatermark, 0, 0, null);
+        // 转换为BufferedImage
+        BufferedImage scaledBuffered = new BufferedImage(
+                scaledSize.width,
+                scaledSize.height,
+                BufferedImage.TYPE_INT_ARGB
+        );
+        scaledBuffered.getGraphics().drawImage(scaledWatermark, 0, 0, null);
 
-            // 创建画布
-            BufferedImage combined = new BufferedImage(
-                    original.getWidth(),
-                    original.getHeight(),
-                    BufferedImage.TYPE_INT_ARGB
-            );
+        // 创建画布
+        BufferedImage combined = new BufferedImage(
+                original.getWidth(),
+                original.getHeight(),
+                BufferedImage.TYPE_INT_ARGB
+        );
 
-            Graphics2D g = combined.createGraphics();
-            g.drawImage(original, 0, 0, null);
-            g.setComposite(AlphaComposite.SrcOver.derive(opacity));
+        Graphics2D g = combined.createGraphics();
+        g.drawImage(original, 0, 0, null);
+        g.setComposite(AlphaComposite.SrcOver.derive(opacity));
 
-            // 计算居中坐标
-            int x = (original.getWidth() - scaledSize.width) / 2;
-            int y = (original.getHeight() - scaledSize.height) / 2;
+        // 计算居中坐标
+        int x = (original.getWidth() - scaledSize.width) / 2;
+        int y = (original.getHeight() - scaledSize.height) / 2;
 
-            // 应用偏移量
-            if (offset != null) {
-                x += offset.x;
-                y += offset.y;
-            }
-
-            // 边界保护
-            x = Math.max(0, Math.min(x, original.getWidth() - scaledSize.width));
-            y = Math.max(0, Math.min(y, original.getHeight() - scaledSize.height));
-
-            // 绘制水印
-            g.rotate(Math.toRadians(180), x + scaledSize.getWidth() / 2, y + scaledSize.getHeight() / 2);
-            g.drawImage(scaledBuffered, x, y, null);
-            g.dispose();
-
-            // 输出流
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(combined, "png", baos);
-            return new ByteArrayInputStream(baos.toByteArray());
-
-        } catch (Exception e) {
-            throw new RuntimeException("添加比例水印失败: " + e.getMessage());
+        // 应用偏移量
+        if (offset != null) {
+            x += offset.x;
+            y += offset.y;
         }
+
+        // 边界保护
+        x = Math.max(0, Math.min(x, original.getWidth() - scaledSize.width));
+        y = Math.max(0, Math.min(y, original.getHeight() - scaledSize.height));
+
+        // 绘制水印
+        g.rotate(Math.toRadians(180), x + scaledSize.getWidth() / 2, y + scaledSize.getHeight() / 2);
+        g.drawImage(scaledBuffered, x, y, null);
+        g.dispose();
+
+        // 输出流
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(combined, "png", baos);
+        return new ByteArrayInputStream(baos.toByteArray());
     }
 
     // 计算缩放尺寸的核心算法
@@ -210,18 +252,16 @@ public final class ImgUtil {
         }
     }
 
+    @SneakyThrows
     public static void main(String[] args) {
         //, "/Users/mac/Downloads/浏览器/output.jpg"
         // FileUtil.writeFromStream(addAdversarialNoise("/Users/mac/Downloads/浏览器/wdzsj.jpg", 0.6f),
         //         "/Users/mac/Downloads/浏览器/output1.png");
 
-        FileUtil.writeFromStream(
-                addAdversarialNoise("/Users/mac/Downloads/浏览器/wdzsj.jpg", 0.3f),
+        /*TimeInterval timer = DateUtil.timer();
+        FileUtil.writeFromStream(protectPic("/Users/mac/Downloads/浏览器/wdzsj.jpg"),
                 "/Users/mac/Downloads/浏览器/output.png");
-        FileUtil.writeFromStream(
-                addProportionalWatermark("/Users/mac/Downloads/浏览器/output.png",
-                        "/Users/mac/Downloads/浏览器/Steins_Gate_Elite_Teaser.jpg", 0.3f, 1, ScaleMode.COVER, null),
-                "/Users/mac/Downloads/浏览器/output1.png");
+        Console.log("2，耗时：{}ms", timer.intervalMs());*/
 
     }
 }

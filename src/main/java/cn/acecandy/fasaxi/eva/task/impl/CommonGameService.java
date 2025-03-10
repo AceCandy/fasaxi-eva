@@ -1,13 +1,14 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
-import cn.acecandy.fasaxi.eva.bot.game.Game;
+import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
-import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.ImgUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.http.HttpUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -51,20 +52,28 @@ public class CommonGameService {
             return;
         }
         // 游戏存在无法出题
-        Game game = GameListUtil.getGame(tgBot.getGroup());
+        /*Game game = GameListUtil.getGame(tgBot.getGroup());
         if (game != null) {
             return;
-        }
+        }*/
         // 非游戏时间
         if (GameUtil.isInNotCommonGameTime()) {
             return;
         }
         // 大于50min无人回答出题 否则静置
         if (System.currentTimeMillis() -
-                CommonGameUtil.endSpeakTime < 50 * 60 * 1000) {
-            return;
+                CommonGameUtil.endSpeakTime > RandomUtil.randomInt(50, 60) * 60 * 1000) {
+            ktccy();
+            CommonGameUtil.endSpeakTime = System.currentTimeMillis();
+        }
+        if (Command.SPEAK_TIME_CNT.get() <= -250) {
+            ktccy();
+            Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(40, 60));
         }
 
+    }
+
+    private void ktccy() {
         GameKtccy ktccy = gameKtccyDao.getRandom2();
         if (ktccy == null) {
             return;
@@ -74,7 +83,7 @@ public class CommonGameService {
                 .photo(new InputFile(new ByteArrayInputStream(
                         HttpUtil.downloadBytes(ktccy.getPicUrl())), "ktccy.jpg"))
                 .build();
-        tgBot.sendPhoto(sendPhoto);
+        tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
         CommonGameUtil.GAME_CACHE.put("KTCCY", ktccy.getAnswer());
         log.warn("[成语猜猜看] {}", ktccy.getAnswer());
         gameKtccyDao.upPlayTime(ktccy.getId());
@@ -96,10 +105,10 @@ public class CommonGameService {
         }
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(tgBot.getGroup()).caption(KTCFH_TIP)
-                .photo(new InputFile(path.toFile()))
+                .photo(new InputFile(ImgUtil.protectPic(path.toFile()), "ktcfh.jpg"))
                 .hasSpoiler(true)
                 .build();
-        tgBot.sendPhoto(sendPhoto);
+        tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
         String filePath = GameUtil.getFhName(path.toString());
         CommonGameUtil.GAME_CACHE.put("KTCFH", filePath);
         log.warn("[道观我最强] {}", filePath);
