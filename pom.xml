@@ -114,6 +114,18 @@
       <version>1.1.8</version>
     </dependency>
 
+    <!-- 图片使用opencv增加噪点 -->
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>javacpp-platform</artifactId>
+      <version>1.5.11</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>opencv-platform</artifactId>
+      <version>4.10.0-1.5.11</version>
+    </dependency>
+
     <!-- MySql数据库 -->
     <!--MySQL JDBC驱动-->
     <dependency>
