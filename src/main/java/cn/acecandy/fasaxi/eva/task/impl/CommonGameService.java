@@ -64,11 +64,11 @@ public class CommonGameService {
         }
         // 大于50min无人回答出题 否则静置
         if (System.currentTimeMillis() -
-                CommonGameUtil.endSpeakTime > RandomUtil.randomInt(50, 60) * 60 * 1000) {
+                CommonGameUtil.endSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
             ktccy();
             CommonGameUtil.endSpeakTime = System.currentTimeMillis();
         }
-        if (Command.SPEAK_TIME_CNT.get() <= -250) {
+        if (Command.SPEAK_TIME_CNT.get() <= -200) {
             ktccy();
             Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(40, 60));
         }

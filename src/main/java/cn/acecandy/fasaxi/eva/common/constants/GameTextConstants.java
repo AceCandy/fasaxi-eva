@@ -157,7 +157,7 @@ public interface GameTextConstants {
     String GAME_SETTLEMENT = "游戏正在结算中，无法退出";
     String SURVIVAL_PERSONNEL = "\n剩余人员({}/{}):\n{}";
     String RUN_AWAY_QUICKLY = "❗️{} 抢跑发言位，此次发言无效并扣除5封Dmail🫶\n";
-    String WARNING_EDIT = "🚨{} 修改了发言，请游戏玩家注意识别\n";
+    String WARNING_EDIT = "🚨{} 悄悄修改了发言，请游戏玩家注意防范！\n";
     String NOT_VOTED_TIP = "❗️{} 两轮连续跑路，扣除5封Dmail🫶\n";
     String SPEAK_REPEAT = "❓️{} 无发言或重复发言，此次发言无效并扣除2封Dmail🫶\n";
     String SPEAK_NOWAY = "❓️{} 违禁爆词，扣除5封Dmail🫶\n";
