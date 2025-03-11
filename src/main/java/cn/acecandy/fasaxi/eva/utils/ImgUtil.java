@@ -3,6 +3,7 @@ package cn.acecandy.fasaxi.eva.utils;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.lang.Console;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,7 @@ public final class ImgUtil {
     public static InputStream protectPic(File file) {
         try (InputStream input = addAdversarialNoise(FileUtil.getInputStream(file), 0.35f)) {
             return addProportionalWatermark(input,
-                    "/Users/mac/Downloads/浏览器/Steins_Gate_Elite_Teaser.jpg", 0.25f);
+                    "static/pic/protect.jpg", 0.25f);
             // return compressImage(input2, 0.5f);
         } catch (Exception e) {
             log.error("图片保护失败", e);
@@ -157,7 +158,7 @@ public final class ImgUtil {
     public static InputStream addProportionalWatermark(InputStream input, String watermarkPath,
                                                        float opacity, float scale, ScaleMode mode, Point offset) {
         BufferedImage original = ImageIO.read(input);
-        BufferedImage watermark = ImageIO.read(new File(watermarkPath));
+        BufferedImage watermark = ImageIO.read(ResourceUtil.getStream(watermarkPath));
 
         // 计算缩放后尺寸
         Dimension scaledSize = calculateScaledSize(
@@ -264,9 +265,15 @@ public final class ImgUtil {
         //         "/Users/mac/Downloads/浏览器/output1.png");
 
         TimeInterval timer = DateUtil.timer();
-        FileUtil.writeFromStream(protectPic(FileUtil.file("/Users/mac/Downloads/浏览器/wdzsj.jpg")),
-                "/Users/mac/Downloads/浏览器/output.png");
-        Console.log("2，耗时：{}ms", timer.intervalMs());
-
+        // FileUtil.writeFromStream(protectPic(FileUtil.file("/Users/mac/Downloads/浏览器/wdzsj.jpg")),
+        //         "/Users/mac/Downloads/浏览器/output.png");
+        InputStream input = addProportionalWatermark(FileUtil.getInputStream("/Users/mac/Downloads/浏览器/wdzsj.jpg"),
+                "static/pic/protect.jpg", 0.85f);
+        FileUtil.writeFromStream(input, "/Users/mac/Downloads/浏览器/output1.png");
+        Console.log("1，耗时：{}ms", timer.intervalMs());
+        cn.hutool.core.img.ImgUtil.pressImage(FileUtil.file("/Users/mac/Downloads/浏览器/wdzsj.jpg"),
+                FileUtil.file("/Users/mac/Downloads/浏览器/output2.png"),
+                cn.hutool.core.img.ImgUtil.read(FileUtil.file("/Users/mac/Downloads/浏览器/Steins_Gate_Elite_Teaser.jpg")), 0, 0, 0.85f);
+        Console.log("1，耗时：{}ms", timer.intervalMs());
     }
 }
