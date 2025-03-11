@@ -3,12 +3,15 @@ package cn.acecandy.fasaxi.eva.bot;
 import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.bot.game.GameEvent;
+import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
+import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
+import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
@@ -46,6 +49,8 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.List;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.COMMON_WIN;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.WARNING_EDIT;
+import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
 import static cn.hutool.core.text.StrPool.COMMA;
 
 /**
@@ -104,13 +109,18 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     @Override
     public void consume(Update update) {
         Message msg = update.getMessage();
+        Message editMsg = update.getEditedMessage();
+        CallbackQuery callback = update.getCallbackQuery();
+        Console.log("update:{}, msg:{}, editMsg:{}", update, msg, editMsg);
         if (msg != null) {
             if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
                 log.warn("过期指令:【{}】{}", msg.getFrom().getFirstName(), msg.getText());
                 return;
             }
             handleIncomingMessage(msg);
-        } else if (update.getCallbackQuery() != null) {
+        } else if (editMsg != null) {
+            // handleEditMessage(msg);
+        } else if (callback != null) {
             handleCallbackQuery(update);
         }
     }
@@ -153,6 +163,32 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
                 }
             }
         }
+    }
+
+    /**
+     * 处理修改消息
+     *
+     * @param message 消息
+     */
+    private void handleEditMessage(Message message) {
+        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
+        if (!message.hasText()) {
+            return;
+        }
+        String msgData = message.getText();
+        if (!isGroupMessage) {
+            return;
+        }
+        Game game = GameListUtil.getGame(message.getChatId());
+        if (game == null || !讨论时间.equals(game.getStatus())) {
+            return;
+        }
+        GameUser member = game.getMember(message.getFrom().getId());
+        if (null == member) {
+            return;
+        }
+        sendMessage(message.getMessageId(), message.getChatId(),
+                StrUtil.format(WARNING_EDIT, TgUtil.tgNameOnUrl(member)));
     }
 
     /**
