@@ -1229,6 +1229,7 @@ public class Game {
                 || StrUtil.containsIgnoreCase(wordPinyinFirst, text)
                 || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)
                 || PinYinUtil.findAllChar(text, member.word)
+                || PinYinUtil.findTwoChar(text, member.word)
             // || StrUtil.equalsIgnoreCase(pinyinFirst, wordPinyinFirst)
         ) {
             // 违禁爆词 本词或者拼音

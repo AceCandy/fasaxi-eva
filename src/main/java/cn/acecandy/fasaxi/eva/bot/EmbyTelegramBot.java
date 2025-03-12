@@ -11,7 +11,6 @@ import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
@@ -111,7 +110,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         Message msg = update.getMessage();
         Message editMsg = update.getEditedMessage();
         CallbackQuery callback = update.getCallbackQuery();
-        Console.log("update:{}, msg:{}, editMsg:{}", update, msg, editMsg);
+        // Console.log("update:{}, msg:{}, editMsg:{}", update, msg, editMsg);
         if (msg != null) {
             if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
                 log.warn("过期指令:【{}】{}", msg.getFrom().getFirstName(), msg.getText());

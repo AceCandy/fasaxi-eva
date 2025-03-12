@@ -94,6 +94,26 @@ public final class PinYinUtil extends PinyinUtil {
     }
 
     /**
+     * 查找字符在所有文字中存在大于2
+     *
+     * @param text 文本
+     * @param have 有
+     * @return boolean
+     */
+    public static boolean findTwoChar(String text, String have) {
+        if (isBlank(text)) {
+            return false;
+        }
+        int count = 0;
+        for (char c : have.toCharArray()) {
+            if (StrUtil.contains(text, c)) {
+                count++;
+            }
+        }
+        return count >= 2;
+    }
+
+    /**
      * 查找字符在所有文字中存在
      *
      * @param text 文本
@@ -113,7 +133,10 @@ public final class PinYinUtil extends PinyinUtil {
     }
 
     public static void main(String[] args) {
-        Console.log(findAllChar("奇奇怪怪的曲","曲奇1"));
+        Console.log(findAllChar("奇奇怪怪的曲", "曲奇1"));
         Console.log(PinYinUtil.findAllChar("白色板子", "白板"));
+        Console.log(PinYinUtil.findTwoChar("白色板子", "白板"));
+        Console.log(PinYinUtil.findTwoChar("白色板子", "白"));
+        Console.log(PinYinUtil.findTwoChar("奇奇怪怪的曲", "曲奇1"));
     }
 }
