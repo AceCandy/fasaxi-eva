@@ -193,7 +193,7 @@ public interface GameTextConstants {
     String SEASON12 = "交叉坐标的星辰";
 
     // 看图猜成语------------------
-    String COMMON_WIN = "✅ 回答正确！\n收获宝箱📦 {}封Dmail~\n";
+    String COMMON_WIN = "✅ {}回答正确！\n收获宝箱📦 {}封Dmail~\n";
     String KTCCY_TIP = "<b>🌸[成语猜猜看(1h)]🌸</b>\n\n回答时请加上<b>‘。’中文句号前缀</b>，才算一次有效回答。";
     String KTCFH_TIP = "<b>💄[道观我最强(1h)]💄</b>\n\n回答时请加上<b>‘。’中文句号前缀</b>，才算一次有效回答。";
 }

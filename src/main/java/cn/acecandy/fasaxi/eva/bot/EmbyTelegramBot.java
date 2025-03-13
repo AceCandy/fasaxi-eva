@@ -361,7 +361,8 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         if (lv == null) {
             return;
         }
-        sendMessage(message.getMessageId(), groupId, StrUtil.format(COMMON_WIN, lv));
+        sendMessage(message.getMessageId(), groupId,
+                StrUtil.format(COMMON_WIN, TgUtil.tgNameOnUrl(message.getFrom()), lv));
         embyDao.upIv(message.getFrom().getId(), lv);
     }
 }
