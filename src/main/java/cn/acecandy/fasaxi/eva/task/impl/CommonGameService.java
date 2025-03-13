@@ -80,15 +80,15 @@ public class CommonGameService {
         if (ktccy == null) {
             return;
         }
+        CommonGameUtil.GAME_CACHE.put("KTCCY", ktccy.getAnswer());
+        log.warn("[成语猜猜看] {}", ktccy.getAnswer());
+        gameKtccyDao.upPlayTime(ktccy.getId());
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(tgBot.getGroup()).caption(KTCCY_TIP)
                 .photo(new InputFile(new ByteArrayInputStream(
                         HttpUtil.downloadBytes(ktccy.getPicUrl())), "ktccy.png"))
                 .build();
         tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
-        CommonGameUtil.GAME_CACHE.put("KTCCY", ktccy.getAnswer());
-        log.warn("[成语猜猜看] {}", ktccy.getAnswer());
-        gameKtccyDao.upPlayTime(ktccy.getId());
     }
 
     /**
@@ -110,13 +110,13 @@ public class CommonGameService {
             if (null == input) {
                 return;
             }
+            String filePath = GameUtil.getFhName(path.toString());
+            CommonGameUtil.GAME_CACHE.put("KTCFH", filePath);
+            log.warn("[道观我最强] {}", filePath);
             SendPhoto sendPhoto = SendPhoto.builder()
                     .chatId(tgBot.getGroup()).caption(KTCFH_TIP)
                     .photo(new InputFile(input, "ktcfh.jpg")).hasSpoiler(true).build();
             tgBot.sendPhoto(sendPhoto, 55 * 60 * 1000);
-            String filePath = GameUtil.getFhName(path.toString());
-            CommonGameUtil.GAME_CACHE.put("KTCFH", filePath);
-            log.warn("[道观我最强] {}", filePath);
         }
     }
 }
