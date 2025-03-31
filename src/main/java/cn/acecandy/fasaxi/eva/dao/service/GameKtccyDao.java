@@ -4,6 +4,7 @@ import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
 import cn.acecandy.fasaxi.eva.dao.mapper.GameKtccyMapper;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -52,5 +53,20 @@ public class GameKtccyDao {
         updateWrapper.eq(GameKtccy::getId, id);
         updateWrapper.setSql("play_time = play_time + 1");
         gameKtccyMapper.update(null, updateWrapper);
+    }
+
+    /**
+     * 增加使用次数
+     *
+     * @param fileUrl 文件路径
+     */
+    public void updateFileUrl(Long id, String fileUrl) {
+        if (null == id||StrUtil.isBlank(fileUrl)) {
+            return;
+        }
+        GameKtccy gameKtccy = new GameKtccy();
+        gameKtccy.setFileUrl(fileUrl);
+        gameKtccy.setId(id);
+        gameKtccyMapper.updateById(gameKtccy);
     }
 }

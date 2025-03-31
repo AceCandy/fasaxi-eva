@@ -20,6 +20,9 @@ public class GameKtccy {
     @Schema(name = "图片链接")
     private String picUrl;
 
+    @Schema(name = "文件绝对路径")
+    private String fileUrl;
+
     @Schema(name = "答案")
     private String answer;
 

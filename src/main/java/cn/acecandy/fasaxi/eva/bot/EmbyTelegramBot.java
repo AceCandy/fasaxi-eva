@@ -4,6 +4,7 @@ import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.bot.game.GameEvent;
 import cn.acecandy.fasaxi.eva.bot.game.GameUser;
+import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
@@ -145,15 +146,20 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
             if (isGroupMessage) {
                 CommonGameUtil.endSpeakTime = System.currentTimeMillis();
                 // 看图猜成语
-                String commonGameType = CommonGameUtil.commonGameSpeak(message);
-                if (StrUtil.isNotBlank(commonGameType)) {
-                    Integer lv = null;
-                    if ("KTCCY".equals(commonGameType)) {
-                        lv = RandomUtil.randomInt(4, 8);
-                    } else if ("KTCFH".equals(commonGameType)) {
-                        lv = RandomUtil.randomInt(10, 15);
+                SmallGameDTO smallGame = CommonGameUtil.commonGameSpeak(message);
+                if (null != smallGame) {
+                    int lv = 0;
+                    switch (smallGame.getType()) {
+                        case 看图猜成语:
+                            lv = RandomUtil.randomInt(4, 8);
+                            break;
+                        case 看图猜番号:
+                            lv = RandomUtil.randomInt(8, 12);
+                            break;
+                        default:
                     }
                     commonWin(getGroup(), message, lv);
+                    deleteMessage(getGroup(), smallGame.getMsgId());
                 } else {
                     TgUtil.gameSpeak(message);
                 }
@@ -333,6 +339,11 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         executeTg(() -> tgClient.executeAsync(msg));
     }
 
+    public void deleteMessage(Long chatId, Integer msgId) {
+        DeleteMessage msg = new DeleteMessage(chatId + "", msgId);
+        executeTg(() -> tgClient.executeAsync(msg));
+    }
+
     public void sendCallback(AnswerCallbackQuery callback) {
         executeTg(() -> tgClient.executeAsync(callback));
     }
@@ -358,7 +369,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
      * @param lv      胜利奖励
      */
     private void commonWin(Long groupId, Message message, Integer lv) {
-        if (lv == null) {
+        if (lv == null || lv < 1) {
             return;
         }
         sendMessage(message.getMessageId(), groupId,

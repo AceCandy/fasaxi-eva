@@ -120,9 +120,13 @@ public class Command {
             tgBot.sendMessage(chatId, "您还未参与过游戏或者未在助手处登记哦~", 10 * 1000);
             return;
         }
-
+        Integer costIv = 2;
+        if (embyUser.getIv() < costIv) {
+            tgBot.sendMessage(chatId, "您的积分不足，无法查看个人信息", 5 * 1000);
+            return;
+        }
         if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
-            embyDao.upIv(userId, -2);
+            embyDao.upIv(userId, -costIv);
         }
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(chatId.toString()).caption(GameUtil.getRecord(user, embyUser))
@@ -140,22 +144,27 @@ public class Command {
      * @param userId 用户id
      * @return boolean
      */
-    private boolean isEmbyUser(Long chatId, Long userId) {
+    private Emby isEmbyUser(Long chatId, Long userId) {
         Emby embyUser = embyDao.findByTgId(userId);
         if (embyUser == null) {
             tgBot.sendMessage(chatId, "您还未在助手处登记哦~", 5 * 1000);
-            return false;
         }
-        return true;
+        return embyUser;
     }
 
     @SneakyThrows
     private void handleRankCommand(Long chatId, Long userId) {
-        if (!isEmbyUser(chatId, userId)) {
+        Emby emby = isEmbyUser(chatId, userId);
+        if (null == emby) {
+            return;
+        }
+        Integer costIv = 15;
+        if (emby.getIv() < costIv) {
+            tgBot.sendMessage(chatId, "您的积分不足，无法查看榜单", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
-            embyDao.upIv(userId, -15);
+            embyDao.upIv(userId, -costIv);
         }
         tgBot.sendMessage(chatId, TIP_IN_RANK, 2 * 1000);
 
@@ -175,11 +184,17 @@ public class Command {
 
     @SneakyThrows
     private void handleTopCommand(Long chatId, Long userId, String text) {
-        if (!isEmbyUser(chatId, userId)) {
+        Emby emby = isEmbyUser(chatId, userId);
+        if (null == emby) {
+            return;
+        }
+        Integer costIv = 10;
+        if (emby.getIv() < costIv) {
+            tgBot.sendMessage(chatId, "您的积分不足，无法查看榜单", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
-            embyDao.upIv(userId, -10);
+            embyDao.upIv(userId, -costIv);
         }
         tgBot.sendMessage(chatId, TIP_IN_TOP, 2 * 1000);
 

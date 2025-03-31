@@ -2,28 +2,35 @@ package cn.acecandy.fasaxi.eva.task.impl;
 
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.bot.game.Command;
+import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.ImgUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCCY_TIP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCFH_TIP;
+import static cn.acecandy.fasaxi.eva.common.enums.SmallGameType.看图猜成语;
+import static cn.acecandy.fasaxi.eva.common.enums.SmallGameType.看图猜番号;
 
 /**
  * 通用定时任务 实现
@@ -46,8 +53,8 @@ public class CommonGameService {
 
     /**
      * 看图猜成语
-     * exec ktccy
      */
+    @Transactional(rollbackFor = Exception.class)
     public void execKtccy() {
         // 未猜完无法出题
         if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
@@ -80,20 +87,29 @@ public class CommonGameService {
         if (ktccy == null) {
             return;
         }
-        CommonGameUtil.GAME_CACHE.put("KTCCY", ktccy.getAnswer());
-        log.warn("[成语猜猜看] {}", ktccy.getAnswer());
+
         gameKtccyDao.upPlayTime(ktccy.getId());
+        File picFile = null;
+        if (StrUtil.isBlank(ktccy.getFileUrl())) {
+            picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
+                    FileUtil.mkdir("/vol2/1000/soft/smallGame/ktccy/" + ktccy.getSource()));
+            gameKtccyDao.updateFileUrl(ktccy.getId(), picFile.getAbsolutePath());
+        } else {
+            picFile = FileUtil.file(ktccy.getFileUrl());
+        }
+
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(tgBot.getGroup()).caption(KTCCY_TIP)
-                .photo(new InputFile(new ByteArrayInputStream(
-                        HttpUtil.downloadBytes(ktccy.getPicUrl())), "ktccy.png"))
+                .photo(new InputFile(picFile))
                 .build();
-        tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
+        Message msg = tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
+        CommonGameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
+                .type(看图猜成语).answer(ktccy.getAnswer()).msgId(msg.getMessageId()).build());
+        log.warn("[成语猜猜看] {}", ktccy.getAnswer());
     }
 
     /**
-     * 看图猜成语
-     * exec ktccy
+     * 看图猜番号
      */
     @SneakyThrows
     public void execKtcfh() {
@@ -110,13 +126,20 @@ public class CommonGameService {
             if (null == input) {
                 return;
             }
-            String filePath = GameUtil.getFhName(path.toString());
-            CommonGameUtil.GAME_CACHE.put("KTCFH", filePath);
-            log.warn("[道观我最强] {}", filePath);
             SendPhoto sendPhoto = SendPhoto.builder()
                     .chatId(tgBot.getGroup()).caption(KTCFH_TIP)
                     .photo(new InputFile(input, "ktcfh.jpg")).hasSpoiler(true).build();
-            tgBot.sendPhoto(sendPhoto, 55 * 60 * 1000);
+            Message msg = tgBot.sendPhoto(sendPhoto, 55 * 60 * 1000);
+            String fhName = GameUtil.getFhName(path.toString());
+            CommonGameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
+                    .type(看图猜番号).answer(fhName).msgId(msg.getMessageId()).build());
+            log.warn("[道观我最强] {}", fhName);
         }
+    }
+
+    public static void main(String[] args) {
+        FileUtil.mkdir("/tmp/ktccy/" + 2);
+        HttpUtil.downloadFileFromUrl("http://hm.suol.cc/API/ktccy/img/425.jpg",
+                FileUtil.mkdir("/tmp/ktccy/" + 3));
     }
 }

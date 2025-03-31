@@ -1,8 +1,11 @@
 package cn.acecandy.fasaxi.eva.utils;
 
-import cn.hutool.cache.impl.TimedCache;
+import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
 import cn.hutool.core.util.StrUtil;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * 通用游戏 工具类
@@ -22,27 +25,27 @@ public final class CommonGameUtil {
     /**
      * 看图猜成语 答案
      */
-    public static TimedCache<String, String> GAME_CACHE
-            = CacheUtil.newTimedCache(60 * 60 * 1000);
+    public static Queue<SmallGameDTO> GAME_CACHE = new ConcurrentLinkedQueue<>();
 
     /**
      * 通用游戏 发言
      *
      * @param message 消息
      */
-    public static String commonGameSpeak(Message message) {
+    public static SmallGameDTO commonGameSpeak(Message message) {
         String text = message.getText();
         if (StrUtil.isBlank(text) || !StrUtil.startWith(text, "。")) {
-            return "";
+            return null;
         }
         text = StrUtil.removeAllPrefix(text, "。");
-        if (StrUtil.equalsIgnoreCase(text, GAME_CACHE.get("KTCCY"))) {
-            GAME_CACHE.remove("KTCCY");
-            return "KTCCY";
-        } else if (StrUtil.equalsIgnoreCase(text, GAME_CACHE.get("KTCFH"))) {
-            GAME_CACHE.remove("KTCFH");
-            return "KTCFH";
+        for (SmallGameDTO smallGame : GAME_CACHE) {
+            if (StrUtil.equalsIgnoreCase(text, smallGame.getAnswer())) {
+                // return GAME_CACHE.poll();
+                if (GAME_CACHE.remove(smallGame)) {
+                    return smallGame;
+                }
+            }
         }
-        return "";
+        return null;
     }
 }
