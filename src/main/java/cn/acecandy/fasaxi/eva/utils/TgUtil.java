@@ -242,7 +242,7 @@ public final class TgUtil {
      * @param def 初始数量
      * @return {@link InlineKeyboardMarkup }
      */
-    public static InlineKeyboardMarkup getSbBtn(Integer def, Long userId) {
+    public static InlineKeyboardMarkup getSbBtn(Integer def) {
         if (null != def) {
             SB_BOX_CNT.set(def);
         } else {
@@ -250,7 +250,7 @@ public final class TgUtil {
         }
         InlineKeyboardButton viewWord = new InlineKeyboardButton(StrUtil.format("狠狠点击我 -> {}", def));
         viewWord.setCallbackData(JSONObject.of("action",
-                StrUtil.format("{}:{}", GameEventUtil.PUBLIC_ACTION_SB, userId)).toString());
+                StrUtil.format(GameEventUtil.PUBLIC_ACTION_SB)).toString());
         List<InlineKeyboardRow> rows = CollUtil.newArrayList();
         rows.add(new InlineKeyboardRow(viewWord));
         return new InlineKeyboardMarkup(rows);

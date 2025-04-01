@@ -324,7 +324,7 @@ public class Command {
                 .chatId(chatId).caption(SB_0401_TIP)
                 .animation(new InputFile(
                         ResourceUtil.getStream("static/pic/礼盒.gif"), "礼盒.gif"))
-                .replyMarkup(TgUtil.getSbBtn(Integer.valueOf(text), userId))
+                .replyMarkup(TgUtil.getSbBtn(Integer.valueOf(text)))
                 .build();
         sbChatId = chatId;
         sbMsg = tgBot.sendAnimation(sendAnimation);
@@ -338,7 +338,8 @@ public class Command {
      * @param userId 用户id
      */
     @Transactional(rollbackFor = Exception.class)
-    public void handleEditSb(AnswerCallbackQuery callback, Long userId) {
+    public void handleEditSb(AnswerCallbackQuery callback, User user) {
+        Long userId = user.getId();
         if (sbMsg == null) {
             callback.setText("❌ 活动已结束");
             return;
@@ -365,7 +366,7 @@ public class Command {
             }
             embyDao.upIv(userId, -costIv);
         }
-        tgBot.editMessage(sbMsg, sbMsg.getCaption(), TgUtil.getSbBtn(null, userId));
+        tgBot.editMessage(sbMsg, sbMsg.getCaption(), TgUtil.getSbBtn(null));
         String gift = SB_BOX_GIFT.remove(ThreadLocalRandom.current().nextInt(SB_BOX_GIFT.size()));
         String giftMsg = switch (gift) {
             case "快活的空气" -> "💰Dmail +0";
@@ -390,6 +391,7 @@ public class Command {
 
         SendMessage sendMessage = new SendMessage(userId.toString(), StrUtil.format(SB_0401_GIFT, gift, giftMsg));
         tgBot.sendMessage(sendMessage);
+        log.info("{} 在礼盒活动中获得了 {}，领取了 {}", TgUtil.tgNameOnUrl(user), gift, giftMsg);
 
         callback.setText("✅ 花费50Dmail成功！");
         SB_USER_LIST.put(userId, "");

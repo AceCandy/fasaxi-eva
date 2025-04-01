@@ -147,7 +147,7 @@ public class GameEvent {
             command.handleEditRank(Integer.valueOf(CollUtil.getLast(actionList)));
         } else if (action.equals(PUBLIC_ACTION_SB)) {
             AnswerCallbackQuery callback = new AnswerCallbackQuery(callbackQuery.getId());
-            command.handleEditSb(callback, Long.valueOf(CollUtil.getLast(actionList)));
+            command.handleEditSb(callback, callbackQuery.getFrom());
             telegramBot.sendCallback(callback);
         }
     }
