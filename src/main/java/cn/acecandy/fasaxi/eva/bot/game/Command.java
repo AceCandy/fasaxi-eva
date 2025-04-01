@@ -15,6 +15,7 @@ import cn.hutool.cache.CacheUtil;
 import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -24,6 +25,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -31,10 +35,14 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
+import static cn.acecandy.fasaxi.eva.utils.TgUtil.SB_BOX_GIFT;
 import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
 
 /**
@@ -58,8 +66,12 @@ public class Command {
             new AtomicInteger(RandomUtil.randomInt(1, 20));
 
     public volatile Message rankMsg;
+    public volatile Message sbMsg;
+    public volatile Long sbChatId;
     public volatile TimedCache<String, List<WodiUser>> rankUserListMap
             = CacheUtil.newTimedCache(600 * 1000);
+
+    public final static Map<Long, String> SB_USER_LIST = MapUtil.newConcurrentHashMap();
 
     private final static String NEW_GAME = "/wd";
     private final static String RECORD = "/wd_info";
@@ -67,6 +79,8 @@ public class Command {
     private final static String TOP = "/wd_top";
     private final static String EXIT = "/wd_exit";
     private final static String HELP = "/wd_help";
+
+    private final static String 惊喜盒子 = "/wd_sb";
 
     @Resource
     private EmbyDao embyDao;
@@ -102,6 +116,9 @@ public class Command {
             case EXIT:
                 handleExitCommand(message, chatId, userId);
                 break;
+            case 惊喜盒子:
+                handleSbCommand(chatId, userId, StrUtil.trim(StrUtil.removePrefix(message.getText(), 惊喜盒子)));
+                break;
             default:
                 break;
         }
@@ -122,7 +139,7 @@ public class Command {
         }
         Integer costIv = 2;
         if (embyUser.getIv() < costIv) {
-            tgBot.sendMessage(chatId, "您的积分不足，无法查看个人信息", 5 * 1000);
+            tgBot.sendMessage(chatId, "您的Dmail不足，无法查看个人信息", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
@@ -160,7 +177,7 @@ public class Command {
         }
         Integer costIv = 15;
         if (emby.getIv() < costIv) {
-            tgBot.sendMessage(chatId, "您的积分不足，无法查看榜单", 5 * 1000);
+            tgBot.sendMessage(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
@@ -190,7 +207,7 @@ public class Command {
         }
         Integer costIv = 10;
         if (emby.getIv() < costIv) {
-            tgBot.sendMessage(chatId, "您的积分不足，无法查看榜单", 5 * 1000);
+            tgBot.sendMessage(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
@@ -288,6 +305,72 @@ public class Command {
             return;
         }
         exitGame(message, chatId, userId);
+    }
+
+    /**
+     * 处理 惊喜盒子
+     *
+     * @param chatId 聊天id
+     * @param userId 用户id
+     */
+    private void handleSbCommand(Long chatId, Long userId, String text) {
+        if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
+            tgBot.sendMessage(chatId, "您无法发起活动", 5 * 1000);
+            return;
+        }
+        SendAnimation sendAnimation = SendAnimation.builder()
+                .chatId(chatId).caption(SB_0401_TIP)
+                .animation(new InputFile(
+                        ResourceUtil.getStream("static/pic/礼盒.gif"), "礼盒.gif"))
+                .replyMarkup(TgUtil.getSbBtn(Integer.valueOf(text), userId))
+                .build();
+        sbChatId = chatId;
+        sbMsg = tgBot.sendAnimation(sendAnimation);
+        Collections.shuffle(SB_BOX_GIFT);
+    }
+
+
+    /**
+     * 用户领取礼盒
+     *
+     * @param userId 用户id
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void handleEditSb(AnswerCallbackQuery callback, Long userId) {
+        if (sbMsg == null) {
+            callback.setText("❌ 活动已结束");
+            return;
+        }
+        int cnt = TgUtil.SB_BOX_CNT.get();
+        if (cnt <= 0) {
+            tgBot.editMessage(sbMsg, "🎁已全部领完了哦～，再次祝大家节日快乐♪٩(´ω`)و♪，明年见！");
+            return;
+        }
+        Emby emby = isEmbyUser(sbChatId, userId);
+        if (null == emby) {
+            callback.setText("❌ 未在助手处登记");
+            return;
+        }
+        Integer costIv = 50;
+        if (emby.getIv() < costIv) {
+            callback.setText("❌ 您的Dmail不足，无法领取礼盒");
+            return;
+        }
+        if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
+            if (SB_USER_LIST.containsKey(userId)) {
+                callback.setText("❌ 只有一次机会哦");
+                return;
+            }
+            embyDao.upIv(userId, -costIv);
+        }
+        tgBot.editMessage(sbMsg, sbMsg.getCaption(), TgUtil.getSbBtn(null, userId));
+        SendMessage sendMessage = new SendMessage(userId.toString(), StrUtil.format(SB_0401_GIFT,
+                SB_BOX_GIFT.remove(ThreadLocalRandom.current().nextInt(SB_BOX_GIFT.size()))));
+        tgBot.sendMessage(sendMessage);
+
+        callback.setText("✅ 花费50Dmail成功！");
+        SB_USER_LIST.put(userId, "");
+        Collections.shuffle(SB_BOX_GIFT);
     }
 
     /**

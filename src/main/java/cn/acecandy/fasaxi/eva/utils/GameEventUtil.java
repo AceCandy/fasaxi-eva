@@ -34,6 +34,7 @@ public final class GameEventUtil {
     public final static String ACTION_VIEW_WORD = "viewWord";
 
     public final static String PUBLIC_ACTION_RANKS = "public|wodi_ranks";
+    public final static String PUBLIC_ACTION_SB = "public|surprise_box";
 
     public final static String PUBLIC_ACTION = "public|";
 

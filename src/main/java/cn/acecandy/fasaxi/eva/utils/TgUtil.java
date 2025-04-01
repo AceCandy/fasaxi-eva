@@ -5,6 +5,7 @@ import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import org.telegram.telegrambots.meta.api.objects.User;
@@ -14,7 +15,9 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.EXIT;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.JOIN_GAME;
@@ -33,6 +36,26 @@ import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
 public final class TgUtil {
     private TgUtil() {
     }
+
+    public final static AtomicInteger SB_BOX_CNT = new AtomicInteger(100);
+    public final static List<String> SB_BOX_GIFT = CollUtil.newCopyOnWriteArrayList(
+            CollUtil.newArrayList(
+                    "快活的空气", "快活的空气", "快活的空气","快活的空气", "快活的空气","快活的空气",
+                    "司墨的爱", "司墨的爱", "司墨的爱","倒影的凝视",  "一半的码子", "一半的码子", "爱的续期",
+                    "四倍的勇气","四倍的勇气", "三倍的祝福", "三倍的祝福", "三倍的祝福", "三倍的祝福", "三倍的祝福",
+                    "双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠",
+                    "双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠",
+                    "双倍的回赠","双倍的回赠","双倍的回赠","双倍的回赠","等价交换的宿命","等价交换的宿命","等价交换的宿命",
+                    "等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命",
+                    "等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命",
+                    "等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命",
+                    "等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命",
+                    "等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命",
+                    "等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命","等价交换的宿命",
+                    "等价交换的宿命","真心的一半","真心的一半","真心的一半","真心的一半","真心的一半","真心的一半",
+                    "真心的一半","真心的一半","真心的一半","真心的一半","真心的一半","真心的一半","真心的一半","真心的一半",
+                    "真心的一半","真心的一半","真心的一半","真心的一半","真心的一半","真心的一半"
+            ));
 
     /**
      * tg名称
@@ -211,6 +234,26 @@ public final class TgUtil {
     }
 
     /**
+     * 生成惊喜盒子
+     *
+     * @param def 初始数量
+     * @return {@link InlineKeyboardMarkup }
+     */
+    public static InlineKeyboardMarkup getSbBtn(Integer def, Long userId) {
+        if (null != def) {
+            SB_BOX_CNT.set(def);
+        } else {
+            def = SB_BOX_CNT.decrementAndGet();
+        }
+        InlineKeyboardButton viewWord = new InlineKeyboardButton(StrUtil.format("狠狠点击我 -> {}", def));
+        viewWord.setCallbackData(JSONObject.of("action",
+                StrUtil.format("{}:{}", GameEventUtil.PUBLIC_ACTION_SB, userId)).toString());
+        List<InlineKeyboardRow> rows = CollUtil.newArrayList();
+        rows.add(new InlineKeyboardRow(viewWord));
+        return new InlineKeyboardMarkup(rows);
+    }
+
+    /**
      * 创建翻页按钮
      *
      * @return {@link InlineKeyboardMarkup }
@@ -263,5 +306,13 @@ public final class TgUtil {
                         StrUtil.SPACE
                 )
         ).toLowerCase();
+    }
+
+    public static void main(String[] args) {
+        Console.log(SB_BOX_GIFT.size());
+        Console.log(SB_BOX_GIFT);
+        Collections.shuffle(SB_BOX_GIFT);
+        Console.log(SB_BOX_GIFT.size());
+        Console.log(SB_BOX_GIFT);
     }
 }

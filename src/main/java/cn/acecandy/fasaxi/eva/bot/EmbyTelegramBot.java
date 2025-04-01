@@ -230,6 +230,15 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         executeTg(() -> tgClient.executeAsync(editMessageText));
     }
 
+    public void editMessage(MaybeInaccessibleMessage message, String newCaption) {
+        EditMessageCaption editMessageText = new EditMessageCaption();
+        editMessageText.setCaption(newCaption);
+        editMessageText.setChatId(message.getChatId().toString());
+        editMessageText.setMessageId(message.getMessageId());
+        editMessageText.setParseMode(ParseMode.HTML);
+        executeTg(() -> tgClient.executeAsync(editMessageText));
+    }
+
     public Message sendMessage(SendMessage message) {
         message.setParseMode(ParseMode.HTML);
         return executeTg(() -> tgClient.execute(message));

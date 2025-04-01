@@ -1134,8 +1134,8 @@ public class Game {
             }
 
         } catch (Exception e) {
-            log.error("结算失败，本次成绩不积分：", e);
-            SendMessage mailMsg = new SendMessage(chatId.toString(), "结算失败，本次成绩不积分");
+            log.error("结算失败，本次成绩不计分：", e);
+            SendMessage mailMsg = new SendMessage(chatId.toString(), "结算失败，本次成绩不记分");
             tgBot.sendMessage(mailMsg);
         } finally {
             if (null != firstMsg) {

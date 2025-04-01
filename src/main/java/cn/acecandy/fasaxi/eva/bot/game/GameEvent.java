@@ -48,7 +48,7 @@ public class GameEvent {
         String action = callbackJn.getStr("action");
 
         if (isPublicAction(action)) {
-            handlePublicAction(action);
+            handlePublicAction(callbackQuery, action);
         } else {
             if (!isGroupMessage) {
                 return;
@@ -136,7 +136,7 @@ public class GameEvent {
      *
      * @param action 行动
      */
-    private void handlePublicAction(String action) {
+    private void handlePublicAction(CallbackQuery callbackQuery, String action) {
         List<String> actionList = StrUtil.splitTrim(action, ":");
         action = CollUtil.getFirst(actionList);
 
@@ -145,6 +145,10 @@ public class GameEvent {
                 return;
             }
             command.handleEditRank(Integer.valueOf(CollUtil.getLast(actionList)));
+        } else if (action.equals(PUBLIC_ACTION_SB)) {
+            AnswerCallbackQuery callback = new AnswerCallbackQuery(callbackQuery.getId());
+            command.handleEditSb(callback, Long.valueOf(CollUtil.getLast(actionList)));
+            telegramBot.sendCallback(callback);
         }
     }
 

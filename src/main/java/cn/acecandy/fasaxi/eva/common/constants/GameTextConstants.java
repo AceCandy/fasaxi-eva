@@ -196,4 +196,13 @@ public interface GameTextConstants {
     String COMMON_WIN = "✅ {}回答正确！\n收获宝箱📦 {}封Dmail~\n";
     String KTCCY_TIP = "<b>🌸[成语猜猜看(1h)]🌸</b>\n\n回答时请加上<b>‘。’中文句号前缀</b>，才算一次有效回答。";
     String KTCFH_TIP = "<b>💄[道观我最强(1h)]💄</b>\n\n回答时请加上<b>‘。’中文句号前缀</b>，才算一次有效回答。";
+    // 惊喜礼盒
+    String SB_0401_TIP = "<b>🎉[愚人节专属礼盒(1h)]🎉</b>\n\n" +
+            "祝大家节日快乐！当前点击花费50Dmail即可花费50Dmail，快来啊大爷们～";
+    String SB_0401_GIFT = """
+                          恭喜你在<b>🎉[愚人节专属礼盒]🎉</b>中获得奖品:
+                            <b>{}</b>
+                          
+                          <i>ps: 建议可以骗下其他人，让未参加的人也多多加入进来吧，嘿嘿</i>
+                          """;
 }
