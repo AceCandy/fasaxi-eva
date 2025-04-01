@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
 import static cn.acecandy.fasaxi.eva.utils.TgUtil.SB_BOX_GIFT;
+import static cn.acecandy.fasaxi.eva.utils.TgUtil.SB_BOX_REGIST_NO;
 import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
 
 /**
@@ -364,8 +365,29 @@ public class Command {
             embyDao.upIv(userId, -costIv);
         }
         tgBot.editMessage(sbMsg, sbMsg.getCaption(), TgUtil.getSbBtn(null, userId));
-        SendMessage sendMessage = new SendMessage(userId.toString(), StrUtil.format(SB_0401_GIFT,
-                SB_BOX_GIFT.remove(ThreadLocalRandom.current().nextInt(SB_BOX_GIFT.size()))));
+        String gift = SB_BOX_GIFT.remove(ThreadLocalRandom.current().nextInt(SB_BOX_GIFT.size()));
+        String giftMsg = switch (gift) {
+            case "快活的空气" -> "💰Dmail +0";
+            case "司墨的微笑" -> "🤣 💰Dmail +0";
+            case "倒影的凝视" -> "👀 💰Dmail +0";
+            case "一半的码子" -> SB_BOX_REGIST_NO.poll();
+            case "爱的续期" -> "⌛️WorldLine-30-Renew_zICTzFBZH4";
+            case "四倍的幸运" -> "💰Dmail +200";
+            case "三倍的祝福" -> "💰Dmail +150";
+            case "双倍的回赠" -> "💰Dmail +100";
+            case "等价交换的宿命" -> "💰Dmail +50";
+            case "真心的一半" -> "💰Dmail +25";
+            default -> gift;
+        };
+        int dmail = 0;
+        if (StrUtil.contains(giftMsg, "Dmail")) {
+            dmail = Integer.parseInt(CollUtil.getLast(StrUtil.split(giftMsg, "+")));
+        }
+        if (dmail != 0) {
+            embyDao.upIv(userId, dmail);
+        }
+
+        SendMessage sendMessage = new SendMessage(userId.toString(), StrUtil.format(SB_0401_GIFT, gift, giftMsg));
         tgBot.sendMessage(sendMessage);
 
         callback.setText("✅ 花费50Dmail成功！");
