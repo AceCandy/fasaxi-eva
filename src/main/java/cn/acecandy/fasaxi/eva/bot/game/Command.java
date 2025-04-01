@@ -118,7 +118,8 @@ public class Command {
                 handleExitCommand(message, chatId, userId);
                 break;
             case 惊喜盒子:
-                handleSbCommand(chatId, userId, StrUtil.trim(StrUtil.removePrefix(message.getText(), 惊喜盒子)));
+                handleSbCommand(tgBot.getGroup(), userId,
+                        StrUtil.trim(StrUtil.removePrefix(message.getText(), 惊喜盒子)));
                 break;
             default:
                 break;
