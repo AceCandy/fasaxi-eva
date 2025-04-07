@@ -97,6 +97,14 @@ public class CommonGameService {
         } else {
             picFile = FileUtil.file(ktccy.getFileUrl());
         }
+        // 简笔化
+        String handleFileUrl = StrUtil.replaceLast(ktccy.getFileUrl(),
+                ".jpg", "-briefStrokes.jpg");
+        if (FileUtil.exist(handleFileUrl)) {
+            picFile = FileUtil.file(handleFileUrl);
+        } else {
+            picFile = ImgUtil.briefStrokes(ktccy.getFileUrl());
+        }
 
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(tgBot.getGroup()).caption(KTCCY_TIP)

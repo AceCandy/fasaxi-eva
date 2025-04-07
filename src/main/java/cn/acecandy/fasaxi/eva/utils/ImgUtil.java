@@ -1,10 +1,11 @@
 package cn.acecandy.fasaxi.eva.utils;
 
-import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.Console;
+import cn.hutool.core.util.StrUtil;
+import com.jhlabs.image.GaussianFilter;
+import com.jhlabs.image.GrayscaleFilter;
+import com.jhlabs.image.InvertFilter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,7 +13,12 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ByteLookupTable;
+import java.awt.image.ColorConvertOp;
+import java.awt.image.LookupOp;
+import java.awt.image.LookupTable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -28,7 +34,7 @@ import java.util.Random;
  * @since 2025/3/3
  */
 @Slf4j
-public final class ImgUtil {
+public final class ImgUtil extends cn.hutool.core.img.ImgUtil {
     private ImgUtil() {
     }
 
@@ -258,22 +264,104 @@ public final class ImgUtil {
         }
     }
 
+    /**
+     * 转为简笔画画风
+     *
+     * @param filePath 文件路径
+     * @return {@link InputStream }
+     */
+    @SneakyThrows
+    public static File briefStrokes(String filePath) {
+        // 1. 读取原图
+        BufferedImage src = read(filePath);
+
+        // 2. 灰度化
+        BufferedImage gray = fastGray(src);
+
+        // 3. 边缘检测
+        BufferedImage edges = sobelEdge(gray);
+
+        // 4. 反色处理
+        BufferedImage inverted = invertColor(edges);
+
+        // 5. 保存结果
+        File outFile = FileUtil.file(StrUtil.replaceLast(filePath, ".jpg", "-briefStrokes.jpg"));
+        ImageIO.write(inverted, "jpg", outFile);
+        return outFile;
+    }
+
     @SneakyThrows
     public static void main(String[] args) {
-        //, "/Users/mac/Downloads/浏览器/output.jpg"
-        // FileUtil.writeFromStream(addAdversarialNoise("/Users/mac/Downloads/浏览器/wdzsj.jpg", 0.6f),
-        //         "/Users/mac/Downloads/浏览器/output1.png");
+        // briefStrokesByJhLab("/Users/mac/Downloads/浏览器/003.jpg");
+    }
 
-        TimeInterval timer = DateUtil.timer();
-        // FileUtil.writeFromStream(protectPic(FileUtil.file("/Users/mac/Downloads/浏览器/wdzsj.jpg")),
-        //         "/Users/mac/Downloads/浏览器/output.png");
-        InputStream input = addProportionalWatermark(FileUtil.getInputStream("/Users/mac/Downloads/浏览器/wdzsj.jpg"),
-                "static/pic/protect.jpg", 0.85f);
-        FileUtil.writeFromStream(input, "/Users/mac/Downloads/浏览器/output1.png");
-        Console.log("1，耗时：{}ms", timer.intervalMs());
-        cn.hutool.core.img.ImgUtil.pressImage(FileUtil.file("/Users/mac/Downloads/浏览器/wdzsj.jpg"),
-                FileUtil.file("/Users/mac/Downloads/浏览器/output2.png"),
-                cn.hutool.core.img.ImgUtil.read(FileUtil.file("/Users/mac/Downloads/浏览器/Steins_Gate_Elite_Teaser.jpg")), 0, 0, 0.85f);
-        Console.log("1，耗时：{}ms", timer.intervalMs());
+    public static BufferedImage fastGray(BufferedImage src) {
+        ColorConvertOp op = new ColorConvertOp(
+                ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
+        return op.filter(src, null);
+    }
+
+    public static BufferedImage sobelEdge(BufferedImage grayImg) {
+        int[][] xKernel = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}}; // 水平方向
+        int[][] yKernel = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}}; // 垂直方向
+        int width = grayImg.getWidth();
+        int height = grayImg.getHeight();
+        BufferedImage edgeImg = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+
+        for (int x = 1; x < width - 1; x++) {
+            for (int y = 1; y < height - 1; y++) {
+                int gx = 0, gy = 0;
+                // 计算梯度
+                for (int i = -1; i <= 1; i++) {
+                    for (int j = -1; j <= 1; j++) {
+                        int pixel = grayImg.getRGB(x + i, y + j) & 0xFF;
+                        gx += pixel * xKernel[i + 1][j + 1];
+                        gy += pixel * yKernel[i + 1][j + 1];
+                    }
+                }
+                int gradient = (int) Math.sqrt(gx * gx + gy * gy);
+                edgeImg.setRGB(x, y, gradient > 128 ? 0xFFFFFF : 0x000000); // 阈值处理
+            }
+        }
+        return edgeImg;
+    }
+
+    public static BufferedImage invertColor(BufferedImage img) {
+        byte[] invertTable = new byte[256];
+        for (int i = 0; i < 256; i++) {
+            invertTable[i] = (byte) (255 - i);
+        }
+        LookupTable table = new ByteLookupTable(0, invertTable);
+        LookupOp op = new LookupOp(table, null);
+        return op.filter(img, null);
+    }
+
+    @SneakyThrows
+    public static InputStream briefStrokesByJhLab(String filePath) {
+        // 1. 读取图像
+        BufferedImage src = read(filePath);
+        // 2. 灰度化
+        BufferedImage gray = new GrayscaleFilter().filter(src, null);
+
+        // 3. 反色处理
+        BufferedImage inverted = new InvertFilter().filter(gray, null);
+
+        // 4. 高斯模糊（半径5像素）
+        BufferedImage blurred = new GaussianFilter(3).filter(inverted, null);
+
+        // 5. 颜色减淡混合（生成素描效果）
+        BufferedImage sketch = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_RGB);
+        for (int x = 0; x < src.getWidth(); x++) {
+            for (int y = 0; y < src.getHeight(); y++) {
+                int a = gray.getRGB(x, y) & 0xFF;   // 原灰度值
+                int b = blurred.getRGB(x, y) & 0xFF; // 模糊后灰度值
+                int c = (a * 255) / (255 - b + 1);   // 颜色减淡公式
+                sketch.setRGB(x, y, (c << 16) | (c << 8) | c);
+            }
+        }
+
+        // 6. 保存结果
+        ImageIO.write(sketch, "jpg", new File("/Users/mac/Downloads/浏览器/004-2.jpg"));
+        return null;
     }
 }

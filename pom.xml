@@ -113,6 +113,16 @@
       <artifactId>jpinyin</artifactId>
       <version>1.1.8</version>
     </dependency>
+    <!--<dependency>
+      <groupId>io.github.nackily</groupId>
+      <artifactId>imglib-all</artifactId>
+      <version>0.2.10</version>
+    </dependency>-->
+    <dependency>
+      <groupId>com.jhlabs</groupId>
+      <artifactId>filters</artifactId>
+      <version>2.0.235-1</version>
+    </dependency>
 
     <!-- MySql数据库 -->
     <!--MySQL JDBC驱动-->
