@@ -48,6 +48,8 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
 
+import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜成语;
+import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜番号;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.COMMON_WIN;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.WARNING_EDIT;
 import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
@@ -286,6 +288,13 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         photo.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(photo));
         MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime);
+        return execute;
+    }
+
+    public Message sendPhoto(SendPhoto photo, long autoDeleteTime,String commonGameType) {
+        photo.setParseMode(ParseMode.HTML);
+        Message execute = executeTg(() -> tgClient.execute(photo));
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime,commonGameType);
         return execute;
     }
 

@@ -1,6 +1,5 @@
 package cn.acecandy.fasaxi.eva.common.dto;
 
-import cn.acecandy.fasaxi.eva.common.enums.SmallGameType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,7 +15,7 @@ public class SmallGameDTO {
     /**
      * 类型
      */
-    private SmallGameType type;
+    private String type;
     /**
      * 答案
      */

@@ -272,8 +272,29 @@ public final class ImgUtil extends cn.hutool.core.img.ImgUtil {
      */
     @SneakyThrows
     public static File briefStrokes(String filePath) {
+        return briefStrokes(FileUtil.file(filePath));
+    }
+
+    /**
+     * 转为简笔画画风
+     *
+     * @param file 文件路径
+     * @return {@link InputStream }
+     */
+    @SneakyThrows
+    public static File briefStrokes(File file) {
         // 1. 读取原图
-        BufferedImage src = read(filePath);
+        BufferedImage src = read(file);
+
+        int originalWidth = src.getWidth();
+        int originalHeight = src.getHeight();
+        if (originalWidth < 400 || originalHeight < 400) {
+            // 计算目标尺寸
+            double scaleFactor = Math.min(400.0 / originalWidth, 400.0 / originalHeight);
+            int targetWidth = (int) (originalWidth * scaleFactor);
+            int targetHeight = (int) (originalHeight * scaleFactor);
+            src = resizeWithGraphics2D(src, targetWidth, targetHeight);
+        }
 
         // 2. 灰度化
         BufferedImage gray = fastGray(src);
@@ -285,7 +306,8 @@ public final class ImgUtil extends cn.hutool.core.img.ImgUtil {
         BufferedImage inverted = invertColor(edges);
 
         // 5. 保存结果
-        File outFile = FileUtil.file(StrUtil.replaceLast(filePath, ".jpg", "-briefStrokes.jpg"));
+        File outFile = FileUtil.file(StrUtil.replaceLast(FileUtil.getAbsolutePath(file),
+                ".jpg", "-briefStrokes.jpg"));
         ImageIO.write(inverted, "jpg", outFile);
         return outFile;
     }
@@ -334,6 +356,25 @@ public final class ImgUtil extends cn.hutool.core.img.ImgUtil {
         LookupTable table = new ByteLookupTable(0, invertTable);
         LookupOp op = new LookupOp(table, null);
         return op.filter(img, null);
+    }
+
+    /**
+     * 无损放大
+     *
+     * @param original     原来
+     * @param targetWidth  目标宽度
+     * @param targetHeight 目标高度
+     * @return {@link BufferedImage }
+     */
+    public static BufferedImage resizeWithGraphics2D(BufferedImage original,
+                                                     int targetWidth, int targetHeight) {
+        BufferedImage resized = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = resized.createGraphics();
+        // 设置高质量渲染参数
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null);
+        g2d.dispose();
+        return resized;
     }
 
     @SneakyThrows

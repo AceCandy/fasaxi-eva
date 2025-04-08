@@ -8,6 +8,7 @@ import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
+import cn.acecandy.fasaxi.eva.task.impl.CommonGameService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
@@ -59,6 +60,8 @@ public class Command {
     private WodiUserDao wodiUserDao;
     @Resource
     private WodiTopDao wodiTopDao;
+    @Resource
+    private CommonGameService commonGameService;
 
     /**
      * 全局发言时间数量
@@ -82,6 +85,8 @@ public class Command {
     private final static String HELP = "/wd_help";
 
     private final static String 惊喜盒子 = "/wd_sb";
+    public final static String 看图猜成语 = "/wd_ktccy";
+    public final static String 看图猜番号 = "/wd_ktcfh";
 
     @Resource
     private EmbyDao embyDao;
@@ -120,6 +125,16 @@ public class Command {
             case 惊喜盒子:
                 handleSbCommand(tgBot.getGroup(), userId,
                         StrUtil.trim(StrUtil.removePrefix(message.getText(), 惊喜盒子)));
+                break;
+            case 看图猜成语:
+                if (isAllowCommonGameCommand(tgBot.getGroup(), userId)) {
+                    commonGameService.ktccy();
+                }
+                break;
+            case 看图猜番号:
+                if (isAllowCommonGameCommand(tgBot.getGroup(), userId)) {
+                    commonGameService.execKtcfh();
+                }
                 break;
             default:
                 break;
@@ -329,6 +344,20 @@ public class Command {
         sbChatId = chatId;
         sbMsg = tgBot.sendAnimation(sendAnimation);
         Collections.shuffle(SB_BOX_GIFT);
+    }
+
+    /**
+     * 是否允许发起小游戏
+     *
+     * @param chatId 聊天id
+     * @param userId 用户id
+     */
+    private boolean isAllowCommonGameCommand(Long chatId, Long userId) {
+        if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
+            tgBot.sendMessage(chatId, "您无法发起活动", 5 * 1000);
+            return false;
+        }
+        return true;
     }
 
 

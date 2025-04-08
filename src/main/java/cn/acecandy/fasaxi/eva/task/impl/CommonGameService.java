@@ -27,10 +27,10 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 
+import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜成语;
+import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜番号;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCCY_TIP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCFH_TIP;
-import static cn.acecandy.fasaxi.eva.common.enums.SmallGameType.看图猜成语;
-import static cn.acecandy.fasaxi.eva.common.enums.SmallGameType.看图猜番号;
 
 /**
  * 通用定时任务 实现
@@ -51,6 +51,9 @@ public class CommonGameService {
     @Value("${game.fh-path}")
     private String fhPath;
 
+    @Value("${game.ccy-path}")
+    private String ccyPath;
+
     /**
      * 看图猜成语
      */
@@ -60,11 +63,6 @@ public class CommonGameService {
         if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
             return;
         }
-        // 游戏存在无法出题
-        /*Game game = GameListUtil.getGame(tgBot.getGroup());
-        if (game != null) {
-            return;
-        }*/
         // 非游戏时间
         if (GameUtil.isInNotCommonGameTime()) {
             return;
@@ -82,7 +80,7 @@ public class CommonGameService {
 
     }
 
-    private void ktccy() {
+    public void ktccy() {
         GameKtccy ktccy = gameKtccyDao.getRandom2();
         if (ktccy == null) {
             return;
@@ -91,8 +89,13 @@ public class CommonGameService {
         gameKtccyDao.upPlayTime(ktccy.getId());
         File picFile = null;
         if (StrUtil.isBlank(ktccy.getFileUrl())) {
+            if (StrUtil.containsIgnoreCase(ktccy.getPicUrl(), "https://free.wqwlkj.cn/wqwlapi/data/")) {
+                ktccy.setPicUrl(ktccy.getPicUrl().replace("https://free.wqwlkj.cn/wqwlapi/data/",
+                        "https://api.lolimi.cn/API/ktcc/"));
+                log.info("远程获取url:{}", ktccy.getPicUrl());
+            }
             picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
-                    FileUtil.mkdir("/vol2/1000/soft/smallGame/ktccy/" + ktccy.getSource()));
+                    FileUtil.mkdir(ccyPath + ktccy.getSource()));
             gameKtccyDao.updateFileUrl(ktccy.getId(), picFile.getAbsolutePath());
         } else {
             picFile = FileUtil.file(ktccy.getFileUrl());
@@ -103,14 +106,14 @@ public class CommonGameService {
         if (FileUtil.exist(handleFileUrl)) {
             picFile = FileUtil.file(handleFileUrl);
         } else {
-            picFile = ImgUtil.briefStrokes(ktccy.getFileUrl());
+            picFile = ImgUtil.briefStrokes(picFile);
         }
 
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(tgBot.getGroup()).caption(KTCCY_TIP)
                 .photo(new InputFile(picFile))
                 .build();
-        Message msg = tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000);
+        Message msg = tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000, 看图猜成语);
         CommonGameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
                 .type(看图猜成语).answer(ktccy.getAnswer()).msgId(msg.getMessageId()).build());
         log.warn("[成语猜猜看] {}", ktccy.getAnswer());
@@ -122,9 +125,9 @@ public class CommonGameService {
     @SneakyThrows
     public void execKtcfh() {
         // 未猜完无法出题
-        if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
-            return;
-        }
+        // if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
+        //     return;
+        // }
 
         Path path = GameUtil.searchPoster(fhPath);
         if (path == null) {
