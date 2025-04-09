@@ -89,13 +89,20 @@ public class CommonGameService {
         gameKtccyDao.upPlayTime(ktccy.getId());
         File picFile = null;
         if (StrUtil.isBlank(ktccy.getFileUrl())) {
-            if (StrUtil.containsIgnoreCase(ktccy.getPicUrl(), "https://free.wqwlkj.cn/wqwlapi/data/")) {
-                ktccy.setPicUrl(ktccy.getPicUrl().replace("https://free.wqwlkj.cn/wqwlapi/data/",
-                        "https://api.lolimi.cn/API/ktcc/"));
-                log.info("远程获取url:{}", ktccy.getPicUrl());
+            try {
+                picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
+                        FileUtil.mkdir(ccyPath + ktccy.getSource()));
+            } catch (Exception e) {
+                if (StrUtil.containsIgnoreCase(ktccy.getPicUrl(), "https://free.wqwlkj.cn/wqwlapi/data/")) {
+                    ktccy.setPicUrl(ktccy.getPicUrl().replace("https://free.wqwlkj.cn/wqwlapi/data/",
+                            "https://api.lolimi.cn/API/ktcc/"));
+                    log.info("远程获取url:{}", ktccy.getPicUrl());
+                    picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
+                            FileUtil.mkdir(ccyPath + ktccy.getSource()));
+                } else {
+                    throw new RuntimeException(StrUtil.format("图片下载失败: {}", ktccy.getPicUrl()), e);
+                }
             }
-            picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
-                    FileUtil.mkdir(ccyPath + ktccy.getSource()));
             gameKtccyDao.updateFileUrl(ktccy.getId(), picFile.getAbsolutePath());
         } else {
             picFile = FileUtil.file(ktccy.getFileUrl());
