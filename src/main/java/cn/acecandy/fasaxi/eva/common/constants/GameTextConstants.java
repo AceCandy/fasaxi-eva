@@ -16,8 +16,10 @@ public interface GameTextConstants {
     String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前已被发现！当前群组信息已上传云端！";
     String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，游戏开放时间9～12、14～18、19～22点！";
     String TIP_IN_GROUP = "请在群组中使用命令~";
+    String TIP_IN_PRIVATE = "请私聊助手使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
+    String TIP_IN_INVITE = "您花费100封Dmail创建邀请链接";
     String TIP_IN_RANK = "您花费15封Dmail进行开启榜单";
     String TIP_IN_TOP = "您花费10封Dmail进行开启榜单";
     String TIP_HELP = """
@@ -156,6 +158,7 @@ public interface GameTextConstants {
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
     String GAME_SETTLEMENT = "游戏正在结算中，无法退出";
     String SURVIVAL_PERSONNEL = "\n剩余人员({}/{}):\n{}";
+    String GENERATE_INVITE = "❤️您生成了一个邀请链接(1天)，请尽快发送给您的朋友进群哦: {}\n";
     String RUN_AWAY_QUICKLY = "❗️{} 抢跑发言位，此次发言无效并扣除5封Dmail🫶\n";
     String WARNING_EDIT = "🚨{} 悄悄修改了发言，请游戏玩家注意防范！\n";
     String NOT_VOTED_TIP = "❗️{} 两轮连续跑路，扣除5封Dmail🫶\n";

@@ -9,6 +9,7 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.task.impl.CommonGameService;
+import cn.acecandy.fasaxi.eva.task.impl.XService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
@@ -62,6 +63,8 @@ public class Command {
     private WodiTopDao wodiTopDao;
     @Resource
     private CommonGameService commonGameService;
+    @Resource
+    private XService xService;
 
     /**
      * 全局发言时间数量
@@ -87,6 +90,8 @@ public class Command {
     private final static String 惊喜盒子 = "/wd_sb";
     public final static String 看图猜成语 = "/wd_ktccy";
     public final static String 看图猜番号 = "/wd_ktcfh";
+
+    public final static String 生成邀请码 = "/x_invite";
 
     @Resource
     private EmbyDao embyDao;
@@ -136,6 +141,9 @@ public class Command {
                     commonGameService.execKtcfh();
                 }
                 break;
+            case 生成邀请码:
+                xService.xInvite(message);
+                break;
             default:
                 break;
         }
@@ -178,7 +186,7 @@ public class Command {
      * @param userId 用户id
      * @return boolean
      */
-    private Emby isEmbyUser(Long chatId, Long userId) {
+    public Emby isEmbyUser(Long chatId, Long userId) {
         Emby embyUser = embyDao.findByTgId(userId);
         if (embyUser == null) {
             tgBot.sendMessage(chatId, "您还未在助手处登记哦~", 5 * 1000);

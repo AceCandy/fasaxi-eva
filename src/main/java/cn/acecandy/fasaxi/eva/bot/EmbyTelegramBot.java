@@ -7,11 +7,15 @@ import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
+import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
@@ -27,6 +31,10 @@ import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateC
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.ApproveChatJoinRequest;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.CreateChatInviteLink;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.DeclineChatJoinRequest;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.RevokeChatInviteLink;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPermissions;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.PinChatMessage;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.UnpinChatMessage;
@@ -36,6 +44,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.ChatInviteLink;
+import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.ChatPermissions;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -71,13 +81,15 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     public final GameEvent gameEvent;
     public final EmbyBossConfig embyBossConfig;
     public final EmbyDao embyDao;
+    public final XInviteDao xInviteDao;
 
-    public EmbyTelegramBot(@Lazy EmbyBossConfig embyBossConfig,
-                           @Lazy Command command, @Lazy GameEvent gameEvent, @Lazy EmbyDao embyDao) {
+    public EmbyTelegramBot(@Lazy EmbyBossConfig embyBossConfig, @Lazy Command command,
+                           @Lazy GameEvent gameEvent, @Lazy EmbyDao embyDao, @Lazy XInviteDao xInviteDao) {
         this.embyBossConfig = embyBossConfig;
         this.command = command;
         this.gameEvent = gameEvent;
         this.embyDao = embyDao;
+        this.xInviteDao = xInviteDao;
         this.tgClient = new OkHttpTelegramClient(getBotToken());
     }
 
@@ -110,10 +122,15 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
 
     @Override
     public void consume(Update update) {
+        // 普通消息
         Message msg = update.getMessage();
+        // 修改消息
         Message editMsg = update.getEditedMessage();
+        // 加入请求
+        ChatJoinRequest joinRequest = update.getChatJoinRequest();
+        // 按钮回调
         CallbackQuery callback = update.getCallbackQuery();
-        // Console.log("update:{}, msg:{}, editMsg:{}", update, msg, editMsg);
+        Console.log("update:{}", update);
         if (msg != null) {
             if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
                 log.warn("过期指令:【{}】{}", msg.getFrom().getFirstName(), msg.getText());
@@ -121,9 +138,11 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
             }
             handleIncomingMessage(msg);
         } else if (editMsg != null) {
-            // handleEditMessage(msg);
+            handleEditMessage(editMsg);
         } else if (callback != null) {
             handleCallbackQuery(update);
+        } else if (joinRequest != null) {
+            handleChatJoinRequest(joinRequest);
         }
     }
 
@@ -133,11 +152,11 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
      * @param message 消息
      */
     private void handleIncomingMessage(Message message) {
-        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
         boolean isCommand = message.isCommand();
         if (!message.hasText()) {
             return;
         }
+        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
         String msgData = message.getText();
         boolean atBotUsername = msgData.endsWith(StrUtil.AT + getBotUsername());
         String msg = TgUtil.extractCommand(msgData, getBotUsername());
@@ -208,6 +227,44 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         boolean isGroupMessage = callbackQuery.getMessage().isGroupMessage()
                 || callbackQuery.getMessage().isSuperGroupMessage();
         gameEvent.onClick(update, isGroupMessage);
+    }
+
+    /**
+     * 处理加入请求
+     * <p>
+     * 这里主要处理邀请进入用户
+     *
+     * @param joinRequest 加入请求
+     */
+    private void handleChatJoinRequest(ChatJoinRequest joinRequest) {
+        if (joinRequest.getInviteLink() == null) {
+            return;
+        }
+        Long tgId = joinRequest.getUser().getId();
+        String inviteLink = joinRequest.getInviteLink().getInviteLink();
+
+        // 更新db
+        XInvite xInvite = xInviteDao.findByUrl(inviteLink);
+        if (null == xInvite) {
+            xInvite = new XInvite();
+            xInvite.setUrl(inviteLink);
+        }
+        // 自动拒绝
+        if (null != xInvite.getInviteeId()) {
+            declineJoin(tgId);
+            log.error("邀请链接{} 已被 {} 使用,拒绝 {} 加入", inviteLink, xInvite.getInviteeId(), tgId);
+            // 过期邀请链接
+            revokeInvite(inviteLink);
+            return;
+        }
+        // 自动批准
+        approveJoin(tgId);
+        log.warn("邀请链接{} 已被 {} 使用,已自动批准加入", inviteLink, tgId);
+        xInvite.setInviteeId(tgId);
+        xInvite.setJoinTime(DateUtil.date());
+        xInviteDao.updateInvitee(xInvite);
+        // 过期邀请链接
+        revokeInvite(inviteLink);
     }
 
     @FunctionalInterface
@@ -291,10 +348,10 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         return execute;
     }
 
-    public Message sendPhoto(SendPhoto photo, long autoDeleteTime,String commonGameType) {
+    public Message sendPhoto(SendPhoto photo, long autoDeleteTime, String commonGameType) {
         photo.setParseMode(ParseMode.HTML);
         Message execute = executeTg(() -> tgClient.execute(photo));
-        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime,commonGameType);
+        MsgDelUtil.addAutoDeleteMessage(execute, autoDeleteTime, commonGameType);
         return execute;
     }
 
@@ -324,6 +381,67 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         Message execute = executeTg(() -> tgClient.execute(message));
         MsgDelUtil.addAutoDeleteMessage(execute, status, game);
         return execute;
+    }
+
+    /**
+     * 生成邀请
+     *
+     * @param inviteLink 链接
+     * @return {@link String }
+     */
+    public String generateInvite(CreateChatInviteLink inviteLink) {
+        return executeTg(() -> tgClient.execute(inviteLink)).getInviteLink();
+    }
+
+    /**
+     * 生成邀请
+     * <p>
+     * 默认1天有效期
+     *
+     * @param userId      用户
+     * @param memberLimit 会员限额
+     * @return {@link String }
+     */
+    public String generateInvite(Long userId, Integer memberLimit) {
+        Integer expireDate = (int) DateUtil.currentSeconds() + 86400;
+        String inviteName = userId + "_" + memberLimit + "_" + DateUtil.now();
+        CreateChatInviteLink inviteLink = new CreateChatInviteLink(
+                getGroup().toString(), expireDate, null, inviteName, true);
+        ChatInviteLink result = executeTg(() -> tgClient.execute(inviteLink));
+        return result.getInviteLink();
+    }
+
+    /**
+     * 撤销邀请
+     *
+     * @param link 链接
+     */
+    public void revokeInvite(String link) {
+        link = StrUtil.removePrefixIgnoreCase(link, "https://t.me/+");
+        RevokeChatInviteLink inviteLink = new RevokeChatInviteLink(getGroup().toString(), link);
+        executeTg(() -> tgClient.execute(inviteLink));
+    }
+
+    /**
+     * 自动批准加入
+     *
+     * @param userId 用户
+     * @return {@link String }
+     */
+    public Boolean approveJoin(Long userId) {
+        ApproveChatJoinRequest approve = new ApproveChatJoinRequest(getGroup().toString(), userId);
+        return executeTg(() -> tgClient.execute(approve));
+    }
+
+    /**
+     * 拒绝加入
+     *
+     * @param userId 用户id
+     * @return {@link Boolean }
+     */
+    public Boolean declineJoin(Long userId) {
+        DeclineChatJoinRequest decline = new DeclineChatJoinRequest(getGroup().toString(), userId);
+        return executeTg(() -> tgClient.execute(decline));
     }
 
     public void muteGroup(Long chatId) {
