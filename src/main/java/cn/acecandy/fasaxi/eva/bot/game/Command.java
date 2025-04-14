@@ -17,12 +17,14 @@ import cn.hutool.cache.CacheUtil;
 import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.lang.Console;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -72,13 +74,16 @@ public class Command {
     public final static AtomicInteger SPEAK_TIME_CNT =
             new AtomicInteger(RandomUtil.randomInt(1, 20));
 
-    public volatile Message rankMsg;
-    public volatile Message sbMsg;
-    public volatile Long sbChatId;
-    public volatile TimedCache<String, List<WodiUser>> rankUserListMap
+    @Getter
+    private volatile Message rankMsg;
+    @Getter
+    private volatile Message sbMsg;
+    @Getter
+    private volatile Long sbChatId;
+    private volatile TimedCache<String, List<WodiUser>> rankUserListMap
             = CacheUtil.newTimedCache(600 * 1000);
 
-    public final static Map<Long, String> SB_USER_LIST = MapUtil.newConcurrentHashMap();
+    private final static Map<Long, String> SB_USER_LIST = MapUtil.newConcurrentHashMap();
 
     private final static String NEW_GAME = "/wd";
     private final static String RECORD = "/wd_info";
@@ -91,7 +96,9 @@ public class Command {
     public final static String 看图猜成语 = "/wd_ktccy";
     public final static String 看图猜番号 = "/wd_ktcfh";
 
-    public final static String 生成邀请码 = "/x_invite";
+    public final static String 生成传承邀请 = "/cc_inv";
+    public final static String 获取传承名单 = "/cc_info";
+    public final static String 传承帮助 = "/cc_help";
 
     @Resource
     private EmbyDao embyDao;
@@ -141,8 +148,14 @@ public class Command {
                     commonGameService.execKtcfh();
                 }
                 break;
-            case 生成邀请码:
+            case 生成传承邀请:
                 xService.xInvite(message);
+                break;
+            case 获取传承名单:
+                xService.xInviteList(message);
+                break;
+            case 传承帮助:
+                tgBot.sendMessage(chatId, INVITE_HELP, 300 * 1000);
                 break;
             default:
                 break;
@@ -159,7 +172,7 @@ public class Command {
         WodiUser user = wodiUserDao.findByTgId(userId);
         Emby embyUser = embyDao.findByTgId(userId);
         if (user == null || embyUser == null) {
-            tgBot.sendMessage(chatId, "您还未参与过游戏或者未在助手处登记哦~", 10 * 1000);
+            tgBot.sendMessage(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
             return;
         }
         Integer costIv = 2;
@@ -222,6 +235,7 @@ public class Command {
                 .replyMarkup(TgUtil.rankPageBtn(1, CollUtil.size(rankUserList)))
                 .build();
         rankMsg = tgBot.sendPhoto(sendPhoto, 300 * 1000);
+        Console.log(rankMsg);
     }
 
     @SneakyThrows

@@ -26,6 +26,12 @@ public class WodiUserLog {
     @Schema(name = "积分")
     private Integer fraction;
 
+    @Schema(name = "Dmail")
+    private Integer iv;
+
+    @Schema(name = "飞升奖励")
+    private Integer tiv;
+
     @Schema(name = "是否胜利")
     private Boolean isVictory;
 

@@ -715,7 +715,7 @@ public class Game {
         }
 
         // 如果白板单独存活 积分翻三倍
-        boolean spaceSingleSurvive = spaceSurviveNum == surviveNum;
+        boolean spaceSingleSurvive = spaceSurviveNum == surviveNum && undercoverNum > 1;
         if (spaceSingleSurvive) {
             stringBuilder.append(StrUtil.format(GAME_OVER_BOOM3, getSurvivesUserNames()));
         }
@@ -1015,7 +1015,7 @@ public class Game {
                 // 将增加后的积分设置设置到当前变量wodiUser中
                 m.wodiUser.setFraction(m.wodiUser.getFraction() + realFraction);
                 // 写入日志
-                wodiUserLogDao.addLog(m.id, realFraction, isVictory);
+                m.setLogId(wodiUserLogDao.addLog(m.id, realFraction, isVictory));
             });
             wodiUserDao.upCompleteGame(completeGameId);
             wodiUserDao.upWordPeople(wordPeopleId);
@@ -1045,6 +1045,7 @@ public class Game {
                     mailBuilder.append(ownerStr);
                     embyDao.upIv(m.user.getId(), m.dmailUp);
                 }
+                wodiUserLogDao.upIvById(m.logId, m.dmailUp);
             });
             int memberSize = memberList.size();
             if (memberSize >= 9) {
@@ -1069,6 +1070,7 @@ public class Game {
                     upBuilder.append(StrUtil.format(USER_LEVEL_UP,
                             TgUtil.tgNameOnUrl(m.user), newLevel, m.dmailUp));
                     embyDao.upIv(m.user.getId(), m.dmailUp);
+                    wodiUserLogDao.upTopIvById(m.logId, m.dmailUp);
                     upMember.add(m);
                 }
             });
@@ -1093,7 +1095,6 @@ public class Game {
                         String upFirst = StrUtil.format(USER_LEVEL_UP_FIRST,
                                 TgUtil.tgNameOnUrl(maxMember.user),
                                 GameUtil.levelByLv(lv), upScore, registerMsg);
-                        embyDao.allUpIv(5);
                         if (lv >= 10) {
                             upFirst = StrUtil.format(SEASON_ENDS,
                                     TgUtil.tgNameOnUrl(maxMember.user),
@@ -1101,8 +1102,11 @@ public class Game {
                             embyDao.upIv(maxMember.id, -50);
                             embyDao.allUpIv(50);
                             seasonEnds = true;
+                        } else {
+                            embyDao.allUpIv(5);
                         }
                         embyDao.upIv(maxMember.user.getId(), upScore);
+                        wodiUserLogDao.upTopIvById(maxMember.logId, upScore);
 
 
                         if (StrUtil.isNotBlank(registerCode)) {

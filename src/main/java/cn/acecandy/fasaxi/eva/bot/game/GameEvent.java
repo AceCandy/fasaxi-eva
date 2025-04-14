@@ -141,7 +141,7 @@ public class GameEvent {
         action = CollUtil.getFirst(actionList);
 
         if (action.equals(PUBLIC_ACTION_RANKS)) {
-            if (null == command.rankMsg) {
+            if (null == command.getRankMsg()) {
                 return;
             }
             command.handleEditRank(Integer.valueOf(CollUtil.getLast(actionList)));

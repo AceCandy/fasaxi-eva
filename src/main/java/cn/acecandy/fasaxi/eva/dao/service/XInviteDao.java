@@ -2,11 +2,16 @@ package cn.acecandy.fasaxi.eva.dao.service;
 
 import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.mapper.XInviteMapper;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * 邀请 dao
@@ -49,6 +54,20 @@ public class XInviteDao {
         }
         xInviteMapper.insertOrUpdate(xInvite);
     }
+    /**
+     * 更新受邀者
+     *
+     * @param tgIds 列表
+     */
+    public void updateCollectTime(List<Long> tgIds, Date collectTime) {
+        if (CollUtil.isEmpty(tgIds)) {
+            return;
+        }
+        LambdaUpdateWrapper<XInvite> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.in(XInvite::getInviteeId, tgIds);
+        updateWrapper.set(XInvite::getCollectTime, collectTime);
+        xInviteMapper.update(null, updateWrapper);
+    }
 
     /**
      * 按url查找
@@ -81,5 +100,40 @@ public class XInviteDao {
                 .orderByDesc(XInvite::getCreateTime).last("limit 1");
         ;
         return xInviteMapper.selectOne(wrapper);
+    }
+
+    /**
+     * 查询门人名单
+     *
+     * @param tgId 网址
+     * @return {@link XInvite }
+     */
+    public List<XInvite> findInviteeByInviter(Long tgId) {
+        if (null == tgId) {
+            return CollUtil.newArrayList();
+        }
+        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(XInvite::getInviterId, tgId)
+                .isNotNull(XInvite::getInviteeId)
+                .orderByAsc(XInvite::getCreateTime);
+        ;
+        return xInviteMapper.selectList(wrapper);
+    }
+
+    /**
+     * 按用户最近一天创建的数量
+     *
+     * @param tgId 网址
+     * @return {@link XInvite }
+     */
+    public Long cntByInviterToday(Long tgId) {
+        if (null == tgId) {
+            return 0L;
+        }
+        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(XInvite::getInviterId, tgId)
+                .ge(XInvite::getCreateTime, System.currentTimeMillis() - 24 * 60 * 60 * 1000)
+        ;
+        return xInviteMapper.selectCount(wrapper);
     }
 }

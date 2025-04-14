@@ -5,6 +5,7 @@ import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
@@ -23,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,15 +34,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.ANONYMOUS_VOTE;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.NOT_VOTE;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.RANK;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.READY;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.RECORD_TXT;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.SPEAK_ORDER;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.VOTE_ABSTAINED;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.VOTE_PUBLICITY;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.DiscussionTimeLimit;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.DiscussionTimeLimitMin;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.GameSecondsAddedByThePlayer;
@@ -86,6 +80,35 @@ public final class GameUtil extends GameSubUtil {
             recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍加成");
         }
         return recordTxt;
+    }
+
+    /**
+     * 获取邀请列表
+     *
+     * @param user     用户
+     * @param xInvites x邀请
+     * @return {@link String }
+     */
+    public static String getInviteList(WodiUser user, List<XInvite> xInvites,
+                                       Map<Long, WodiUser> embyMap, Map<Long, Integer> ivMap) {
+        String recordTxt = INVITE_LIST
+                .replace("{userName}", TgUtil.tgNameOnUrl(user))
+                .replace("{level}", levelByScore(user.getFraction()));
+        if (CollUtil.isEmpty(xInvites)) {
+            return recordTxt.replace("{list}", "🤡 您的门下还没有传承弟子");
+        }
+        StringBuilder rankFinal = new StringBuilder();
+        xInvites.forEach(x -> {
+            WodiUser wdUser = embyMap.get(x.getInviteeId());
+            String inviteeName = TgUtil.tgNameOnUrl(wdUser);
+            if(StrUtil.isBlank(inviteeName)) {
+                inviteeName = x.getInviteeId().toString();
+            }
+            Integer iv = ivMap.getOrDefault(x.getInviteeId(), 0);
+            String inviteeStr = StrUtil.format(INVITE_SINGLE, inviteeName, iv, DateUtil.formatDate(x.getJoinTime()));
+            rankFinal.append(inviteeStr);
+        });
+        return recordTxt.replace("{list}", rankFinal);
     }
 
     /**

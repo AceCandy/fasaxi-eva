@@ -19,7 +19,7 @@ public interface GameTextConstants {
     String TIP_IN_PRIVATE = "请私聊助手使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
-    String TIP_IN_INVITE = "您花费100封Dmail创建邀请链接";
+    String TIP_IN_INVITE = "您花费100封Dmail创建传承邀请";
     String TIP_IN_RANK = "您花费15封Dmail进行开启榜单";
     String TIP_IN_TOP = "您花费10封Dmail进行开启榜单";
     String TIP_HELP = """
@@ -147,7 +147,7 @@ public interface GameTextConstants {
                          🚨
                          🚨  🏆 {}成为<b>【{}】</b>飞升第一人
                          🚨  💰 收获<b>{}</b>封Dmail！{}
-                         🚨  💓 <b>群内所有成员Dmail+10</b>
+                         🚨  💓 <b>群内所有成员Dmail+50</b>
                          🚨  🎉 大家恭喜这个b！！！！！
                          🚨
                          🚨  <b>新赛季即将开始</b>，当前进入季后赛阶段！
@@ -158,9 +158,9 @@ public interface GameTextConstants {
     String ELIMINATED_IN_THIS_ROUND = "💀 第{}轮，本轮淘汰：";
     String GAME_SETTLEMENT = "游戏正在结算中，无法退出";
     String SURVIVAL_PERSONNEL = "\n剩余人员({}/{}):\n{}";
-    String GENERATE_INVITE = "❤️您生成了一个邀请链接(1天)，请尽快发送给您的朋友进群哦: {}\n";
+    String GENERATE_INVITE = "❤️您生成了一个传承邀请(1天)，请尽快发送给您的门人使用吧: {}\n";
     String RUN_AWAY_QUICKLY = "❗️{} 抢跑发言位，此次发言无效并扣除5封Dmail🫶\n";
-    String WARNING_EDIT = "🚨{} 悄悄修改了发言，请游戏玩家注意防范！\n";
+    String WARNING_EDIT = "🚨游戏玩家: {} 修改了发言，请其余玩家注意甄别！\n";
     String NOT_VOTED_TIP = "❗️{} 两轮连续跑路，扣除5封Dmail🫶\n";
     String SPEAK_REPEAT = "❓️{} 无发言或重复发言，此次发言无效并扣除2封Dmail🫶\n";
     String SPEAK_NOWAY = "❓️{} 违禁爆词，扣除5封Dmail🫶\n";
@@ -208,4 +208,24 @@ public interface GameTextConstants {
                           
                           <i>ps: 建议可以不告诉别人中的什么骗下他们，让未参加的人也多多加入进来吧，嘿嘿</i>
                           """;
+    String INVITE_LIST = """
+                         
+                         ◎ <b>{level}</b> {userName} 传承名单
+                         
+                         {list}
+                         """;
+    String INVITE_SINGLE = "{}(<b>当日累计: {}</b>)\t\t加入时间:{} \n";
+    String INVITE_COLLECT = "🎉 你的传承弟子们昨日非常用功，你不禁抚须大笑，Dmail+<b>{}</b> \n";
+    String INVITE_HELP = """
+                         <b>传承系统</b>:
+                         
+                         1. 用户通过指令可创建传承邀请链接，可以邀请其他用户加入本群，成为自己的传承弟子。
+                         2. 用户每日可创建的传承数量有上限，上限与游戏等级挂钩。
+                         3. 传承弟子累计进群3周(21天)后出师，可以开启自己的传承邀请。
+                         4. 在传承弟子未出师之前，每天游戏中获取的Dmail会按比例同时增发给自己的门主(需要门主手动领取)。
+                         5. 门主可以通过指令获取弟子(未出师)名单，并且获取到传承弟子昨日游戏表现对应的Dmail奖励(每日一次)。
+                         
+                         /cc_inv 创建传承邀请（200Dmail）
+                         /cc_info 查看弟子(未出师)名单/领取昨日弟子奖励（2Dmail/天）
+                         """;
 }

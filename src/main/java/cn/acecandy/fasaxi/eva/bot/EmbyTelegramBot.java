@@ -15,7 +15,6 @@ import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
@@ -130,7 +129,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         ChatJoinRequest joinRequest = update.getChatJoinRequest();
         // 按钮回调
         CallbackQuery callback = update.getCallbackQuery();
-        Console.log("update:{}", update);
+        // Console.log("update:{}", update);
         if (msg != null) {
             if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
                 log.warn("过期指令:【{}】{}", msg.getFrom().getFirstName(), msg.getText());
@@ -138,7 +137,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
             }
             handleIncomingMessage(msg);
         } else if (editMsg != null) {
-            handleEditMessage(editMsg);
+            // handleEditMessage(editMsg);
         } else if (callback != null) {
             handleCallbackQuery(update);
         } else if (joinRequest != null) {
@@ -252,14 +251,14 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         // 自动拒绝
         if (null != xInvite.getInviteeId()) {
             declineJoin(tgId);
-            log.error("邀请链接{} 已被 {} 使用,拒绝 {} 加入", inviteLink, xInvite.getInviteeId(), tgId);
+            log.error("传承邀请{} 已被 {} 使用,拒绝 {} 加入", inviteLink, xInvite.getInviteeId(), tgId);
             // 过期邀请链接
             revokeInvite(inviteLink);
             return;
         }
         // 自动批准
         approveJoin(tgId);
-        log.warn("邀请链接{} 已被 {} 使用,已自动批准加入", inviteLink, tgId);
+        log.warn("传承邀请{} 已被 {} 使用,已自动批准加入", inviteLink, tgId);
         xInvite.setInviteeId(tgId);
         xInvite.setJoinTime(DateUtil.date());
         xInviteDao.updateInvitee(xInvite);

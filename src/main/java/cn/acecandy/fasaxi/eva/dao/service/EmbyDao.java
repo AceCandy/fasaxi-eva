@@ -25,7 +25,7 @@ public class EmbyDao {
     private EmbyMapper embyMapper;
 
     public void upIv(Long telegramId, Integer iv) {
-        if (null == telegramId || null == iv) {
+        if (null == telegramId || null == iv || 0 == iv) {
             return;
         }
         LambdaUpdateWrapper<Emby> updateWrapper = new LambdaUpdateWrapper<>();

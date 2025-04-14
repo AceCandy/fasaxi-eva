@@ -67,14 +67,23 @@ public final class TgUtil {
      * @return {@link String }
      */
     public static String tgNameOnUrl(User user) {
+        if (null == user) {
+            return "";
+        }
         return StrUtil.format("<a href=\"tg://user?id={}\">{}</a>", user.getId(), tgName(user));
     }
 
     public static String tgNameOnUrl(WodiUser user) {
+        if (null == user) {
+            return "";
+        }
         return StrUtil.format("<a href='tg://user?id={}'>{}</a>", user.getTelegramId(), tgName(user));
     }
 
     public static String tgNameOnUrl(WodiTop user) {
+        if (null == user) {
+            return "";
+        }
         return StrUtil.format("<a href='tg://user?id={}'>{}</a>", user.getTelegramId(), tgName(user));
     }
 

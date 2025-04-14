@@ -18,6 +18,7 @@ public class GameUser {
     public WodiUser wodiUser;
     public Long id;
     String word;
+    public Integer logId;
 
     public String oldLevel;
 

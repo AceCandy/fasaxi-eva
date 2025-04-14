@@ -2,22 +2,34 @@ package cn.acecandy.fasaxi.eva.task.impl;
 
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiUserLog;
 import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
+import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Console;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.GENERATE_INVITE;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.INVITE_COLLECT;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_INVITE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_PRIVATE;
 
@@ -40,8 +52,14 @@ public class XService {
     @Resource
     private XInviteDao xInviteDao;
 
+    @Resource
+    private WodiUserDao wodiUserDao;
+
+    @Resource
+    private WodiUserLogDao wodiUserLogDao;
+
     /**
-     * 看图猜成语
+     * 传承邀请
      */
     @Transactional(rollbackFor = Exception.class)
     public void xInvite(Message message) {
@@ -56,15 +74,19 @@ public class XService {
         if (null == emby) {
             return;
         }
-        XInvite xInvite = xInviteDao.findByInviterLast(userId);
-        if (null != xInvite && DateUtil.compare(DateUtil.date(), DateUtil.endOfDay(xInvite.getCreateTime())) < 0) {
-            tgBot.sendMessage(chatId, "您今天已经创建过邀请链接了", 5 * 1000);
+        WodiUser wodiUser = wodiUserDao.findByTgId(userId);
+        Integer lv = GameUtil.level(wodiUser.getFraction());
+        Integer canInviteCnt = lv / 3 + 1;
+        Long cnt = xInviteDao.cntByInviterToday(userId);
+        if (cnt >= canInviteCnt) {
+            tgBot.sendMessage(chatId,
+                    "您今日创建传承邀请超限(" + canInviteCnt + ")了，请明日再来", 5 * 1000);
             return;
         }
 
-        Integer costIv = 100;
+        Integer costIv = 200;
         if (emby.getIv() < costIv) {
-            tgBot.sendMessage(chatId, "您的Dmail不足，无法创建邀请", 5 * 1000);
+            tgBot.sendMessage(chatId, "您的Dmail不足，无法创建传承邀请", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
@@ -73,9 +95,61 @@ public class XService {
         tgBot.sendMessage(chatId, TIP_IN_INVITE, 2 * 1000);
 
         String inviteUrl = tgBot.generateInvite(userId, 1);
-        log.info("用户:{},生成了一个邀请链接:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
+        log.info("{} 生成了一个传承邀请:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
         tgBot.sendMessage(message.getMessageId(), message.getChatId(), StrUtil.format(GENERATE_INVITE, inviteUrl));
         xInviteDao.insertInviter(userId, inviteUrl);
+    }
+
+    /**
+     * 传承邀请名单
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void xInviteList(Message message) {
+        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
+        Long chatId = message.getChatId();
+        Long userId = message.getFrom().getId();
+        if (isGroupMessage) {
+            tgBot.sendMessage(chatId, TIP_IN_PRIVATE, 10 * 1000);
+            return;
+        }
+        WodiUser wodiUser = wodiUserDao.findByTgId(userId);
+        Emby emby = embyDao.findByTgId(userId);
+        if (null == wodiUser || null == emby) {
+            tgBot.sendMessage(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
+            return;
+        }
+
+        List<XInvite> xInvites = xInviteDao.findInviteeByInviter(userId);
+        List<Long> yesInviteeIds = xInvites.stream().filter(x -> x.getCollectTime() == null
+                        || DateUtil.compare(x.getCollectTime(), DateUtil.yesterday()) < 0)
+                .map(XInvite::getInviteeId).toList();
+        Map<Long, Integer> ivMap = wodiUserLogDao.findByTgIdYesterday(yesInviteeIds).stream()
+                .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
+                        Collectors.summingInt(bean -> (int) (bean.getIv() * 0.2 + bean.getTiv() * 0.1))
+                ));
+        // 发放昨日奖励
+        if (MapUtil.isNotEmpty(ivMap)) {
+            xInviteDao.updateCollectTime(yesInviteeIds, DateUtil.yesterday());
+            int ivTotal = ivMap.values().stream().mapToInt(v -> v).sum();
+            if (ivTotal > 0) {
+                embyDao.upIv(userId, ivTotal - 2);
+                tgBot.sendMessage(userId, StrUtil.format(INVITE_COLLECT, ivTotal));
+            }
+        }
+
+        // 今日累计展示
+        List<Long> inviteeIds = xInvites.stream().map(XInvite::getInviteeId).toList();
+        Map<Long, WodiUser> embyMap = wodiUserDao.findByTgId(inviteeIds).stream().collect(
+                Collectors.toMap(WodiUser::getTelegramId, v -> v, (k1, k2) -> k2));
+        Map<Long, Integer> newIvMap = wodiUserLogDao.findByTgIdToday(inviteeIds).stream()
+                .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
+                        Collectors.summingInt(bean -> (int) (bean.getIv() * 0.2 + bean.getTiv() * 0.1))
+                ));
+        SendMessage sendMsg = SendMessage.builder()
+                .chatId(chatId).text(GameUtil.getInviteList(wodiUser, xInvites, embyMap, newIvMap))
+                .build();
+        tgBot.sendMessage(sendMsg, 300 * 1000);
+
     }
 
     public static void main(String[] args) {

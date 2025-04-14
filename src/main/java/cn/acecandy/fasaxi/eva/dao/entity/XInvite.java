@@ -34,4 +34,7 @@ public class XInvite {
 
     @Schema(name = "加入时间")
     private Date joinTime;
+
+    @Schema(name = "领取时间")
+    private Date collectTime;
 }
