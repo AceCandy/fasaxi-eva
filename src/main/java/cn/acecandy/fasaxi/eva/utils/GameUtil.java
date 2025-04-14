@@ -95,7 +95,7 @@ public final class GameUtil extends GameSubUtil {
                 .replace("{userName}", TgUtil.tgNameOnUrl(user))
                 .replace("{level}", levelByScore(user.getFraction()));
         if (CollUtil.isEmpty(xInvites)) {
-            return recordTxt.replace("{list}", "🤡 您的门下还没有传承弟子");
+            return recordTxt.replace("{list}", "🍂 秋风萧瑟，您的门下还没有传承弟子");
         }
         StringBuilder rankFinal = new StringBuilder();
         xInvites.forEach(x -> {

@@ -226,6 +226,6 @@ public interface GameTextConstants {
                          5. 门主可以通过指令获取弟子(未出师)名单，并且获取到传承弟子昨日游戏表现对应的Dmail奖励(每日一次)。
                          
                          /cc_inv 创建传承邀请（200Dmail）
-                         /cc_info 查看弟子(未出师)名单/领取昨日弟子奖励（2Dmail/天）
+                         /cc_info 查看弟子(未出师)名单/领取昨日弟子奖励（领取成功时扣除2Dmail）
                          """;
 }
