@@ -119,6 +119,22 @@ public class XInviteDao {
         ;
         return xInviteMapper.selectList(wrapper);
     }
+    /**
+     * 查询师尊
+     *
+     * @param tgId 网址
+     * @return {@link XInvite }
+     */
+    public XInvite findByInvitee(Long tgId) {
+        if (null == tgId) {
+            return null;
+        }
+        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(XInvite::getInviteeId, tgId)
+                .orderByDesc(XInvite::getCreateTime);
+        ;
+        return CollUtil.getFirst(xInviteMapper.selectList(wrapper));
+    }
 
     /**
      * 按用户最近一天创建的数量

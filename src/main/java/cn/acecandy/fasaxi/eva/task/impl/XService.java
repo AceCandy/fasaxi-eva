@@ -74,6 +74,12 @@ public class XService {
         if (null == emby) {
             return;
         }
+        XInvite shifu = xInviteDao.findByInvitee(userId);
+        if (null != shifu && DateUtil.betweenDay(DateUtil.date(), shifu.getJoinTime(), false) < 21) {
+            tgBot.sendMessage(chatId, "您还未出师，无法开启传承！", 5 * 1000);
+            return;
+        }
+
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
         Integer lv = GameUtil.level(wodiUser.getFraction());
         Integer canInviteCnt = lv / 3 + 1;
@@ -105,21 +111,19 @@ public class XService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void xInviteList(Message message) {
-        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
         Long chatId = message.getChatId();
         Long userId = message.getFrom().getId();
-        if (isGroupMessage) {
-            tgBot.sendMessage(chatId, TIP_IN_PRIVATE, 10 * 1000);
-            return;
-        }
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
         Emby emby = embyDao.findByTgId(userId);
         if (null == wodiUser || null == emby) {
             tgBot.sendMessage(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
             return;
         }
-
+        // 查询弟子名单 小于21天为未出师弟子（计算22天是为了取昨日）
         List<XInvite> xInvites = xInviteDao.findInviteeByInviter(userId);
+        xInvites = xInvites.stream().filter(x ->
+                DateUtil.betweenDay(DateUtil.date(), x.getJoinTime(), false) < 22).toList();
+        // 获取昨日弟子表现
         List<Long> yesInviteeIds = xInvites.stream().filter(x -> x.getCollectTime() == null
                         || DateUtil.compare(x.getCollectTime(), DateUtil.yesterday()) < 0)
                 .map(XInvite::getInviteeId).toList();
@@ -132,6 +136,7 @@ public class XService {
             xInviteDao.updateCollectTime(yesInviteeIds, DateUtil.yesterday());
             int ivTotal = ivMap.values().stream().mapToInt(v -> v).sum();
             if (ivTotal > 0) {
+                // 扣除2分领取
                 embyDao.upIv(userId, ivTotal - 2);
                 tgBot.sendMessage(userId, StrUtil.format(INVITE_COLLECT, ivTotal));
             }
@@ -149,12 +154,10 @@ public class XService {
                 .chatId(chatId).text(GameUtil.getInviteList(wodiUser, xInvites, embyMap, newIvMap))
                 .build();
         tgBot.sendMessage(sendMsg, 300 * 1000);
-
     }
 
     public static void main(String[] args) {
-        DateTime d = DateUtil.parse("2025-04-10 03:35:16");
-        Console.log(DateUtil.endOfDay(d));
-        Console.log(DateUtil.compare(DateUtil.date(), DateUtil.endOfDay(d)) > 0);
+        DateTime d = DateUtil.parse("2025-04-20 03:35:16");
+        Console.log(DateUtil.betweenDay(DateUtil.date(), d, false));
     }
 }
