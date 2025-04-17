@@ -227,5 +227,6 @@ public interface GameTextConstants {
                          
                          /cc_inv 创建传承邀请（200Dmail）
                          /cc_info 查看弟子(未出师)名单/领取昨日弟子奖励（领取成功时扣除2Dmail）
+                         /cc_help 召唤出当前帮助
                          """;
 }
