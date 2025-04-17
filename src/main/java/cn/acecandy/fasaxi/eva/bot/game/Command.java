@@ -17,7 +17,6 @@ import cn.hutool.cache.CacheUtil;
 import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -235,7 +234,7 @@ public class Command {
                 .replyMarkup(TgUtil.rankPageBtn(1, CollUtil.size(rankUserList)))
                 .build();
         rankMsg = tgBot.sendPhoto(sendPhoto, 300 * 1000);
-        Console.log(rankMsg);
+        // Console.log(rankMsg);
     }
 
     @SneakyThrows

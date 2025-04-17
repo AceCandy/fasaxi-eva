@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.retry.annotation.EnableRetry;
@@ -25,6 +26,7 @@ import java.net.InetAddress;
 @EnableRetry
 @RestController
 @ConfigurationPropertiesScan
+@ServletComponentScan
 @SpringBootApplication
 public class Application {
 

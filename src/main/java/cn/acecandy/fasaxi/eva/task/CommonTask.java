@@ -1,5 +1,6 @@
 package cn.acecandy.fasaxi.eva.task;
 
+import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.task.impl.CommonGameService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,9 @@ public class CommonTask {
     @Resource
     private CommonGameService service;
 
+    @Resource
+    private CommonGameConfig commonGameConfig;
+
     /**
      * 看图猜成语
      * exec ktccy
@@ -28,6 +32,10 @@ public class CommonTask {
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
     public void execKtccy() {
         try {
+            if (!commonGameConfig.getKtccy().getEnable()) {
+                return;
+            }
+
             service.execKtccy();
         } catch (Exception e) {
             log.error("执行异常-看图猜成语 ", e);
@@ -39,9 +47,12 @@ public class CommonTask {
      * exec ktccy
      */
     @Scheduled(cron = "0 7 4,13,23 * * ?")
-    // @Scheduled(cron = "* * * * * ?")
     public void execKtcfh() {
         try {
+            if (!commonGameConfig.getKtcfh().getEnable()) {
+                return;
+            }
+
             service.execKtcfh();
         } catch (Exception e) {
             log.error("执行异常-看图猜番号 ", e);

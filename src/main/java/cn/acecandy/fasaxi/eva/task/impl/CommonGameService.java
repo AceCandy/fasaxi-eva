@@ -3,6 +3,7 @@ package cn.acecandy.fasaxi.eva.task.impl;
 import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
+import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
@@ -16,7 +17,6 @@ import cn.hutool.http.HttpUtil;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
@@ -48,11 +48,14 @@ public class CommonGameService {
     @Resource
     private GameKtccyDao gameKtccyDao;
 
-    @Value("${game.fh-path}")
+    /*@Value("${game.fh-path}")
     private String fhPath;
 
     @Value("${game.ccy-path}")
-    private String ccyPath;
+    private String ccyPath;*/
+
+    @Resource
+    private CommonGameConfig commonGameConfig;
 
     /**
      * 看图猜成语
@@ -85,20 +88,21 @@ public class CommonGameService {
         if (ktccy == null) {
             return;
         }
+        String defaultPath = commonGameConfig.getKtccy().getPath();
 
         gameKtccyDao.upPlayTime(ktccy.getId());
         File picFile = null;
         if (StrUtil.isBlank(ktccy.getFileUrl())) {
             try {
                 picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
-                        FileUtil.mkdir(ccyPath + ktccy.getSource()));
+                        FileUtil.mkdir(defaultPath + ktccy.getSource()));
             } catch (Exception e) {
                 if (StrUtil.containsIgnoreCase(ktccy.getPicUrl(), "https://free.wqwlkj.cn/wqwlapi/data/")) {
                     ktccy.setPicUrl(ktccy.getPicUrl().replace("https://free.wqwlkj.cn/wqwlapi/data/",
                             "https://api.lolimi.cn/API/ktcc/"));
                     log.info("远程获取url:{}", ktccy.getPicUrl());
                     picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
-                            FileUtil.mkdir(ccyPath + ktccy.getSource()));
+                            FileUtil.mkdir(defaultPath + ktccy.getSource()));
                 } else {
                     throw new RuntimeException(StrUtil.format("图片下载失败: {}", ktccy.getPicUrl()), e);
                 }
@@ -135,8 +139,9 @@ public class CommonGameService {
         // if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
         //     return;
         // }
+        String defaultPath = commonGameConfig.getKtcfh().getPath();
 
-        Path path = GameUtil.searchPoster(fhPath);
+        Path path = GameUtil.searchPoster(defaultPath);
         if (path == null) {
             return;
         }
