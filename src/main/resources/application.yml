@@ -10,11 +10,6 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
-  datasource:
-    username: "root"
-    password: "123456"
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/fasaxi-eva?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&useAffectedRows=true
 
 server:
   # 服务端口
@@ -55,18 +50,3 @@ knife4j:
     - name: 标题2
       locations: classpath:markdown1/*
       group: 对外API
-
-tg-bot:
-  emby-boss:
-    name: tgBot
-    token: '99xxxx999:AZXCVBNMQWERTYUIODFGHJKLRTYUI'
-    admins: 88888888888
-    owners: 88888888888
-    group: -18888888888888
-
-emby:
-  host: http://192.168.0.34:8096
-  publicAddr: http://192.168.0.34:8096
-  strmPaths:
-    - 'https://xxxx.xx/d'
-    - 'http://192.168.0.34:5244/d'
