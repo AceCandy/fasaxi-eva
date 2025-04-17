@@ -3,6 +3,7 @@ package cn.acecandy.fasaxi.eva.emby.filter;
 import cn.acecandy.fasaxi.eva.config.FastEmbyConfig;
 import cn.acecandy.fasaxi.eva.emby.common.resp.EmbyCachedResp;
 import cn.acecandy.fasaxi.eva.emby.wrapper.EmbyContentCacheReqWrapper;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.Console;
 import cn.hutool.core.map.MapUtil;
@@ -63,6 +64,10 @@ public class EmbyProxyFilter implements Filter {
             .maximumSize(1000).expireAfterWrite(12, TimeUnit.HOURS)
             .build();
 
+    private final Cache<String, String> urlCache = Caffeine.newBuilder()
+            .maximumSize(1000).expireAfterWrite(1, TimeUnit.DAYS)
+            .build();
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -72,8 +77,8 @@ public class EmbyProxyFilter implements Filter {
         // 缓存原始请求数据
         EmbyContentCacheReqWrapper reqWrapper = new EmbyContentCacheReqWrapper(req);
         try {
-            if (shouldProcessRequest(req)) {
-                processSpecialReq(reqWrapper, res);
+            if (needVideoRedirect(req)) {
+                processVideo(reqWrapper, res);
             } else {
                 forwardOriReq(reqWrapper, res);
             }
@@ -83,9 +88,8 @@ public class EmbyProxyFilter implements Filter {
         }
     }
 
-    private boolean shouldProcessRequest(HttpServletRequest req) {
-        // return false;
-        return req.getRequestURI().startsWith("/emby/videos/");
+    private boolean needVideoRedirect(HttpServletRequest req) {
+        return StrUtil.containsAll(req.getRequestURI(), "/emby/videos/", "/original");
     }
 
     /**
@@ -99,7 +103,7 @@ public class EmbyProxyFilter implements Filter {
             return false;
         }
         String uri = req.getRequestURI().toLowerCase();
-        if (StrUtil.contains(uri, "/images/primary")) {
+        if (StrUtil.containsAny(uri, "/images/primary", "/images/backdrop")) {
             return true;
         }
         return uri.matches(".*\\.(js|css|woff2|png|jpg|gif|ico|json|html)$");
@@ -122,7 +126,7 @@ public class EmbyProxyFilter implements Filter {
      * @param response 响应
      */
     @SneakyThrows
-    private void processSpecialReq(EmbyContentCacheReqWrapper request, HttpServletResponse response) {
+    private void processVideo(EmbyContentCacheReqWrapper request, HttpServletResponse response) {
         Map<String, Object> params = request.getCacheParam();
         String apiKey = MapUtil.getStr(params, "api_key");
         String mediaSourceId = StrUtil.removePrefixIgnoreCase(
@@ -131,22 +135,65 @@ public class EmbyProxyFilter implements Filter {
         Map<String, String> headers = request.getHeaderMap();
         String ua = headers.get("User-Agent");
 
-        Map<String, Object> itemReq = MapUtil.newHashMap();
-        itemReq.put("Ids", mediaSourceId);
-        itemReq.put("Fields", "Path,MediaSources");
-        itemReq.put("api_key", apiKey);
-        String result = HttpUtil.get(fastEmbyConfig.getHost() + "/Items", itemReq);
+        String url = urlCache.getIfPresent(ua + mediaSourceId);
+        if (StrUtil.isNotBlank(url)) {
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            response.setHeader("Location", url);
+            log.warn("重定向(缓存UA+Media):[{}] => {}", ua + mediaSourceId, url);
+            return;
+        }
+        url = urlCache.getIfPresent(mediaSourceId);
+        if (StrUtil.isNotBlank(url)) {
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            response.setHeader("Location", url);
+            log.warn("重定向(缓存Media):[{}] => {}", mediaSourceId, url);
+            return;
+        }
+
+        String result = HttpUtil.createGet(fastEmbyConfig.getHost() + "/Items")
+                .form("Ids", mediaSourceId)
+                .form("Fields", "Path,MediaSources").form("api_key", apiKey)
+                .execute().body();
         JSONObject resultJn = JSONObject.parseObject(result);
         JSONObject items = resultJn.getJSONArray("Items").getJSONObject(0);
         String filePath = items.getString("Path");
         String mediaPath = items.getJSONArray("MediaSources").getJSONObject(0).getString("Path");
 
         if (StrUtil.equalsIgnoreCase(FileUtil.extName(filePath), "strm")) {
+            // 外网转为内网
+            mediaPath = StrUtil.replaceIgnoreCase(mediaPath,
+                    fastEmbyConfig.getAlistPublic(), fastEmbyConfig.getAlistInner());
             try (HttpResponse mediaResp = HttpUtil.createRequest(Method.HEAD, mediaPath).execute()) {
                 if (mediaResp.getStatus() == FOUND) {
+                    String location = mediaResp.header("Location");
+
+                    if (StrUtil.startWithIgnoreCase(location, fastEmbyConfig.getOriginPt())) {
+                        int minute = DateUtil.thisMinute();
+                        if (minute == 0) {
+                            // 使用原始路径
+                        } else if (minute % 10 == 0) {
+                            location = StrUtil.replaceIgnoreCase(location,
+                                    fastEmbyConfig.getOriginPt(), fastEmbyConfig.getTransPt1());
+                        } else {
+                            if (minute % 3 == 0) {
+                                location = StrUtil.replaceIgnoreCase(location,
+                                        fastEmbyConfig.getOriginPt(), fastEmbyConfig.getTransPt2());
+                            } else if (minute % 3 == 1) {
+                                location = StrUtil.replaceIgnoreCase(location,
+                                        fastEmbyConfig.getOriginPt(), fastEmbyConfig.getTransPt3());
+                            } else if (minute % 3 == 2) {
+                                location = StrUtil.replaceIgnoreCase(location,
+                                        fastEmbyConfig.getOriginPt(), fastEmbyConfig.getTransPt4());
+                            }
+                        }
+                        urlCache.put(mediaSourceId, location);
+                    } else {
+                        urlCache.put(ua + mediaSourceId, location);
+                    }
+
                     response.setStatus(HttpServletResponse.SC_FOUND);
-                    response.setHeader("Location", mediaResp.header("Location"));
-                    log.info("重定向:[{}] => {}", mediaPath, mediaResp.header("Location"));
+                    response.setHeader("Location", location);
+                    log.warn("重定向:[{}] => {}", mediaPath, location);
                     return;
                 }
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);

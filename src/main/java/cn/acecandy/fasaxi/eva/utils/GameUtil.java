@@ -341,7 +341,7 @@ public final class GameUtil extends GameSubUtil {
      */
     public static boolean isGameOver(Game game) {
         return getUndercoverSurvivesNumber(game) == 0
-                || (getPeopleSurviveNumber(game) == 1 && getUndercoverSurvivesNumber(game) >= 0)
+                || (getPeopleSurviveNumber(game) <= 1 && getUndercoverSurvivesNumber(game) >= 0)
                 || (getUndercoverNumber(game) == 1 && getUndercoverSurvivesNumber(game) >= 0
                 && getSurvivesNumber(game) <= 3);
     }

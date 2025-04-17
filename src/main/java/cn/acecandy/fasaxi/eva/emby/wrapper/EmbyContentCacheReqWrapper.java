@@ -38,14 +38,7 @@ public class EmbyContentCacheReqWrapper extends HttpServletRequestWrapper {
         while ((len = is.read(buffer)) > -1) {
             baos.write(buffer, 0, len);
         }
-        byte[] originalContent = baos.toByteArray();
-        this.cachedContent = originalContent;
-
-        /*String charset = request.getCharacterEncoding();
-        if (charset == null) charset = StandardCharsets.UTF_8.name();
-        String queryString = new String(originalContent, charset);
-        queryString += "&X-Emby-Token=e2262107a13c45a7bfc48884be6f98ad";
-        this.cachedContent = queryString.getBytes();*/
+        this.cachedContent = baos.toByteArray();
     }
 
     private void cacheHeader(HttpServletRequest request) throws IOException {
@@ -55,16 +48,16 @@ public class EmbyContentCacheReqWrapper extends HttpServletRequestWrapper {
             String headerName = headerNames.nextElement();
             if (!StrUtil.equalsAnyIgnoreCase(headerName, "Host", "Content-Length", "Referer")) {
                 String headerValue = request.getHeader(headerName);
-                if (StrUtil.equalsIgnoreCase(headerName, "User-Agent")) {
+                /*if (StrUtil.equalsIgnoreCase(headerName, "User-Agent")) {
                     headerValue = "Yamby/1.0";
-                }
+                }*/
                 headerMap.put(headerName, headerValue);
             }
         }
         cachedHeader.putAll(headerMap);
     }
 
-    private void cacheParam(HttpServletRequest request) throws IOException {
+    private void cacheParam(HttpServletRequest request) {
         Enumeration<String> paramNames = request.getParameterNames();
         while (paramNames.hasMoreElements()) {
             String paramName = paramNames.nextElement();
