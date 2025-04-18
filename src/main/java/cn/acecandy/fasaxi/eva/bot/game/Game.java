@@ -500,18 +500,6 @@ public class Game {
             blankCount = 1;
         }
 
-        /*if (size >= 4 && size <= 5) {
-            spyCount = 1;
-        } else if (size >= 6 && size <= 7) {
-            spyCount = 2;
-        } else if (size >= 8 && size <= 9) {
-            spyCount = 3;
-            blankCount = 1;
-        } else if (size >= 10) {
-            spyCount = 4;
-            blankCount = 1;
-        }*/
-
         // 分配卧底
         Set<GameUser> spyMembers = RandomUtil.randomEleSet(memberList, spyCount);
         spyMembers.forEach(m -> {
