@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
 import static cn.hutool.core.text.CharSequenceUtil.SPACE;
@@ -104,13 +105,13 @@ public final class PinYinUtil extends PinyinUtil {
         if (isBlank(text)) {
             return false;
         }
-        int count = 0;
+        Set<String> set = CollUtil.newHashSet();
         for (char c : have.toCharArray()) {
             if (StrUtil.contains(text, c)) {
-                count++;
+                set.add(String.valueOf(c));
             }
         }
-        return count >= 2;
+        return set.size() >= 2;
     }
 
     /**

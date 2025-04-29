@@ -26,27 +26,9 @@
             </Policies>
             <DefaultRolloverStrategy max="100"/>
         </RollingFile>
-
-        <!-- Emby专用日志 -->
-        <RollingFile name="EmbyFile"
-                     fileName="${LOG_DIR}/emby.log"
-                     filePattern="${LOG_DIR}/emby/emby-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout pattern="${LOG_PATTERN}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy interval="1"/>
-                <SizeBasedTriggeringPolicy size="${MAX_FILE_SIZE}"/>
-            </Policies>
-            <DefaultRolloverStrategy max="100"/>
-        </RollingFile>
     </Appenders>
 
     <Loggers>
-        <!-- 为指定包配置独立日志 -->
-        <Logger name="cn.acecandy.fasaxi.eva.emby" level="INFO" additivity="false">
-            <AppenderRef ref="EmbyFile"/>
-            <AppenderRef ref="Console"/>
-        </Logger>
-
         <!-- 其他日志配置 -->
         <Root level="INFO">
             <AppenderRef ref="Console"/>

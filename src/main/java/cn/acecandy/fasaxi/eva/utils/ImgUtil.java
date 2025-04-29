@@ -3,9 +3,6 @@ package cn.acecandy.fasaxi.eva.utils;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.StrUtil;
-import com.jhlabs.image.GaussianFilter;
-import com.jhlabs.image.GrayscaleFilter;
-import com.jhlabs.image.InvertFilter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -375,34 +372,5 @@ public final class ImgUtil extends cn.hutool.core.img.ImgUtil {
         g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null);
         g2d.dispose();
         return resized;
-    }
-
-    @SneakyThrows
-    public static InputStream briefStrokesByJhLab(String filePath) {
-        // 1. 读取图像
-        BufferedImage src = read(filePath);
-        // 2. 灰度化
-        BufferedImage gray = new GrayscaleFilter().filter(src, null);
-
-        // 3. 反色处理
-        BufferedImage inverted = new InvertFilter().filter(gray, null);
-
-        // 4. 高斯模糊（半径5像素）
-        BufferedImage blurred = new GaussianFilter(3).filter(inverted, null);
-
-        // 5. 颜色减淡混合（生成素描效果）
-        BufferedImage sketch = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_RGB);
-        for (int x = 0; x < src.getWidth(); x++) {
-            for (int y = 0; y < src.getHeight(); y++) {
-                int a = gray.getRGB(x, y) & 0xFF;   // 原灰度值
-                int b = blurred.getRGB(x, y) & 0xFF; // 模糊后灰度值
-                int c = (a * 255) / (255 - b + 1);   // 颜色减淡公式
-                sketch.setRGB(x, y, (c << 16) | (c << 8) | c);
-            }
-        }
-
-        // 6. 保存结果
-        ImageIO.write(sketch, "jpg", new File("/Users/mac/Downloads/浏览器/004-2.jpg"));
-        return null;
     }
 }
