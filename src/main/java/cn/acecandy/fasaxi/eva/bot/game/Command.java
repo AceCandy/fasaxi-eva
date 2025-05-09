@@ -463,6 +463,6 @@ public class Command {
         }
         wodiUserDao.upFraction(userId, -3);
         game.setStatus(GameStatus.游戏关闭);
-        tgBot.sendMessage(chatId, StrUtil.format(EXIT_GAME, message.getFrom().getFirstName()), 15 * 1000);
+        tgBot.sendMessage(chatId, StrUtil.format(EXIT_GAME, message.getFrom().getFirstName()));
     }
 }

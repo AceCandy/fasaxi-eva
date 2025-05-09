@@ -246,7 +246,8 @@ public final class GameUtil extends GameSubUtil {
             if (member.toUser != null) {
                 // 公示投票
                 finishVoteStr.add(StrUtil.format(VOTE_PUBLICITY, TgUtil.tgNameOnUrl(member.user),
-                        anonymousVote ? "🀫🀫🀫🀫" : TgUtil.tgNameOnUrl(member.toUser.user)));
+                        // anonymousVote ? "🀫🀫🀫🀫" : TgUtil.tgNameOnUrl(member.toUser.user)));
+                        anonymousVote ? "████" : TgUtil.tgNameOnUrl(member.toUser.user)));
                 member.notVote = 0;
             } else if (member.finishVote) {
                 // 投票弃权
