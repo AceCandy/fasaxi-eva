@@ -4,36 +4,44 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 赛季3-等级规则
+ * 赛季4-等级规则
  *
  * @author AceCandy
  * @since 2024/10/16
  */
 @AllArgsConstructor
 @Getter
-public enum Season3Lv {
+public enum Season4Lv {
     /**
-     * 1-10级别
+     * 1-10级别 炼气期→筑基期→结丹期→元婴期→化神期→炼虚期→合体期→大乘期→真仙境→金仙境→太乙境→大罗境→道祖境
      */
-    LV_0(0, "无用折纸", Integer.MIN_VALUE, 100),
-    LV_1(1, "环保塑料", 100, 200),
-    LV_2(2, "坚韧黑铁", 200, 300),
-    LV_3(3, "英勇黄铜", 300, 500),
-    LV_4(4, "不屈白银", 500, 750),
-    LV_5(5, "荣耀黄金", 750, 1050),
-    LV_6(6, "华贵铂金", 1050, 1450),
-    LV_7(7, "璀璨钻石", 1450, 1950),
-    LV_8(8, "超凡大师", 1950, 2616),
-    LV_9(9, "傲世宗师", 2616, 3504),
-    LV_10(10, "最强王者", 3504, Integer.MAX_VALUE);
+    LV_0(0, "人界", "凡人", Integer.MIN_VALUE, 68),
+    LV_1(1, "人界", "练气期", 68, 168),
+    LV_2(2, "人界", "筑基期", 168, 288),
+    LV_3(3, "人界", "结丹期", 288, 438),
+    LV_4(4, "人界", "元婴期", 438, 638),
+    LV_5(5, "人界", "化神期", 638, 888),
+
+    LV_6(6, "灵界", "练虚期", 888, 1188),
+    LV_7(7, "灵界", "合体期", 1188, 1488),
+    LV_8(8, "灵界", "大乘期", 1488, 1888),
+
+    LV_9(9, "仙界", "真仙境", 1888, 2338),
+    LV_10(10, "仙界", "金仙境", 2338, 2788),
+    LV_11(11, "仙界", "太乙境", 2788, 3288),
+    LV_12(12, "仙界", "大罗境", 3288, 4088),
+
+    LV_13(13, "天道", "道祖境", 4088, Integer.MAX_VALUE),
+    ;
 
     private final Integer lv;
+    private final String realm;
     private final String title;
     private final Integer min;
     private final Integer max;
 
-    public static Season3Lv scoreTo(int score) {
-        for (Season3Lv sl : Season3Lv.values()) {
+    public static Season4Lv scoreTo(int score) {
+        for (Season4Lv sl : Season4Lv.values()) {
             if (score >= sl.min && score < sl.max) {
                 return sl;
             }
@@ -78,8 +86,8 @@ public enum Season3Lv {
         return 50 + lv * 50;
     }
 
-    public static Season3Lv lvTo(int lv) {
-        for (Season3Lv sl : Season3Lv.values()) {
+    public static Season4Lv lvTo(int lv) {
+        for (Season4Lv sl : Season4Lv.values()) {
             if (sl.lv.equals(lv)) {
                 return sl;
             }
