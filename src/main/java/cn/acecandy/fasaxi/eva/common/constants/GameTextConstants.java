@@ -11,7 +11,7 @@ public interface GameTextConstants {
     /**
      * 当前赛季
      */
-    Integer CURRENT_SEASON = 2;
+    Integer CURRENT_SEASON = 3;
 
     String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前已被发现！当前群组信息已上传云端！";
     String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，游戏开放时间9～12、14～18、19～22点！";
@@ -40,7 +40,7 @@ public interface GameTextConstants {
                       4. <b>发言顺序</b>：第一轮由<b>系统通知</b>前两名玩家进行发言描述，后续无顺序要求。
                       5. <b>发言规则</b>：通过“，XXX”（中文逗号前缀）此种方式正常描述自己的词，但是禁止无发言、本轮重复发言（扣除2Dmail），另外严禁包括谐音等方式爆本家词（扣除5Dmail）
                       6. <b>投票规则</b>：有投票权的玩家需要在规定时间内投票，未发言玩家无法参与投票环节，两次不参与投票（弃票不算）的玩家将会被系统kill（扣除5Dmail）。
-                      7. <b>房主优劣</b>：房主积分底分+1（享受成就加成），胜利回收11封Dmail，失败回收7封Dmail。
+                      7. <b>房主优劣</b>：房主开局需花费10Dmail，胜利收获14Dmail，失败收获7Dmail。
                       8. <b>积分成就</b>：每把游戏其中无论输赢游戏积分均会增长，Dmail则根据胜负情况增减。根据游戏情况积分的获取多少有不同，获得成就会有额外的积分奖励。短时间内Dmail减少很正常，不必惊慌，尽量多获得积分才重要。
                       9. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
                       
@@ -127,8 +127,8 @@ public interface GameTextConstants {
     String USER_DMAIL = "🎉 恭喜[Lv{}]{}本次赢得 <b>{}</b> 封Dmail \n";
     String USER_DMAIL_OWNER_WIN = "🚩💓 房主{}阵营获胜！奖励 <b>{}</b> 封Dmail \n";
     String USER_DMAIL_OWNER_FAIL = "🚩☠️ 房主{}阵营失败！回收 <b>{}</b> 封Dmail \n";
-    String USER_FULL = "✅ 参加人数达到{}人！全体增加 <b>{}</b> 封Dmail \n";
-    String RORATE_FULL = "✅ 激战回合数达到{}轮！全体增加 <b>{}</b> 封Dmail \n";
+    String USER_FULL = "✅ 参加人数达到{}人！全体(未逃跑)增加 <b>{}</b> 封Dmail \n";
+    String RORATE_FULL = "✅ 激战回合数达到{}轮！全体(未逃跑)增加 <b>{}</b> 封Dmail \n";
     String USER_LEVEL_UP = "🚀 祝贺{} 飞升为 <b>【{}】</b>，收获礼包 <b>{}</b> 封Dmail！\n";
     // String USER_LEVEL_UP_FIRST = "🏆🚀🚀🚀 {} 成为<b>首个</b>飞升至 <b>【{}】</b>的超级大牛, 额外收获 <b>{}</b> 封Dmail！大家快来膜拜他！！！\n";
     String USER_LEVEL_UP_FIRST = """
@@ -178,8 +178,15 @@ public interface GameTextConstants {
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL
     // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
 
-    String BOOM_WAITING = "🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪\n🌌\n🌌嘘～噤声！神秘的屠夫悄悄从屁股中缓缓地抽出了五米长的钢刀…………\n🌌\n🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪";
-    String BOOM_FAIL = "☠️❌☠️❌☠️ 玩家【{}】突然暴毙，没人知道发生了没什么（并且丢失了2Dmail）。剩余玩家游戏继续…………";
+    String BOOM_WAITING = """
+                          🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪
+                          🌌
+                          🌌嘘～～～～～～噤声！
+                          🌌屠夫缓缓从屁眼中抽出了五米长的钢刀…………
+                          🌌
+                          🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪
+                          """;
+    String BOOM_FAIL = "☠️❌☠️❌☠️ 【{}】突然猝死暴毙倒下，围观群众虽不明但都躲得远远的，生怕被碰瓷（Dmail-2）\n";
 
     String SEASON0 = "零化域的缺失之环";
     String SEASON1 = "闭时曲线的碑文";

@@ -1,12 +1,12 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
-import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
 import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
+import cn.acecandy.fasaxi.eva.utils.FhUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.ImgUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -43,7 +43,7 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCFH_TI
 public class CommonGameService {
 
     @Resource
-    private EmbyTelegramBot tgBot;
+    private TgService tgService;
 
     @Resource
     private GameKtccyDao gameKtccyDao;
@@ -121,10 +121,10 @@ public class CommonGameService {
         }
 
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(tgBot.getGroup()).caption(KTCCY_TIP)
+                .chatId(tgService.getGroup()).caption(KTCCY_TIP)
                 .photo(new InputFile(picFile))
                 .build();
-        Message msg = tgBot.sendPhoto(sendPhoto, 60 * 60 * 1000, 看图猜成语);
+        Message msg = tgService.sendPhoto(sendPhoto, 60 * 60 * 1000, 看图猜成语);
         CommonGameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
                 .type(看图猜成语).answer(ktccy.getAnswer()).msgId(msg.getMessageId()).build());
         log.warn("[成语猜猜看] {}", ktccy.getAnswer());
@@ -135,13 +135,9 @@ public class CommonGameService {
      */
     @SneakyThrows
     public void execKtcfh() {
-        // 未猜完无法出题
-        // if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
-        //     return;
-        // }
         String defaultPath = commonGameConfig.getKtcfh().getPath();
 
-        Path path = GameUtil.searchPoster(defaultPath);
+        Path path = FhUtil.searchPoster(defaultPath);
         if (path == null) {
             return;
         }
@@ -150,10 +146,10 @@ public class CommonGameService {
                 return;
             }
             SendPhoto sendPhoto = SendPhoto.builder()
-                    .chatId(tgBot.getGroup()).caption(KTCFH_TIP)
+                    .chatId(tgService.getGroup()).caption(KTCFH_TIP)
                     .photo(new InputFile(input, "ktcfh.jpg")).hasSpoiler(true).build();
-            Message msg = tgBot.sendPhoto(sendPhoto, 55 * 60 * 1000);
-            String fhName = GameUtil.getFhName(path.toString());
+            Message msg = tgService.sendPhoto(sendPhoto, 55 * 60 * 1000);
+            String fhName = FhUtil.getFhName(path.toString());
             CommonGameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
                     .type(看图猜番号).answer(fhName).msgId(msg.getMessageId()).build());
             log.warn("[道观我最强] {}", fhName);

@@ -38,7 +38,7 @@ public final class GameListUtil {
      * @param chatId 聊天id
      * @return {@link Game }
      */
-    public static Game getGame(Long chatId) {
+    public static Game getGame(String chatId) {
         Optional<Game> game = GAME_LIST.stream()
                 .filter(g -> g != null && chatId.equals(g.chatId))
                 .findFirst();

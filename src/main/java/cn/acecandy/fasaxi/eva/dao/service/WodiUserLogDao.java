@@ -6,14 +6,18 @@ import cn.acecandy.fasaxi.eva.dao.mapper.WodiUserLogMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.Console;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
 
 /**
  * 卧底用户日志 dao
@@ -41,6 +45,7 @@ public class WodiUserLogDao {
         log.setTelegramId(telegramId);
         log.setFraction(fraction);
         log.setIsVictory(isVictory);
+        log.setSeason(CURRENT_SEASON);
         wodiUserLogMapper.insert(log);
         return log.getId();
     }
@@ -112,5 +117,31 @@ public class WodiUserLogDao {
                 .between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(date), DateUtil.endOfDay(date))
         ;
         return wodiUserLogMapper.selectList(wrapper);
+    }
+
+    /**
+     * 按赛季查找
+     * <p>
+     * 时间是今天之前的所有（不包含今天）
+     * 按telegram_id升序、fraction降序、create_time降序排列
+     *
+     * @param season 季节
+     * @return {@link List }<{@link WodiUserLog }>
+     */
+    public List<WodiUserLog> findAllBySeason(Integer season) {
+        if (null == season) {
+            season = CURRENT_SEASON;
+        }
+        LambdaQueryWrapper<WodiUserLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WodiUserLog::getSeason, season)
+                .lt(WodiUserLog::getCreateTime, LocalDate.now())
+                .orderByAsc(WodiUserLog::getTelegramId)
+                .orderByDesc(WodiUserLog::getFraction, WodiUserLog::getCreateTime)
+        ;
+        return wodiUserLogMapper.selectList(wrapper);
+    }
+
+    public static void main(String[] args) {
+        Console.log(LocalDate.now());
     }
 }

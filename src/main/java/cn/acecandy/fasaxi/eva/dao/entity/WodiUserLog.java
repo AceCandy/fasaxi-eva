@@ -35,6 +35,9 @@ public class WodiUserLog {
     @Schema(name = "是否胜利")
     private Boolean isVictory;
 
+    @Schema(name = "赛季")
+    private Integer season;
+
     @Schema(name = "比赛时间")
     private Date createTime;
 }

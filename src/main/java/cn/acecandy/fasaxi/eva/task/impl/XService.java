@@ -1,6 +1,5 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
-import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUserLog;
@@ -30,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.GENERATE_INVITE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.INVITE_COLLECT;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_GROUP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_INVITE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_PRIVATE;
 
@@ -44,7 +44,7 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_P
 public class XService {
 
     @Resource
-    private EmbyTelegramBot tgBot;
+    private TgService tgService;
 
     @Resource
     private EmbyDao embyDao;
@@ -63,11 +63,10 @@ public class XService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void xInvite(Message message) {
-        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
-        Long chatId = message.getChatId();
+        String chatId = message.getChatId().toString();
         Long userId = message.getFrom().getId();
-        if (isGroupMessage) {
-            tgBot.sendMessage(chatId, TIP_IN_PRIVATE, 10 * 1000);
+        if (TgUtil.isGroupMsg(message)) {
+            tgService.sendMsg(chatId, TIP_IN_PRIVATE, 10 * 1000);
             return;
         }
         Emby emby = embyDao.findByTgId(userId);
@@ -76,33 +75,33 @@ public class XService {
         }
         XInvite shifu = xInviteDao.findByInvitee(userId);
         if (null != shifu && DateUtil.betweenDay(DateUtil.date(), shifu.getJoinTime(), false) < 21) {
-            tgBot.sendMessage(chatId, "您还未出师，无法开启传承！", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未出师，无法开启传承！", 5 * 1000);
             return;
         }
 
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
-        Integer lv = GameUtil.level(wodiUser.getFraction());
+        Integer lv = GameUtil.scoreToLv(wodiUser.getFraction());
         Integer canInviteCnt = lv / 3 + 1;
         Long cnt = xInviteDao.cntByInviterToday(userId);
         if (cnt >= canInviteCnt) {
-            tgBot.sendMessage(chatId,
+            tgService.sendMsg(chatId,
                     "您今日创建传承邀请超限(" + canInviteCnt + ")了，请明日再来", 5 * 1000);
             return;
         }
 
         Integer costIv = 200;
         if (emby.getIv() < costIv) {
-            tgBot.sendMessage(chatId, "您的Dmail不足，无法创建传承邀请", 5 * 1000);
+            tgService.sendMsg(chatId, "您的Dmail不足，无法创建传承邀请", 5 * 1000);
             return;
         }
-        if (!CollUtil.contains(tgBot.getAdmins(), userId)) {
+        if (!CollUtil.contains(tgService.getAdmins(), userId)) {
             embyDao.upIv(userId, -costIv);
         }
-        tgBot.sendMessage(chatId, TIP_IN_INVITE, 2 * 1000);
+        tgService.sendMsg(chatId, TIP_IN_INVITE, 2 * 1000);
 
-        String inviteUrl = tgBot.generateInvite(userId, 1);
+        String inviteUrl = tgService.generateInvite(userId, 1);
         log.info("{} 生成了一个传承邀请:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
-        tgBot.sendMessage(message.getMessageId(), message.getChatId(), StrUtil.format(GENERATE_INVITE, inviteUrl));
+        tgService.sendMsg(message.getMessageId(), message.getChatId().toString(), StrUtil.format(GENERATE_INVITE, inviteUrl));
         xInviteDao.insertInviter(userId, inviteUrl);
     }
 
@@ -111,12 +110,16 @@ public class XService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void xInviteList(Message message) {
-        Long chatId = message.getChatId();
+        String chatId = message.getChatId().toString();
         Long userId = message.getFrom().getId();
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
         Emby emby = embyDao.findByTgId(userId);
         if (null == wodiUser || null == emby) {
-            tgBot.sendMessage(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
+            return;
+        }
+        if (TgUtil.isPrivateMsg(message)) {
+            tgService.sendMsg(chatId, TIP_IN_GROUP, 10 * 1000);
             return;
         }
         // 查询弟子名单 小于21天为未出师弟子（计算22天是为了取昨日）
@@ -129,7 +132,8 @@ public class XService {
                 .map(XInvite::getInviteeId).toList();
         Map<Long, Integer> ivMap = wodiUserLogDao.findByTgIdYesterday(yesInviteeIds).stream()
                 .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
-                        Collectors.summingInt(bean -> (int) (bean.getIv() * 0.2 + bean.getTiv() * 0.1))
+                        Collectors.summingInt(bean ->
+                                (int) (bean.getFraction() * 0.5 + bean.getTiv() * 0.2))
                 ));
         // 发放昨日奖励
         if (MapUtil.isNotEmpty(ivMap)) {
@@ -138,7 +142,7 @@ public class XService {
             if (ivTotal > 0) {
                 // 扣除2分领取
                 embyDao.upIv(userId, ivTotal - 2);
-                tgBot.sendMessage(userId, StrUtil.format(INVITE_COLLECT, ivTotal));
+                tgService.sendMsg(userId.toString(), StrUtil.format(INVITE_COLLECT, ivTotal));
             }
         }
 
@@ -148,12 +152,13 @@ public class XService {
                 Collectors.toMap(WodiUser::getTelegramId, v -> v, (k1, k2) -> k2));
         Map<Long, Integer> newIvMap = wodiUserLogDao.findByTgIdToday(inviteeIds).stream()
                 .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
-                        Collectors.summingInt(bean -> (int) (bean.getIv() * 0.2 + bean.getTiv() * 0.1))
+                        Collectors.summingInt(bean ->
+                                (int) (bean.getFraction() * 0.5 + bean.getTiv() * 0.2))
                 ));
         SendMessage sendMsg = SendMessage.builder()
                 .chatId(chatId).text(GameUtil.getInviteList(wodiUser, xInvites, embyMap, newIvMap))
                 .build();
-        tgBot.sendMessage(sendMsg, 300 * 1000);
+        tgService.sendMsg(sendMsg, 300 * 1000);
     }
 
     public static void main(String[] args) {

@@ -1,9 +1,18 @@
 package cn.acecandy.fasaxi.eva.utils;
 
+import cn.acecandy.fasaxi.eva.common.constants.GameTextConstants;
+import cn.hutool.core.lang.Console;
+import cn.hutool.core.util.ClassUtil;
+import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
+import java.lang.reflect.Method;
+
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.SEASON1;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TOP_TITLE;
 
 /**
  * 游戏工具类(赛季子集)
@@ -16,123 +25,47 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
 @Slf4j
 public class GameSubUtil {
 
-    public static Integer levelUpScoreByLv1(Integer lv) {
-        if (lv >= 6 && lv <= 9) {
-            return 500;
-        } else if (lv >= 10) {
-            return 1000;
+    /**
+     * 统一调用入口
+     *
+     * @param season 赛季编号（1=Season1Lv, 2=Season2Lv...）
+     * @param params 方法参数（需与方法签名匹配）
+     */
+    @SneakyThrows
+    public static Object invoke(Integer season, Object... params) {
+        if (null == season) {
+            season = CURRENT_SEASON;
         }
-        return lv * 100;
+        String methodName = StackWalker.getInstance().walk(s -> s.skip(1)
+                .findFirst().map(StackWalker.StackFrame::getMethodName).orElse("Unknown"));
+        // 获取赛季对应的枚举类名
+        String className = "cn.acecandy.fasaxi.eva.common.enums.Season" + season + "Lv";
+        Method method = ReflectUtil.getMethod(Class.forName(className), methodName, ClassUtil.getClasses(params));
+        return ReflectUtil.invokeStatic(method, params);
     }
 
-    public static Integer levelUpScoreByLv2(Integer lv) {
-        if (lv >= 10) {
-            return 1000;
-        }
-        return 50 + lv * 50;
+    public static Integer scoreToLv(Integer score) {
+        return (int) invoke(CURRENT_SEASON, score);
     }
 
-
-    public static String levelByLv1(Integer lv) {
-        return switch (lv) {
-            case 0 -> "善良白丁";
-            case 1 -> "钢铁暴民";
-            case 2 -> "新生凤雏";
-            case 3 -> "智计卧龙";
-            case 4 -> "迷踪神探";
-            case 5 -> "幻影刺客";
-            case 6 -> "岐山王者";
-            case 7 -> "九州霸王";
-            case 8 -> "无天杀神";
-            case 9 -> "乱世传奇";
-            default -> lv >= 10 ? "地界至尊" : "地痞混子";
-        };
+    public static String lvToTitle(Integer lv) {
+        return lvToTitle(lv, CURRENT_SEASON);
     }
 
-    public static String levelByLv2(Integer lv) {
-        return switch (lv) {
-            case 0 -> "普通路人";
-            case 1 -> "古武高手";
-            case 2 -> "仙路强者";
-            case 3 -> "人界超赛";
-            case 4 -> "地界超赛";
-            case 5 -> "天界超赛";
-            case 6 -> "原始超赛";
-            case 7 -> "极道至尊";
-            case 8 -> "羽化星空";
-            case 9 -> "宇宙中枢";
-            default -> lv >= 10 ? "圣破万维" : "未知生物";
-        };
+    public static String lvToTitle(Integer lv, Integer season) {
+        return (String) invoke(season, lv);
     }
 
-    public static String levelByLv3(Integer lv) {
-        return switch (lv) {
-            case 0 -> "无用折纸";
-            case 1 -> "环保塑料";
-            case 2 -> "坚韧黑铁";
-            case 3 -> "英勇黄铜";
-            case 4 -> "不屈白银";
-            case 5 -> "荣耀黄金";
-            case 6 -> "华贵铂金";
-            case 7 -> "璀璨钻石";
-            case 8 -> "超凡大师";
-            case 9 -> "傲世宗师";
-            default -> lv >= 10 ? "最强王者" : "未知生物";
-        };
+    public static String scoreToTitle(Integer score) {
+        return (String) invoke(CURRENT_SEASON, score);
     }
 
-    public static Integer level1(Integer score) {
-        if (score >= 0 && score < 100) {
-            return 0;
-        } else if (score >= 100 && score < 200) {
-            return 1;
-        } else if (score >= 200 && score < 300) {
-            return 2;
-        } else if (score >= 300 && score < 400) {
-            return 3;
-        } else if (score >= 400 && score < 500) {
-            return 4;
-        } else if (score >= 500 && score < 600) {
-            return 5;
-        } else if (score >= 600 && score < 800) {
-            return 6;
-        } else if (score >= 800 && score < 1000) {
-            return 7;
-        } else if (score >= 1000 && score < 1250) {
-            return 8;
-        } else if (score >= 1250 && score < 1888) {
-            return 9;
-        } else if (score >= 1888) {
-            return 10;
-        }
-        return -1;
+    public static Integer scoreToFirstUpGift(Integer score) {
+        return (Integer) invoke(CURRENT_SEASON, score);
     }
 
-    public static Integer level2(Integer score) {
-        if (score >= 0 && score < 80) { // 80
-            return 0;
-        } else if (score >= 80 && score < 180) {// 100
-            return 1;
-        } else if (score >= 180 && score < 320) { // 140
-            return 2;
-        } else if (score >= 320 && score < 500) {// 180
-            return 3;
-        } else if (score >= 500 && score < 700) {// 200
-            return 4;
-        } else if (score >= 700 && score < 950) {// 250
-            return 5;
-        } else if (score >= 950 && score < 1250) {// 300
-            return 6;
-        } else if (score >= 1250 && score < 1650) {// 400
-            return 7;
-        } else if (score >= 1650 && score < 2150) {// 500
-            return 8;
-        } else if (score >= 2150 && score < 2816) {// 666
-            return 9;
-        } else if (score >= 2816) {
-            return 10;
-        }
-        return -1;
+    public static Integer lvToFirstUpGift(Integer lv) {
+        return (Integer) invoke(CURRENT_SEASON, lv);
     }
 
     /**
@@ -148,29 +81,15 @@ public class GameSubUtil {
         return StrUtil.format(TOP_TITLE, getTopBySeason(season), season);
     }
 
+    @SneakyThrows
     public static String getTopBySeason(Integer season) {
-        if (season == 1) {
-            return SEASON1;
-        } else if (season == 2) {
-            return SEASON2;
-        } else if (season == 3) {
-            return SEASON3;
-        } else if (season == 4) {
-            return SEASON4;
-        } else if (season == 5) {
-            return SEASON5;
-        } else if (season == 6) {
-            return SEASON6;
-        } else if (season == 7) {
-            return SEASON7;
-        } else if (season == 8) {
-            return SEASON8;
-        } else if (season == 9) {
-            return SEASON9;
-        } else if (season == 10) {
-            return SEASON10;
+        if (null == season) {
+            season = CURRENT_SEASON;
         }
+        return (String) ReflectUtil.getFieldValue(GameTextConstants.class, "SEASON" + season);
+    }
 
-        return SEASON1;
+    public static void main(String[] args) {
+        Console.log(getTopBySeason(3));
     }
 }

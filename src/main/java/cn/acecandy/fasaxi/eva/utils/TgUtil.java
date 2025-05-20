@@ -131,14 +131,16 @@ public final class TgUtil {
         if (StrUtil.isBlank(text) || !StrUtil.startWith(text, "，")) {
             return;
         }
-        Game game = GameListUtil.getGame(message.getChatId());
+        Game game = GameListUtil.getGame(message.getChatId().toString());
         if (game == null || !讨论时间.equals(game.getStatus())) {
             return;
         }
-        text = StrUtil.removeAllPrefix(text, "，");
-        if (game.rotate != 1 && StrUtil.startWithIgnoreCase(text, "。")) {
-            // 白板爆词专用(第一轮不允许)
-            text = StrUtil.removeAllPrefix(text, "。");
+        text = StrUtil.removePrefix(text, "，");
+        // 第一轮不能爆；非。开头不能爆；第二轮时如果第一轮发言人数<2不能爆
+        boolean canBoom = game.rotate != 1 && StrUtil.startWith(text, "。") &&
+                !(game.rotate == 2 && game.firstSpeakList.size() < 2);
+        if (canBoom) {
+            text = StrUtil.removePrefix(text, "。");
             game.boom(message, message.getFrom().getId(), text);
         } else {
             game.speak(message, message.getFrom().getId(), text);
@@ -318,6 +320,26 @@ public final class TgUtil {
                         StrUtil.SPACE
                 )
         ).toLowerCase();
+    }
+
+    /**
+     * 是群消息
+     *
+     * @param message 消息
+     * @return boolean
+     */
+    public static boolean isGroupMsg(Message message) {
+        return message.isGroupMessage() || message.isSuperGroupMessage();
+    }
+
+    /**
+     * 是群消息
+     *
+     * @param message 消息
+     * @return boolean
+     */
+    public static boolean isPrivateMsg(Message message) {
+        return !isGroupMsg(message);
     }
 
     public static void main(String[] args) {

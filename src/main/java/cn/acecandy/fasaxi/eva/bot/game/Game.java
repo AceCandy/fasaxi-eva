@@ -1,16 +1,15 @@
 package cn.acecandy.fasaxi.eva.bot.game;
 
-import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
-import cn.acecandy.fasaxi.eva.dao.service.WodiGroupDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
+import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
@@ -42,6 +41,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,13 +49,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
-import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAXIMUM_VOTE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAX_PLAYER;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MaxActiveTime;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MaxWattingTime;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.WaitingYoJoinTimeInterval;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.minMemberSize;
-import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.notVote;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteReminderVote;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteTimeLimit;
 import static cn.acecandy.fasaxi.eva.utils.GameUtil.isSpecialGameOver;
@@ -78,7 +76,7 @@ public class Game {
      * 最后活动时间
      */
     public volatile long endActiveTime;
-    public Long chatId;
+    public String chatId;
     public User homeOwner;
 
     @Setter
@@ -114,16 +112,22 @@ public class Game {
      */
     boolean voteReminder;
 
+    /**
+     * 每轮发言记录
+     */
     List<String> speakList = CollUtil.newArrayList();
+    /**
+     * 第一轮发言记录
+     */
+    public List<String> firstSpeakList = CollUtil.newArrayList();
     String PEOPLE_WORD;
     String SPY_WORD;
     public String SPACE_MEMBER;
 
     private boolean specialMode = false;
 
-    public EmbyTelegramBot tgBot;
+    public TgService tgService;
 
-    public WodiGroupDao wodiGroupDao;
     public WodiUserDao wodiUserDao;
     public WodiWordDao wodiWordDao;
     public WodiTopDao wodiTopDao;
@@ -136,18 +140,15 @@ public class Game {
         initEnv();
         this.status = GameStatus.等待加入;
         this.chat = chat;
-        this.chatId = chat.getId();
+        this.chatId = chat.getId().toString();
         this.homeOwner = user;
         this.specialMode = false;
-        wodiGroupDao.updateGroupData(chatId, chat.getUserName(), chat.getTitle());
 
         joinGame(user);
         startGameLoop();
     }
 
     private void initEnv() {
-        tgBot = SpringUtil.getBean(EmbyTelegramBot.class);
-        wodiGroupDao = SpringUtil.getBean(WodiGroupDao.class);
         wodiUserDao = SpringUtil.getBean(WodiUserDao.class);
         wodiWordDao = SpringUtil.getBean(WodiWordDao.class);
         wodiTopDao = SpringUtil.getBean(WodiTopDao.class);
@@ -160,7 +161,7 @@ public class Game {
             return;
         }
         if (null == embyDao.findByTgId(user.getId())) {
-            tgBot.sendMessage(chatId, NO_EMBY_USER_TIP, 5 * 1000);
+            tgService.sendMsg(chatId, NO_EMBY_USER_TIP, 5 * 1000);
             return;
         }
 
@@ -225,12 +226,12 @@ public class Game {
 
         // 60s时间结束但是有人尚未准备
         if (endTime - endActiveTime > MaxActiveTime && !GameUtil.isAllMemberReady(this)) {
-            tgBot.sendMessage(chatId, StrUtil.format(TimeoutShutdown, noReadyMember()), 60 * 1000);
+            tgService.sendMsg(chatId, StrUtil.format(TimeoutShutdown, noReadyMember()), 60 * 1000);
             status = GameStatus.游戏关闭;
         }
         // 360s时间结束但是有人尚未准备
         if (endTime - endActiveTime > MaxWattingTime) {
-            tgBot.sendMessage(chatId, WattingTimeoutShutdown);
+            tgService.sendMsg(chatId, WattingTimeoutShutdown);
             status = GameStatus.游戏关闭;
         }
     }
@@ -250,6 +251,9 @@ public class Game {
         if (CollUtil.isNotEmpty(boomList)) {
             sendBoom(CollUtil.getFirst(boomList));
         }
+        if (status != GameStatus.讨论时间) {
+            return;
+        }
 
         if (endTime > speechTimeEnd || memberList.stream()
                 .filter(m -> m.survive).allMatch(m -> m.speak)) {
@@ -267,20 +271,25 @@ public class Game {
      * @param member 成员
      */
     private void sendBoom(GameUser member) {
-        tgBot.muteGroup(chatId);
-        SendMessage sendMessage = new SendMessage(chatId.toString(), StrUtil.format(BOOM_WAITING));
-        tgBot.sendMessage(sendMessage, 5 * 1000);
-        ThreadUtil.safeSleep(4 * 1000);
+        tgService.muteGroup(chatId);
+        tgService.sendAnimation(SendAnimation.builder().chatId(chatId)
+                .caption(StrUtil.format(BOOM_WAITING))
+                .animation(new InputFile(
+                        ResourceUtil.getStream("static/pic/moon.gif.mp4"), "moon.gif.mp4"))
+                .build(), 10 * 1000);
+        ThreadUtil.safeSleep(9 * 1000);
 
         String boom = member.boom;
         if (StrUtil.equalsIgnoreCase(boom, PEOPLE_WORD)) {
             sendBoomGameOver();
         } else {
             member.survive = false;
-            tgBot.sendMessage(chatId, StrUtil.format(BOOM_FAIL, TgUtil.tgNameOnUrl(member)));
             embyDao.upIv(member.id, -2);
+            tgService.sendMsg(chatId, StrUtil.format(BOOM_FAIL, TgUtil.tgNameOnUrl(member)));
+
+            execGameOver(new StringBuilder());
         }
-        tgBot.unmuteGroup(chatId);
+        tgService.unmuteGroup(chatId);
     }
 
 
@@ -305,11 +314,10 @@ public class Game {
     public void startDiscussion() {
         TimeInterval timer = DateUtil.timer();
         embyDao.upIv(homeOwner.getId(), -10);
-        tgBot.sendMessage(chatId, StrUtil.format(GAME_START, TgUtil.tgNameOnUrl(homeOwner)), 5 * 1000);
-        log.info("，耗时1：{}ms", timer.intervalMs());
+        tgService.sendMsg(chatId, StrUtil.format(GAME_START, TgUtil.tgNameOnUrl(homeOwner)), 5 * 1000);
         initWords();
-        log.warn("游戏开始！平民词：{}，卧底词：{}，白板：{}", PEOPLE_WORD, SPY_WORD, SPACE_MEMBER);
-        log.info("发牌初始化，耗时2：{}ms", timer.intervalMs());
+        log.warn("游戏开始！平民词：{}，卧底词：{}，白板：{}, 耗时：{}ms",
+                PEOPLE_WORD, SPY_WORD, SPACE_MEMBER, timer.intervalMs());
         sendUserWord();
         log.info("玩家收到词，耗时3：{}ms", timer.intervalMs());
         sendSpeechPerform();
@@ -328,10 +336,10 @@ public class Game {
             member.beVoted.set(0);
             member.toUser = null;
         });
-        SendMessage sendMessage = new SendMessage(chatId.toString(), VOTING_START);
+        SendMessage sendMessage = new SendMessage(chatId, VOTING_START);
         sendMessage.setReplyMarkup(TgUtil.getVoteMarkup(this));
-        tgBot.sendMessage(sendMessage, GameStatus.投票中, this);
-        tgBot.muteGroup(chatId);
+        tgService.sendMsg(sendMessage, GameStatus.投票中, this);
+        tgService.muteGroup(chatId);
     }
 
     public boolean vote(Long userId, Long toUser) {
@@ -354,6 +362,10 @@ public class Game {
             if (-1 != toUser) {
                 toMember.beVoted.incrementAndGet();
                 member.toUser = toMember;
+                member.abstainedRound = 0;
+            } else {
+                // 弃权场次+1
+                member.abstainedRound += 1;
             }
         }
         return ret;
@@ -376,8 +388,8 @@ public class Game {
 
         SendMessage sendMessage = new SendMessage(this.chatId.toString(),
                 StrUtil.format(SPEECH_TIME, getSurvivesUserNames(), speechTime, rotate, speechSortStr));
-        sendMessage.setReplyMarkup(TgUtil.getViewWord(tgBot.getBotUsername()));
-        Message msg = tgBot.sendMessage(sendMessage);
+        sendMessage.setReplyMarkup(TgUtil.getViewWord(tgService.getBotUsername()));
+        Message msg = tgService.sendMsg(sendMessage);
 
         // 新一轮发言结束时间以及清空之前的发言状态和发言列表
         speechTimeEnd = System.currentTimeMillis() + (speechTime * 1000);
@@ -387,7 +399,7 @@ public class Game {
         sendInviteMessage = msg;
         // 置顶第一轮发言方便回溯
         if (isPin) {
-            tgBot.pinMsg(msg.getChatId(), msg.getMessageId());
+            tgService.pinMsg(msg.getChatId().toString(), msg.getMessageId());
             firstMsg = msg;
         }
     }
@@ -404,7 +416,7 @@ public class Game {
                         GameUtil.getWaitingUserNames(memberList, homeOwner)))
                 .replyMarkup(TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this))
                 .build();
-        return tgBot.sendPhoto(sendPhoto, WaitingYoJoinTimeInterval, GameStatus.等待加入, this);
+        return tgService.sendPhoto(sendPhoto, WaitingYoJoinTimeInterval, GameStatus.等待加入, this);
     }
 
     /**
@@ -414,7 +426,7 @@ public class Game {
         if (sendInviteMessage == null) {
             return;
         }
-        tgBot.editMessage(sendInviteMessage, StrUtil.format(
+        tgService.editMsg(sendInviteMessage, StrUtil.format(
                         GAME_WAITING, memberList.size(), GameUtil.getWaitingUserNames(memberList, homeOwner)),
                 TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this));
     }
@@ -528,7 +540,7 @@ public class Game {
         memberList.parallelStream().forEach(m -> {
             SendMessage sendMessage = new SendMessage(m.id.toString(),
                     StrUtil.format(sendWord, chat.getTitle(), m.word));
-            Message message = tgBot.sendMessage(sendMessage);
+            Message message = tgService.sendMsg(sendMessage);
         });
     }
 
@@ -546,68 +558,50 @@ public class Game {
 
         // 淘汰
         stringBuilder.append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
-        List<String> surviveStr = execOutMember();
-        stringBuilder.append(CollUtil.isNotEmpty(surviveStr) ? CollUtil.join(surviveStr, StrUtil.COMMA) : "无")
-                .append("\n");
+        Map<String, List<GameUser>> outMap = GameUtil.execOutMember(this, memberList);
+        outMap.get("逃跑").forEach(m -> {
+            embyDao.upIv(m.id, -5);
+            tgService.sendMsg(chatId, StrUtil.format(NOT_VOTED_TIP, TgUtil.tgNameOnUrl(m.user)));
+        });
+        stringBuilder.append(GameUtil.formatOutStr(outMap)).append("\n");
 
+        if (!execGameOver(stringBuilder)) {
+            stringBuilder.append(StrUtil.format(SURVIVAL_PERSONNEL, GameUtil.getSurvivesNumber(this),
+                    memberList.size(), getSurvivesUserNames()));
+            tgService.sendMsg(chatId, stringBuilder.toString());
+            sendSpeechPerform();
+        }
+    }
+
+    /**
+     * 判断如果游戏结束则执行结算
+     *
+     * @param stringBuilder 字符串生成器
+     * @return boolean
+     */
+    private boolean execGameOver(StringBuilder stringBuilder) {
         // 判断游戏结束
         if (specialMode && isSpecialGameOver(this)) {
-            tgBot.sendMessage(chatId, stringBuilder.toString());
+            tgService.sendMsg(chatId, stringBuilder.toString());
             if (GameUtil.getUndercoverSurvivesNumber(this) != 0) {
                 // 卧底胜利时需要淘汰剩余平民
                 memberList.stream().filter(member -> member.survive && !member.isUndercover)
                         .forEach(member -> member.survive = false);
             }
             sendSpecialGameOver();
+            return true;
         } else if (GameUtil.isGameOver(this)) {
-            tgBot.sendMessage(chatId, stringBuilder.toString());
+            tgService.sendMsg(chatId, stringBuilder.toString());
             if (GameUtil.getUndercoverSurvivesNumber(this) != 0) {
                 // 卧底胜利时需要淘汰剩余平民
                 memberList.stream().filter(member -> member.survive && !member.isUndercover)
                         .forEach(member -> member.survive = false);
             }
             sendGameOver();
-        } else {
-            stringBuilder.append(StrUtil.format(SURVIVAL_PERSONNEL, GameUtil.getSurvivesNumber(this),
-                    memberList.size(), getSurvivesUserNames()));
-            tgBot.sendMessage(chatId, stringBuilder.toString());
-            sendSpeechPerform();
+            return true;
         }
-        tgBot.unmuteGroup(chatId);
+        return false;
     }
-
-    /**
-     * 处理淘汰成员
-     *
-     * @return {@link List }<{@link String }>
-     */
-    private List<String> execOutMember() {
-        // 本轮淘汰所需票数
-        long survivesNumber = GameUtil.getSurvivesNumber(this);
-        long weedOut = survivesNumber / 3 + (survivesNumber % 3 > 0 ? 1 : 0);
-
-        List<String> surviveStr = CollUtil.newArrayList();
-        List<GameUser> highMember = GameUtil.getHighestVotedMembers(this);
-        if (CollUtil.size(highMember) == 1) {
-            int highVoted = CollUtil.getFirst(highMember).beVoted.get();
-            surviveStr.addAll(memberList.stream()
-                    .filter(m -> m.survive && m.beVoted.get() == highVoted &&
-                            (m.beVoted.get() >= MAXIMUM_VOTE || m.beVoted.get() >= weedOut))
-                    .map(m -> {
-                        m.survive = false;
-                        return StrUtil.format("{}({}票)", TgUtil.tgNameOnUrl(m.user), m.beVoted.get());
-                    }).toList());
-        }
-        surviveStr.addAll(memberList.stream().filter(m -> m.survive && m.notVote >= notVote).map(m -> {
-                    m.survive = false;
-                    tgBot.sendMessage(chatId, StrUtil.format(NOT_VOTED_TIP, TgUtil.tgNameOnUrl(m.user)));
-                    embyDao.upIv(m.id, -5);
-                    return TgUtil.tgNameOnUrl(m.user) + StrUtil.format("({}票-未投票2次)", m.beVoted.get());
-                }
-        ).toList());
-        return surviveStr;
-    }
-
 
     /**
      * 白板爆词 游戏结束 积分计算
@@ -628,9 +622,8 @@ public class Game {
         member.fraction += memberList.size() < 8 ? -2 : 0;
         // 每回合+1分
         member.fraction += member.round;
-        // 房主+1
+        // 房主
         boolean isOwner = member.id.equals(homeOwner.getId());
-        member.fraction += isOwner ? 1 : 0;
 
         // 构建爆词成就str
         buildBoomAchievementStr(isOwner, member, stringBuilder, surviveNum, noSpaceSurviveNum, noSpaceNum);
@@ -658,7 +651,7 @@ public class Game {
         });
 
 
-        tgBot.sendMessage(chatId, stringBuilder.toString());
+        tgService.sendMsg(chatId, stringBuilder.toString());
 
         realSettlement(true);
         status = GameStatus.游戏关闭;
@@ -690,14 +683,14 @@ public class Game {
         if (allUnderCoverSurvive) {
             stringBuilder.append(GAME_OVER_BOOM_UNDERCOVER);
         }
-        // 如果卧底全部存活 但是白板死亡 积分+3
+        // 如果卧底全部存活 但是白板死亡 积分+3（卧底人数>2）
         boolean allUnderCoverSurviveNoSpace = winnerIsUndercover && spaceNum > 0
-                && spaceSurviveNum == 0 && undercoverSurviveNum == noSpaceNum;
+                && spaceSurviveNum == 0 && undercoverSurviveNum == noSpaceNum && undercoverNum > 2;
         if (allUnderCoverSurviveNoSpace) {
             stringBuilder.append(GAME_OVER_BOOM_SINGLE_UNDERCOVER);
         }
-        // 如果卧底单独存活 积分+5
-        boolean singleUnderCoverSurvive = undercoverNum > 1 && undercoverSurviveNum == 1 && spaceSurviveNum == 0;
+        // 如果卧底单独存活 积分+5（卧底人数>2）
+        boolean singleUnderCoverSurvive = undercoverNum > 2 && undercoverSurviveNum == 1 && spaceSurviveNum == 0;
         if (singleUnderCoverSurvive) {
             stringBuilder.append(GAME_OVER_BOOM_SINGLE_UNDERCOVER2);
         }
@@ -708,12 +701,12 @@ public class Game {
             stringBuilder.append(StrUtil.format(GAME_OVER_BOOM3, getSurvivesUserNames()));
         }
 
-        // 平民全部存活 积分1.5倍（卧底人数需＞1）
-        boolean allPeopleSurvive = peopleNum == surviveNum && !winnerIsUndercover && undercoverNum > 1;
+        // 平民全部存活 积分1.5倍（卧底人数需＞2）
+        boolean allPeopleSurvive = peopleNum == surviveNum && !winnerIsUndercover && undercoverNum > 2;
         if (allPeopleSurvive) {
             stringBuilder.append(GAME_OVER_BOOM_PEOPLE);
         }
-        // 平民存活且只存活2人 且总人数>=6 积分+5
+        // 平民存活且只存活2人 且总人数>=6 积分+3
         boolean brotherSurvive = CollUtil.size(memberList) >= 6 && peopleSurviveNum == 2;
         if (brotherSurvive) {
             stringBuilder.append(GAME_OVER_BOOM_SINGLE_PEOPLE);
@@ -727,8 +720,20 @@ public class Game {
             boolean undercover = m.isUndercover;
             boolean isOwner = m.id.equals(homeOwner.getId());
 
-            // 底分：白板6 卧底5 平民3
-            m.fraction = undercover ? (m.isSpace ? 5 : 4) : 3;
+            // 底分
+            if (allUnderCoverSurvive && !undercover) {
+                // 卧底全活成就下 平民分为2
+                m.fraction = 2;
+            } else if (allPeopleSurvive && undercover) {
+                // 民全活成就下 卧底分为1
+                m.fraction = 1;
+            } else if (undercover) {
+                // 卧底4
+                m.fraction = 4;
+            } else if (!undercover) {
+                // 平民3
+                m.fraction = 3;
+            }
             // 每活2个回合(超过人数回合不算)，积分+1
             if (undercoverNum == 1) {
                 m.fraction += Math.min(m.round, memberList.size() - undercoverNum + 1) / 2;
@@ -739,8 +744,6 @@ public class Game {
             if (m.survive) {
                 // 加上卧底人数/2的分数（0-2）
                 m.fraction += undercoverNum / 2;
-                // 房主加成
-                m.fraction += isOwner ? 1 : 0;
 
                 Integer realFraction = m.fraction;
                 if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
@@ -755,8 +758,6 @@ public class Game {
                         .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
-                // 房主加成2分
-                m.fraction += isOwner ? 1 : 0;
                 // 输家阵营-2分
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
@@ -775,7 +776,7 @@ public class Game {
         surviveStr.forEach(stringBuilder::append);
         stringBuilder.append("\n");
         noSurviveStr.forEach(stringBuilder::append);
-        tgBot.sendMessage(chatId, stringBuilder.toString());
+        tgService.sendMsg(chatId, stringBuilder.toString());
 
         // 实际结算
         realSettlement(winnerIsUndercover);
@@ -827,8 +828,6 @@ public class Game {
             if (m.survive) {
                 // 加上卧底人数/2的分数（0-2）
                 m.fraction += undercoverNum / 2;
-                // 房主加成
-                m.fraction += isOwner ? 1 : 0;
 
                 Integer realFraction = m.fraction;
                 String boomStr = "";
@@ -843,8 +842,6 @@ public class Game {
                         .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
-                // 房主加成2分
-                m.fraction += isOwner ? 1 : 0;
                 // 输家阵营-2分
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
@@ -864,7 +861,7 @@ public class Game {
         surviveStr.forEach(stringBuilder::append);
         stringBuilder.append("\n");
         noSurviveStr.forEach(stringBuilder::append);
-        tgBot.sendMessage(chatId, stringBuilder.toString());
+        tgService.sendMsg(chatId, stringBuilder.toString());
 
         // 实际结算
         realSettlement(winnerIsUndercover);
@@ -944,7 +941,11 @@ public class Game {
             m.fraction += 3;
             boomStr += "<b> +3</b>";
         }
-        if (singleUnderCoverSurvive || brotherSurvive) {
+        if (brotherSurvive) {
+            m.fraction += 3;
+            boomStr += "<b> +3</b>";
+        }
+        if (singleUnderCoverSurvive) {
             m.fraction += 5;
             boomStr += "<b> +5</b>";
         }
@@ -971,8 +972,6 @@ public class Game {
     private void realSettlement(boolean winnerIsUndercover) {
         boolean seasonEnds = false;
         try {
-            wodiGroupDao.upFinishGame(chatId);
-            wodiGroupDao.upMaxOfPeople(chatId, memberList.size());
             List<Long> completeGameId = CollUtil.newArrayList();
             List<Long> wordPeopleId = CollUtil.newArrayList();
             List<Long> wordSpyId = CollUtil.newArrayList();
@@ -1014,7 +1013,7 @@ public class Game {
             // 发币
             StringBuilder mailBuilder = new StringBuilder();
             memberList.forEach(m -> {
-                Integer level = GameUtil.level(m.wodiUser.getFraction());
+                Integer level = GameUtil.scoreToLv(m.wodiUser.getFraction());
                 m.dmailUp = (int) ((m.fraction - 4) * (1 + 0.1 * level));
                 mailBuilder.append(StrUtil.format(USER_DMAIL, level, TgUtil.tgNameOnUrl(m.user), m.dmailUp));
                 embyDao.upIv(m.user.getId(), m.dmailUp);
@@ -1022,7 +1021,7 @@ public class Game {
                 if (m.id.equals(homeOwner.getId())) {
                     String ownerStr = "";
                     if ((m.isUndercover && winnerIsUndercover) || (!m.isUndercover && !winnerIsUndercover)) {
-                        m.dmailUp = 11;
+                        m.dmailUp = 14;
                         ownerStr = StrUtil.format(USER_DMAIL_OWNER_WIN,
                                 TgUtil.tgNameOnUrl(m.user), m.dmailUp);
                     } else {
@@ -1039,22 +1038,24 @@ public class Game {
             if (memberSize >= 9) {
                 int upRotate = memberSize - 8;
                 mailBuilder.append("\n").append(StrUtil.format(USER_FULL, memberSize, upRotate));
-                memberList.forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
+                memberList.stream().filter(m -> !m.isRunner)
+                        .forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
             if (rotate > memberSize + 1) {
                 int upRotate = NumberUtil.min(rotate - memberSize - 1, memberSize / 2);
                 mailBuilder.append("\n").append(StrUtil.format(RORATE_FULL, rotate, upRotate));
-                memberList.forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
+                memberList.stream().filter(m -> !m.isRunner)
+                        .forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
-            tgBot.sendMessage(chatId, mailBuilder.toString());
+            tgService.sendMsg(chatId, mailBuilder.toString());
 
             StringBuilder upBuilder = new StringBuilder();
             List<GameUser> upMember = CollUtil.newArrayList();
             memberList.forEach(m -> {
                 String oldLevel = m.oldLevel;
-                String newLevel = GameUtil.levelByScore(m.wodiUser.getFraction());
+                String newLevel = GameUtil.scoreToTitle(m.wodiUser.getFraction());
                 if (!StrUtil.equals(oldLevel, newLevel)) {
-                    m.dmailUp = 40 + (GameUtil.level(m.wodiUser.getFraction())) * 10;
+                    m.dmailUp = GameUtil.scoreToFirstUpGift(m.wodiUser.getFraction());
                     upBuilder.append(StrUtil.format(USER_LEVEL_UP,
                             TgUtil.tgNameOnUrl(m.user), newLevel, m.dmailUp));
                     embyDao.upIv(m.user.getId(), m.dmailUp);
@@ -1063,16 +1064,16 @@ public class Game {
                 }
             });
             if (CollUtil.isNotEmpty(upMember)) {
-                tgBot.sendMessage(chatId, upBuilder.toString());
+                tgService.sendMsg(chatId, upBuilder.toString());
                 GameUser maxMember = upMember.stream()
                         .max(Comparator.comparingInt(m -> m.wodiUser.getFraction()))
                         .orElse(null);
                 if (null != maxMember) {
-                    Integer lv = GameUtil.level(maxMember.wodiUser.getFraction());
+                    Integer lv = GameUtil.scoreToLv(maxMember.wodiUser.getFraction());
                     WodiTop top = wodiTopDao.selectByLevel(lv);
                     // List<WodiUser> gtF = wodiUserDao.findGtFraction(maxMember.wodiUser.getFraction());
                     if (null == top) {
-                        Integer upScore = GameUtil.levelUpScoreByLv(lv);
+                        Integer upScore = GameUtil.lvToFirstUpGift(lv);
                         String registerMsg = "";
                         String registerCode = "";
                         if (lv >= 9) {
@@ -1082,11 +1083,11 @@ public class Game {
                         // maxMember.dmailUp = upScore;
                         String upFirst = StrUtil.format(USER_LEVEL_UP_FIRST,
                                 TgUtil.tgNameOnUrl(maxMember.user),
-                                GameUtil.levelByLv(lv), upScore, registerMsg);
+                                GameUtil.lvToTitle(lv), upScore, registerMsg);
                         if (lv >= 10) {
                             upFirst = StrUtil.format(SEASON_ENDS,
                                     TgUtil.tgNameOnUrl(maxMember.user),
-                                    GameUtil.levelByLv(lv), upScore, registerMsg);
+                                    GameUtil.lvToTitle(lv), upScore, registerMsg);
                             embyDao.upIv(maxMember.id, -50);
                             embyDao.allUpIv(50);
                             seasonEnds = true;
@@ -1100,7 +1101,7 @@ public class Game {
                         if (StrUtil.isNotBlank(registerCode)) {
                             SendMessage sendMessage = new SendMessage(maxMember.id.toString(),
                                     StrUtil.format("您获得了{}: \n{}", registerMsg, registerCode));
-                            Message message = tgBot.sendMessage(sendMessage);
+                            Message message = tgService.sendMsg(sendMessage);
                         }
 
                         // 写入碑文
@@ -1113,22 +1114,22 @@ public class Game {
                         wodiTopDao.insertOrUpdate(wodiTop);
 
                         SendPhoto sendPhoto = SendPhoto.builder()
-                                .chatId(chatId.toString()).caption(upFirst)
+                                .chatId(chatId).caption(upFirst)
                                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                                         "static/pic/s{}/lv{}.webp", CURRENT_SEASON, lv)),
                                         "谁是卧底个人信息"))
                                 .build();
                         // Message msg = tgBot.sendMessage(chatId, upFirst);
-                        Message msg = tgBot.sendPhoto(sendPhoto);
-                        tgBot.pinMsg(msg.getChatId(), msg.getMessageId());
+                        Message msg = tgService.sendPhoto(sendPhoto);
+                        tgService.pinMsg(msg.getChatId().toString(), msg.getMessageId());
                     }
                 }
             }
 
         } catch (Exception e) {
             log.error("结算失败，本次成绩不计分：", e);
-            SendMessage mailMsg = new SendMessage(chatId.toString(), "结算失败，本次成绩不记分");
-            tgBot.sendMessage(mailMsg);
+            SendMessage mailMsg = new SendMessage(chatId, "结算失败，本次成绩不记分");
+            tgService.sendMsg(mailMsg);
         } finally {
             if (null != firstMsg) {
                 Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(50, 80));
@@ -1145,7 +1146,7 @@ public class Game {
                 if (seasonEnds) {
                     Command.SPEAK_TIME_CNT.set(1199);
                 }
-                tgBot.unPinMsg(firstMsg.getChatId(), firstMsg.getMessageId());
+                tgService.unPinMsg(firstMsg.getChatId().toString(), firstMsg.getMessageId());
             }
         }
     }
@@ -1167,27 +1168,27 @@ public class Game {
         if (rotate == 1) {
             if (CollUtil.size(speakList) == 0) {
                 if (!userId.equals(firstSpeakUserId)) {
-                    tgBot.sendMessage(chatId, StrUtil.format(RUN_AWAY_QUICKLY, TgUtil.tgNameOnUrl(member)));
+                    tgService.sendMsg(chatId, StrUtil.format(RUN_AWAY_QUICKLY, TgUtil.tgNameOnUrl(member)));
                     embyDao.upIv(userId, -5);
                     return;
                 }
             } else if (CollUtil.size(speakList) == 1) {
                 if (!userId.equals(secondSpeakUserId)) {
-                    tgBot.sendMessage(chatId, StrUtil.format(RUN_AWAY_QUICKLY, TgUtil.tgNameOnUrl(member)));
+                    tgService.sendMsg(chatId, StrUtil.format(RUN_AWAY_QUICKLY, TgUtil.tgNameOnUrl(member)));
                     embyDao.upIv(userId, -5);
                     return;
                 }
             }
         }
 
-        text = StrUtil.trim(text);
         text = StrUtil.cleanBlank(text);
-        text = StrUtil.removeAny(text, ",", "，", ".", "。", "!", "！", ";", "“", "”");
+        text = StrUtil.removeAny(StrUtil.cleanBlank(text),
+                ",", "，", ".", "。", "!", "！", ";", "“", "”");
         String finalText = text;
         if (StrUtil.isBlank(text) || CollUtil.contains(speakList, text)
                 || speakList.stream().anyMatch(s -> StrUtil.containsIgnoreCase(s, finalText))) {
             // 发言为空或重复词语
-            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_REPEAT, TgUtil.tgNameOnUrl(member)));
+            tgService.sendMsg(chatId, StrUtil.format(SPEAK_REPEAT, TgUtil.tgNameOnUrl(member)));
             embyDao.upIv(userId, -2);
             return;
         }
@@ -1207,7 +1208,7 @@ public class Game {
                     currentIv = 20;
                 }
             }
-            tgBot.sendAnimation(SendAnimation.builder().chatId(chatId)
+            tgService.sendAnimation(SendAnimation.builder().chatId(chatId)
                     .replyToMessageId(message.getMessageId())
                     .caption(StrUtil.format(SPEAK_NOWAY_BIG, TgUtil.tgNameOnUrl(member), currentIv))
                     .animation(new InputFile(
@@ -1222,14 +1223,16 @@ public class Game {
                 || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)
                 || PinYinUtil.findAllChar(text, member.word)
                 || PinYinUtil.findTwoChar(text, member.word)
-            // || StrUtil.equalsIgnoreCase(pinyinFirst, wordPinyinFirst)
         ) {
             // 违禁爆词 本词或者拼音
-            tgBot.sendMessage(chatId, StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));
+            tgService.sendMsg(userId.toString(), StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));
             embyDao.upIv(userId, -5);
         }
         member.speak = true;
         speakList.add(text);
+        if (rotate == 1) {
+            firstSpeakList.add(text);
+        }
     }
 
     /**
@@ -1245,7 +1248,7 @@ public class Game {
             if (member == null || member.speak || !member.survive || !member.isSpace) {
                 return;
             }
-            tgBot.deleteMessage(message);
+            tgService.delMsg(message);
             member.boom = text;
         }
     }
@@ -1275,8 +1278,8 @@ public class Game {
             stringBuilder.append(notAdmin);
         }
         if (someoneSpeaks && speaks == 0) return;
-        SendMessage sendMessage = new SendMessage(chatId.toString(), stringBuilder.toString());
-        tgBot.sendMessage(sendMessage, voteReminderVote);
+        SendMessage sendMessage = new SendMessage(chatId, stringBuilder.toString());
+        tgService.sendMsg(sendMessage, voteReminderVote);
     }
 
     public static void main(String[] args) {

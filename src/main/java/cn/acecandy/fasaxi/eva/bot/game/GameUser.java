@@ -39,6 +39,10 @@ public class GameUser {
      */
     public boolean isSpace;
     /**
+     * 是逃跑玩家
+     */
+    public boolean isRunner;
+    /**
      * 准备
      */
     public boolean ready = false;
@@ -66,6 +70,10 @@ public class GameUser {
      */
     public GameUser toUser;
     /**
+     * 连续弃权轮次
+     */
+    public int abstainedRound;
+    /**
      * 游戏结算分
      */
     public int fraction = 0;
@@ -78,6 +86,6 @@ public class GameUser {
         this.user = user;
         this.id = user.getId();
         this.wodiUser = wodiUser;
-        this.oldLevel = GameUtil.levelByScore(wodiUser.getFraction());
+        this.oldLevel = GameUtil.scoreToTitle(wodiUser.getFraction());
     }
 }

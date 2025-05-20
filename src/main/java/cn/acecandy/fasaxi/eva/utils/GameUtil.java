@@ -9,35 +9,27 @@ import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.Console;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.CONTINUOUS_ABSTAINED;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.DiscussionTimeLimit;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.DiscussionTimeLimitMin;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.GameSecondsAddedByThePlayer;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.MAXIMUM_VOTE;
+import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.notVote;
 
 /**
  * 游戏工具类
@@ -51,6 +43,13 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.GameSec
 public final class GameUtil extends GameSubUtil {
     private GameUtil() {
     }
+
+    /**
+     * 出局用户
+     * <p>
+     * Map<连续弃票, List<GameUser>>
+     */
+    public final static Map<String, List<GameUser>> OUT_USER = MapUtil.newHashMap();
 
     public static String getRecord(WodiUser user, Emby embyUser) {
         Integer completeGame = NumberUtil.nullToZero(user.getCompleteGame());
@@ -73,9 +72,9 @@ public final class GameUtil extends GameSubUtil {
                 .replace("{spy_percentage}", NumberUtil.formatPercent(
                         wordSpyVictory / NumberUtil.toDouble(wordSpy), 1))
                 .replace("{fraction}", user.getFraction() + "")
-                .replace("{level}", levelByScore(user.getFraction()))
+                .replace("{level}", scoreToTitle(user.getFraction()))
                 .replace("{dm}", embyUser.getIv() + "");
-        Integer level = level(user.getFraction());
+        Integer level = scoreToLv(user.getFraction());
         if (level > 0) {
             recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍加成");
         }
@@ -93,7 +92,7 @@ public final class GameUtil extends GameSubUtil {
                                        Map<Long, WodiUser> embyMap, Map<Long, Integer> ivMap) {
         String recordTxt = INVITE_LIST
                 .replace("{userName}", TgUtil.tgNameOnUrl(user))
-                .replace("{level}", levelByScore(user.getFraction()));
+                .replace("{level}", scoreToTitle(user.getFraction()));
         if (CollUtil.isEmpty(xInvites)) {
             return recordTxt.replace("{list}", "🍂 秋风萧瑟，您的门下还没有传承弟子");
         }
@@ -101,7 +100,7 @@ public final class GameUtil extends GameSubUtil {
         xInvites.forEach(x -> {
             WodiUser wdUser = embyMap.get(x.getInviteeId());
             String inviteeName = TgUtil.tgNameOnUrl(wdUser);
-            if(StrUtil.isBlank(inviteeName)) {
+            if (StrUtil.isBlank(inviteeName)) {
                 inviteeName = x.getInviteeId().toString();
             }
             Integer iv = ivMap.getOrDefault(x.getInviteeId(), 0);
@@ -135,7 +134,7 @@ public final class GameUtil extends GameSubUtil {
                     no, (pageNum - 1) * 10 + i + 1);
 
             String rankSingle = StrUtil.format(rankSingleFormat, noSingle,
-                    TgUtil.tgNameOnUrl(user), levelByScore(user.getFraction()), user.getFraction());
+                    TgUtil.tgNameOnUrl(user), scoreToTitle(user.getFraction()), user.getFraction());
             String detailSingle = StrUtil.format(detailSingleFormat, user.getCompleteGame(),
                     NumberUtil.formatPercent(user.getWordPeopleVictory()
                             / NumberUtil.toDouble(user.getWordPeople()), 0),
@@ -159,64 +158,11 @@ public final class GameUtil extends GameSubUtil {
         topList.forEach(t -> {
             List<String> upTimeList = StrUtil.splitTrim(DateUtil.formatChineseDate(
                     t.getUpTime(), false, true), "分");
-            rankFinal.append(StrUtil.format(topSingle, levelByLv(t.getLevel(), season),
+            rankFinal.append(StrUtil.format(topSingle, lvToTitle(t.getLevel(), season),
                     TgUtil.tgNameOnUrl(t), CollUtil.getFirst(upTimeList) + "分"));
         });
         rankFinal.append(StrUtil.format("\n#WodiTop {}", DateUtil.now()));
         return rankFinal.toString();
-    }
-
-    /**
-     * 按等级获取首飞第一人币奖励
-     *
-     * @param lv lv
-     * @return {@link Integer }
-     */
-    public static Integer levelUpScoreByLv(Integer lv) {
-        if (CURRENT_SEASON == 1) {
-            return levelUpScoreByLv1(lv);
-        } else if (CURRENT_SEASON == 2) {
-            return levelUpScoreByLv2(lv);
-        }
-        throw new RuntimeException("未知赛季");
-    }
-
-
-    /**
-     * 按分数获取称号
-     *
-     * @param score 分数
-     * @return {@link String }
-     */
-    public static String levelByScore(Integer score) {
-        return levelByLv(level(score));
-    }
-
-    public static String levelByLv(Integer lv) {
-        if (CURRENT_SEASON == 1) {
-            return levelByLv1(lv);
-        } else if (CURRENT_SEASON == 2) {
-            return levelByLv2(lv);
-        }
-        throw new RuntimeException("未知赛季");
-    }
-
-    public static String levelByLv(Integer lv, Integer season) {
-        if (season == 1) {
-            return levelByLv1(lv);
-        } else if (season == 2) {
-            return levelByLv2(lv);
-        }
-        throw new RuntimeException("未知赛季");
-    }
-
-    public static Integer level(Integer score) {
-        if (CURRENT_SEASON == 1) {
-            return level1(score);
-        } else if (CURRENT_SEASON == 2) {
-            return level2(score);
-        }
-        throw new RuntimeException("未知赛季");
     }
 
     /**
@@ -284,6 +230,59 @@ public final class GameUtil extends GameSubUtil {
                 .filter(m -> m.survive && !m.id.equals(firstMember.id)).toList());
         game.secondSpeakUserId = secondMember.id;
         return StrUtil.format(SPEAK_ORDER, TgUtil.tgNameOnUrl(firstMember), TgUtil.tgNameOnUrl(secondMember));
+    }
+
+    /**
+     * 处理淘汰成员
+     *
+     * @return {@link List }<{@link String }>
+     */
+    public static Map<String, List<GameUser>> execOutMember(Game game, Set<GameUser> memberList) {
+        // 本轮淘汰所需票数
+        long survivesNumber = GameUtil.getSurvivesNumber(game);
+        long weedOut = survivesNumber / 3 + (survivesNumber % 3 > 0 ? 1 : 0);
+
+        List<GameUser> highMembers = GameUtil.getHighestVotedMembers(game);
+
+        Map<String, List<GameUser>> outMap = MapUtil.newHashMap();
+        outMap.put("高票", memberList.stream().filter(m ->
+                isHighVotedMember(highMembers, m, weedOut)).peek(m -> m.survive = false).toList());
+        outMap.put("逃跑", memberList.stream().filter(m ->
+                m.survive && m.notVote >= notVote).peek(m -> m.survive = false).toList());
+        outMap.put("连续弃票", memberList.stream().filter(m -> m.survive &&
+                m.abstainedRound >= CONTINUOUS_ABSTAINED).peek(m -> m.survive = false).toList());
+        return outMap;
+    }
+
+    /**
+     * 是被投票最高的成员
+     *
+     * @param highMembers 高级成员
+     * @param member      成员
+     * @param weedOut     淘汰
+     * @return boolean
+     */
+    private static boolean isHighVotedMember(List<GameUser> highMembers,
+                                             GameUser member, long weedOut) {
+        return CollUtil.size(highMembers) == 1
+                && member.beVoted.get() == CollUtil.getFirst(highMembers).beVoted.get()
+                && (member.beVoted.get() >= MAXIMUM_VOTE || member.beVoted.get() >= weedOut);
+    }
+
+    /**
+     * 格式化输出 淘汰名单str
+     *
+     * @param outMap out地图
+     * @return {@link String }
+     */
+    public static String formatOutStr(Map<String, List<GameUser>> outMap) {
+        List<String> strList = CollUtil.newArrayList();
+        outMap.forEach((reason, list) -> {
+            strList.addAll(list.stream().map(m -> StrUtil.format("{}({}票-{})",
+                    TgUtil.tgNameOnUrl(m.user),
+                    m.beVoted.get(), reason)).toList());
+        });
+        return CollUtil.isNotEmpty(strList) ? CollUtil.join(strList, StrUtil.COMMA) : "无";
     }
 
     /**
@@ -574,95 +573,4 @@ public final class GameUtil extends GameSubUtil {
         return day * 25;
     }
 
-
-    /**
-     * 搜索海报
-     *
-     * @param root 根
-     * @return {@link Path }
-     */
-    @SneakyThrows
-    public static Path searchPoster(String root) {
-        final AtomicInteger counter = new AtomicInteger(0);
-        final Path[] result = new Path[1];
-        try (Stream<Path> stream = Files.find(Paths.get(root), Integer.MAX_VALUE,
-                (p, a) -> a.isRegularFile() && p.endsWith("poster.jpg")).parallel()) {
-            stream.forEach(file -> reservoirSampling(file, counter, result));
-        }
-        return counter.get() == 0 ? null : result[0];
-    }
-
-    private static final Lock LOCK = new ReentrantLock();
-
-    private static void reservoirSampling(Path file, AtomicInteger counter, Path[] result) {
-        int count = counter.getAndIncrement();
-        ThreadLocalRandom rand = ThreadLocalRandom.current();
-
-        // 无锁优化：使用CAS减少竞争
-        if (count == 0) {
-            LOCK.lock();
-            try {
-                result[0] = file;
-            } finally {
-                LOCK.unlock();
-            }
-        } else if (rand.nextInt(count + 1) == 0) {
-            LOCK.lock();
-            try {
-                result[0] = file;
-            } finally {
-                LOCK.unlock();
-            }
-        }
-    }
-
-    /**
-     * 番号 匹配正则
-     */
-    private static final Pattern FH_PATTERN =
-            Pattern.compile("^([A-Z0-9]+[-_][A-Z0-9\\d]{2,})(?:[-_][A-Z]+)?\\b.*");
-
-    /**
-     * 提取标准番号
-     *
-     * @param original 原来
-     * @return {@link String }
-     */
-    public static String standardFhName(String original) {
-        if (StrUtil.isBlank(original)) {
-            return original;
-        }
-        return CollUtil.getFirst(ReUtil.findAll(FH_PATTERN, StrUtil.trim(original), 1));
-    }
-
-    /**
-     * 获取番号名称
-     *
-     * @param filePath 文件路径
-     * @return {@link String }
-     */
-    public static String getFhName(String filePath) {
-        int end = StrUtil.lastIndexOfIgnoreCase(filePath, "/");
-        if (end == -1) {
-            // Windows兼容
-            end = StrUtil.lastIndexOfIgnoreCase(filePath, "\\");
-        }
-
-        if (end > 0) {
-            int start = StrUtil.lastIndexOfIgnoreCase(filePath, "/", end - 1);
-            if (start == -1) {
-                start = StrUtil.lastIndexOfIgnoreCase(filePath, "\\", end - 1);
-            }
-            String fhName = StrUtil.sub(filePath, (start != -1) ? start + 1 : 0, end);
-            return standardFhName(fhName);
-        }
-        return null;
-    }
-
-    public static void main(String[] args) {
-        String filePath = "/private/tmp/test/104DANDY/104DANDY-818-C 座ったままの男を一切动かさないS字尻振り骑乘位で骨抜きにする美尻キャビンアテンダント/poster.jpg";
-        Console.log(getFhName(filePath));
-        Console.log(StrUtil.lastIndexOfIgnoreCase(filePath, "/vvvv"));
-        Console.log(filePath.lastIndexOf('/'));
-    }
 }

@@ -1,8 +1,8 @@
 package cn.acecandy.fasaxi.eva.bot.game;
 
-import cn.acecandy.fasaxi.eva.bot.EmbyTelegramBot;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
@@ -32,7 +32,7 @@ import static cn.acecandy.fasaxi.eva.utils.GameEventUtil.*;
 public class GameEvent {
 
     @Resource
-    private EmbyTelegramBot telegramBot;
+    private TgService tgService;
     @Resource
     private Command command;
     @Resource
@@ -64,16 +64,16 @@ public class GameEvent {
      * @param callbackJn    回调jn
      * @param action        行动
      */
-    private void handleGroupAction(CallbackQuery callbackQuery, JSONObject callbackJn, String action) {
-        Long chatId = callbackQuery.getMessage().getChatId();
-        Game game = GameListUtil.getGame(chatId);
+    private void handleGroupAction(CallbackQuery callbackQuery,
+                                   JSONObject callbackJn, String action) {
+        Game game = GameListUtil.getGame(callbackQuery.getMessage().getChatId().toString());
         if (null == game) {
             return;
         }
 
         AnswerCallbackQuery callback = new AnswerCallbackQuery(callbackQuery.getId());
         processAction(callbackQuery, game, callback, callbackJn, action);
-        telegramBot.sendCallback(callback);
+        tgService.sendCallback(callback);
     }
 
     /**
@@ -148,7 +148,7 @@ public class GameEvent {
         } else if (action.equals(PUBLIC_ACTION_SB)) {
             AnswerCallbackQuery callback = new AnswerCallbackQuery(callbackQuery.getId());
             command.handleEditSb(callback, callbackQuery.getFrom());
-            telegramBot.sendCallback(callback);
+            tgService.sendCallback(callback);
         }
     }
 

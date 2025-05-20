@@ -46,6 +46,10 @@ public interface GameValueConstants {
      */
     int notVote = 2;
     /**
+     * 设置连续最大弃票轮次
+     */
+    int CONTINUOUS_ABSTAINED = 3;
+    /**
      * 淘汰所需的最大票数,
      */
     int MAXIMUM_VOTE = 4;
