@@ -50,6 +50,9 @@ import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
 
 /**
  * 命令处理类，转入命令 仅命令名 （无‘/’，无‘@****’）
+ *
+ * @author AceCandy
+ * @since 2025/05/21
  */
 @Slf4j
 @Component

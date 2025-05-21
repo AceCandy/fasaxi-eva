@@ -8,6 +8,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -15,7 +16,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,6 +34,7 @@ import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
  * @author tangningzhu
  * @since 2024/10/16
  */
+@Slf4j
 public final class TgUtil {
     private TgUtil() {
     }
@@ -314,12 +315,9 @@ public final class TgUtil {
      * @return {@link String }
      */
     public static String extractCommand(String msgData, String botUserName) {
-        return CollUtil.getFirst(
-                StrUtil.splitTrim(
-                        StrUtil.removeAll(msgData, StrUtil.AT + botUserName),
-                        StrUtil.SPACE
-                )
-        ).toLowerCase();
+        return CollUtil.getFirst(StrUtil.splitTrim(
+                StrUtil.removeAll(msgData, StrUtil.AT + botUserName),
+                StrUtil.SPACE)).toLowerCase();
     }
 
     /**
@@ -342,11 +340,26 @@ public final class TgUtil {
         return !isGroupMsg(message);
     }
 
+    /**
+     * 消息是否有效
+     *
+     * @param msg 味精
+     * @return boolean
+     */
+    public static boolean isMessageValid(Message msg) {
+        if (!msg.hasText()) {
+            return false;
+        }
+        if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
+            log.warn("过期指令:【{}】{}", msg.getFrom().getFirstName(), msg.getText());
+            return false;
+        }
+        return true;
+    }
+
     public static void main(String[] args) {
-        Console.log(SB_BOX_GIFT.size());
-        Console.log(SB_BOX_GIFT);
-        Collections.shuffle(SB_BOX_GIFT);
-        Console.log(SB_BOX_GIFT.size());
-        Console.log(SB_BOX_GIFT);
+        Console.log(extractCommand("/wd_rank@WorldLineGame_bot", "WorldLineGame_bot"));
+        Console.log(extractCommand("/wd_rank@WorldLi", "WorldLineGame_bot"));
+        Console.log(extractCommand("/wd_rank", "WorldLineGame_bot"));
     }
 }

@@ -14,8 +14,8 @@ import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -27,8 +27,6 @@ import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜成语;
-import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜番号;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.COMMON_WIN;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.WARNING_EDIT;
 import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
@@ -44,23 +42,18 @@ import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
 @Component
 public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
 
-    public final TgService tgService;
-    public final Command command;
-    public final GameEvent gameEvent;
-    public final EmbyBossConfig embyBossConfig;
-    public final EmbyDao embyDao;
-    public final XInviteDao xInviteDao;
-
-    public EmbyTelegramBot(TgService tgService,
-                           @Lazy EmbyBossConfig embyBossConfig, @Lazy Command command,
-                           @Lazy GameEvent gameEvent, @Lazy EmbyDao embyDao, @Lazy XInviteDao xInviteDao) {
-        this.embyBossConfig = embyBossConfig;
-        this.command = command;
-        this.gameEvent = gameEvent;
-        this.embyDao = embyDao;
-        this.xInviteDao = xInviteDao;
-        this.tgService = tgService;
-    }
+    @Resource
+    public TgService tgService;
+    @Resource
+    public Command command;
+    @Resource
+    public GameEvent gameEvent;
+    @Resource
+    public EmbyBossConfig embyBossConfig;
+    @Resource
+    public EmbyDao embyDao;
+    @Resource
+    public XInviteDao xInviteDao;
 
     @Override
     public String getBotToken() {
@@ -75,23 +68,20 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
 
     @Override
     public void consume(Update update) {
-        // 普通消息
+        handleUpdate(update);
+    }
+
+    private void handleUpdate(Update update) {
+        // Console.log(JSONUtil.toJsonStr(update));
         Message msg = update.getMessage();
-        // 修改消息
         Message editMsg = update.getEditedMessage();
-        // 加入请求
         ChatJoinRequest joinRequest = update.getChatJoinRequest();
-        // 按钮回调
         CallbackQuery callback = update.getCallbackQuery();
-        // Console.log("update:{}", update);
-        if (msg != null) {
-            if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
-                log.warn("过期指令:【{}】{}", msg.getFrom().getFirstName(), msg.getText());
-                return;
-            }
-            handleIncomingMessage(msg);
+
+        if (msg != null && TgUtil.isMessageValid(msg)) {
+            handleMsg(msg);
         } else if (editMsg != null) {
-            handleEditMessage(editMsg);
+            handleEditMsg(editMsg);
         } else if (callback != null) {
             handleCallbackQuery(update);
         } else if (joinRequest != null) {
@@ -99,47 +89,32 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         }
     }
 
+
     /**
      * 处理传入消息
      *
      * @param message 消息
      */
-    private void handleIncomingMessage(Message message) {
+    private void handleMsg(Message message) {
         boolean isCommand = message.isCommand();
-        if (!message.hasText()) {
-            return;
-        }
-        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
+        boolean isGroupMessage = TgUtil.isGroupMsg(message);
         String msgData = message.getText();
-        boolean atBotUsername = msgData.endsWith(StrUtil.AT + tgService.getBotUsername());
-        String msg = TgUtil.extractCommand(msgData, tgService.getBotUsername());
 
         if (isCommand) {
+            String msg = TgUtil.extractCommand(msgData, tgService.getBotUsername());
             command.process(msg, message, isGroupMessage);
         } else {
             if (isGroupMessage) {
                 CommonGameUtil.endSpeakTime = System.currentTimeMillis();
-                // 看图猜成语
                 SmallGameDTO smallGame = CommonGameUtil.commonGameSpeak(message);
                 if (null != smallGame) {
-                    int lv = 0;
-                    switch (smallGame.getType()) {
-                        case 看图猜成语:
-                            lv = RandomUtil.randomInt(4, 8);
-                            break;
-                        case 看图猜番号:
-                            lv = RandomUtil.randomInt(8, 12);
-                            break;
-                        default:
-                    }
+                    int lv = CommonGameUtil.getGameRewards(smallGame.getType());
                     commonWin(tgService.getGroup(), message, lv);
                     tgService.delMsg(tgService.getGroup(), smallGame.getMsgId());
                 } else {
                     TgUtil.gameSpeak(message);
                 }
-                if (!atBotUsername) {
-                    Command.SPEAK_TIME_CNT.getAndDecrement();
-                }
+                Command.SPEAK_TIME_CNT.getAndDecrement();
             }
         }
     }
@@ -149,13 +124,8 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
      *
      * @param message 消息
      */
-    private void handleEditMessage(Message message) {
-        boolean isGroupMessage = message.isGroupMessage() || message.isSuperGroupMessage();
-        if (!message.hasText()) {
-            return;
-        }
-        String msgData = message.getText();
-        if (!isGroupMessage) {
+    private void handleEditMsg(Message message) {
+        if (!TgUtil.isGroupMsg(message)) {
             return;
         }
         Game game = GameListUtil.getGame(message.getChatId().toString());
