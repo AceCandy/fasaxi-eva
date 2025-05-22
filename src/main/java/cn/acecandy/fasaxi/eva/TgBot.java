@@ -1,4 +1,4 @@
-package cn.acecandy.fasaxi.eva.bot;
+package cn.acecandy.fasaxi.eva;
 
 import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.bot.game.Game;
@@ -7,7 +7,7 @@ import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.common.ex.BaseException;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
 import cn.acecandy.fasaxi.eva.task.impl.CcService;
-import cn.acecandy.fasaxi.eva.task.impl.CommonGameService;
+import cn.acecandy.fasaxi.eva.task.impl.GameService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.task.impl.WdService;
 import cn.acecandy.fasaxi.eva.utils.CommandUtil;
@@ -42,7 +42,7 @@ import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
 @Lazy
 @Slf4j
 @Component
-public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
+public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
 
     @Resource
     public TgService tgService;
@@ -51,7 +51,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     @Resource
     public WdService wdService;
     @Resource
-    public CommonGameService commonGameService;
+    public GameService gameService;
     @Resource
     public EmbyBossConfig embyBossConfig;
     @Resource
@@ -141,6 +141,8 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         String cmd = TgUtil.extractCommand(message.getText(), tgService.getBotUsername());
         if (CommandUtil.isWdCommand(cmd)) {
             wdService.process(cmd, message);
+        }if (CommandUtil.isCcCommand(cmd)) {
+            ccService.process(cmd, message);
         } else {
             command.process(cmd, message);
         }
@@ -156,7 +158,7 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
             return;
         }
         try {
-            commonGameService.speak(message);
+            gameService.speak(message);
             wdService.speak(message);
         } finally {
             GlobalUtil.updateSpeak();

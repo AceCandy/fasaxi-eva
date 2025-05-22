@@ -1,7 +1,7 @@
 package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
-import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import lombok.Data;
 import lombok.Getter;
 import org.telegram.telegrambots.meta.api.objects.User;
@@ -86,6 +86,6 @@ public class GameUser {
         this.user = user;
         this.id = user.getId();
         this.wodiUser = wodiUser;
-        this.oldLevel = GameUtil.scoreToTitle(wodiUser.getFraction());
+        this.oldLevel = WdUtil.scoreToTitle(wodiUser.getFraction());
     }
 }

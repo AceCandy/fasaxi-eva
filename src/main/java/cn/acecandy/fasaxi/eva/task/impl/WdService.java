@@ -9,7 +9,7 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
-import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -69,7 +69,6 @@ public class WdService {
             return;
         }
         Long userId = message.getFrom().getId();
-        Integer msgId = message.getMessageId();
         switch (cmd) {
             case 新建游戏 -> handleNewGameCommand(message.getFrom(), message.getChat());
             case 个人信息 -> handleRecordCommand(chatId, userId);
@@ -104,9 +103,9 @@ public class WdService {
             embyDao.upIv(userId, -costIv);
         }
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(chatId).caption(GameUtil.getRecord(user, embyUser))
+                .chatId(chatId).caption(WdUtil.getRecord(user, embyUser))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
-                        "static/pic/s{}/lv{}.webp", CURRENT_SEASON, GameUtil.scoreToLv(user.getFraction()))),
+                        "static/pic/s{}/lv{}.webp", CURRENT_SEASON, WdUtil.scoreToLv(user.getFraction()))),
                         "谁是卧底个人信息"))
                 .build();
         tgService.sendPhoto(sendPhoto, 75 * 1000);
@@ -149,7 +148,7 @@ public class WdService {
         }
         RANK_CACHE.put("RANK", rankUserList);
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(chatId).caption(GameUtil.getRank(rankUserList, 1))
+                .chatId(chatId).caption(WdUtil.getRank(rankUserList, 1))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/名人榜.webp", CURRENT_SEASON)), "名人榜"))
                 .replyMarkup(TgUtil.rankPageBtn(1, CollUtil.size(rankUserList)))
@@ -184,7 +183,7 @@ public class WdService {
             return;
         }
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(chatId).caption(GameUtil.getTop(topList, season))
+                .chatId(chatId).caption(WdUtil.getTop(topList, season))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/Top飞升.webp", season)), "Top飞升"))
                 .build();
@@ -204,7 +203,7 @@ public class WdService {
         if (CollUtil.isEmpty(rankUserList)) {
             rankUserList = wodiUserDao.selectRank();
         }
-        tgService.editMsg(GlobalUtil.rankMsg, GameUtil.getRank(rankUserList, pageNum),
+        tgService.editMsg(GlobalUtil.rankMsg, WdUtil.getRank(rankUserList, pageNum),
                 TgUtil.rankPageBtn(pageNum, CollUtil.size(rankUserList)));
     }
 
@@ -222,7 +221,7 @@ public class WdService {
             log.error("非授权群组私自拉bot入群已被发现：{}, chat: {}", chatId, chat);
             return;
         }
-        if (!GameUtil.isInGameTime()) {
+        if (!WdUtil.isInGameTime()) {
             tgService.sendMsg(chatId, CURFEW_GAME_TIME);
             return;
         }

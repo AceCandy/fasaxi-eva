@@ -11,7 +11,7 @@ import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
-import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.bean.BeanUtil;
@@ -56,7 +56,7 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.Waiting
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.minMemberSize;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteReminderVote;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteTimeLimit;
-import static cn.acecandy.fasaxi.eva.utils.GameUtil.isSpecialGameOver;
+import static cn.acecandy.fasaxi.eva.utils.WdUtil.isSpecialGameOver;
 import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.addSpeakCnt;
 import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.setSpeakCnt;
 
@@ -222,12 +222,12 @@ public class Game {
         }
 
         // 满员如果所有人都准备 游戏自动开始
-        if (CollUtil.size(memberList) == MAX_PLAYER && GameUtil.isAllMemberReady(this)) {
+        if (CollUtil.size(memberList) == MAX_PLAYER && WdUtil.isAllMemberReady(this)) {
             startDiscussion();
         }
 
         // 60s时间结束但是有人尚未准备
-        if (endTime - endActiveTime > MaxActiveTime && !GameUtil.isAllMemberReady(this)) {
+        if (endTime - endActiveTime > MaxActiveTime && !WdUtil.isAllMemberReady(this)) {
             tgService.sendMsg(chatId, StrUtil.format(TimeoutShutdown, noReadyMember()), 60 * 1000);
             status = GameStatus.游戏关闭;
         }
@@ -384,8 +384,8 @@ public class Game {
         memberList.stream().filter(GameUser::isSurvive).forEach(m -> m.round = rotate);
 
         // 获取投票时间、第一轮指定发言人
-        long speechTime = GameUtil.getSpeechTime(this);
-        String speechSortStr = GameUtil.buildSpeechSortStr(this);
+        long speechTime = WdUtil.getSpeechTime(this);
+        String speechSortStr = WdUtil.buildSpeechSortStr(this);
         boolean isPin = StrUtil.isNotBlank(speechSortStr);
 
         SendMessage sendMessage = new SendMessage(this.chatId.toString(),
@@ -415,7 +415,7 @@ public class Game {
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/游戏主图.webp", CURRENT_SEASON)), "游戏主图"))
                 .caption(StrUtil.format(GAME_WAITING, memberList.size(),
-                        GameUtil.getWaitingUserNames(memberList, homeOwner)))
+                        WdUtil.getWaitingUserNames(memberList, homeOwner)))
                 .replyMarkup(TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this))
                 .build();
         return tgService.sendPhoto(sendPhoto, WaitingYoJoinTimeInterval, GameStatus.等待加入, this);
@@ -429,7 +429,7 @@ public class Game {
             return;
         }
         tgService.editMsg(sendInviteMessage, StrUtil.format(
-                        GAME_WAITING, memberList.size(), GameUtil.getWaitingUserNames(memberList, homeOwner)),
+                        GAME_WAITING, memberList.size(), WdUtil.getWaitingUserNames(memberList, homeOwner)),
                 TgUtil.getJoinGameMarkup(memberList.size() >= minMemberSize, this));
     }
 
@@ -554,21 +554,21 @@ public class Game {
     void processVoteResult(boolean isFinishVote) {
         StringBuilder stringBuilder = new StringBuilder(isFinishVote ? ALL_FINISH_VOTED : TIME_END_VOTED);
         // 最后投票人
-        stringBuilder.append(StrUtil.format(LAST_VOTE, TgUtil.tgNameOnUrl(GameUtil.lastVoteMember(this))));
+        stringBuilder.append(StrUtil.format(LAST_VOTE, TgUtil.tgNameOnUrl(WdUtil.lastVoteMember(this))));
         // 投票结果展示
-        stringBuilder.append(GameUtil.buildVotePublicStr(this));
+        stringBuilder.append(WdUtil.buildVotePublicStr(this));
 
         // 淘汰
         stringBuilder.append(StrUtil.format(ELIMINATED_IN_THIS_ROUND, rotate));
-        Map<String, List<GameUser>> outMap = GameUtil.execOutMember(this, memberList);
+        Map<String, List<GameUser>> outMap = WdUtil.execOutMember(this, memberList);
         outMap.get("逃跑").forEach(m -> {
             embyDao.upIv(m.id, -5);
             tgService.sendMsg(chatId, StrUtil.format(NOT_VOTED_TIP, TgUtil.tgNameOnUrl(m.user)));
         });
-        stringBuilder.append(GameUtil.formatOutStr(outMap)).append("\n");
+        stringBuilder.append(WdUtil.formatOutStr(outMap)).append("\n");
 
         if (!execGameOver(stringBuilder)) {
-            stringBuilder.append(StrUtil.format(SURVIVAL_PERSONNEL, GameUtil.getSurvivesNumber(this),
+            stringBuilder.append(StrUtil.format(SURVIVAL_PERSONNEL, WdUtil.getSurvivesNumber(this),
                     memberList.size(), getSurvivesUserNames()));
             tgService.sendMsg(chatId, stringBuilder.toString());
             sendSpeechPerform();
@@ -585,16 +585,16 @@ public class Game {
         // 判断游戏结束
         if (specialMode && isSpecialGameOver(this)) {
             tgService.sendMsg(chatId, stringBuilder.toString());
-            if (GameUtil.getUndercoverSurvivesNumber(this) != 0) {
+            if (WdUtil.getUndercoverSurvivesNumber(this) != 0) {
                 // 卧底胜利时需要淘汰剩余平民
                 memberList.stream().filter(member -> member.survive && !member.isUndercover)
                         .forEach(member -> member.survive = false);
             }
             sendSpecialGameOver();
             return true;
-        } else if (GameUtil.isGameOver(this)) {
+        } else if (WdUtil.isGameOver(this)) {
             tgService.sendMsg(chatId, stringBuilder.toString());
-            if (GameUtil.getUndercoverSurvivesNumber(this) != 0) {
+            if (WdUtil.getUndercoverSurvivesNumber(this) != 0) {
                 // 卧底胜利时需要淘汰剩余平民
                 memberList.stream().filter(member -> member.survive && !member.isUndercover)
                         .forEach(member -> member.survive = false);
@@ -614,9 +614,9 @@ public class Game {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(StrUtil.format(GAME_OVER, "", "🀫 白板")).append(DIVIDING_LINE);
 
-        long surviveNum = GameUtil.getSurvivesNumber(this);
-        long noSpaceSurviveNum = GameUtil.getNoSpaceSurviveNumber(this);
-        long noSpaceNum = GameUtil.getNoSpaceNumber(this);
+        long surviveNum = WdUtil.getSurvivesNumber(this);
+        long noSpaceSurviveNum = WdUtil.getNoSpaceSurviveNumber(this);
+        long noSpaceNum = WdUtil.getNoSpaceNumber(this);
 
         GameUser member = memberList.stream().filter(m -> m.survive && m.isSpace).findFirst().get();
         member.fraction = 7;
@@ -645,7 +645,7 @@ public class Game {
             m.fraction += (m.round - 1) / 2;
 
             Integer realFraction = m.fraction;
-            if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+            if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
                 realFraction = 1;
             }
             stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
@@ -665,20 +665,20 @@ public class Game {
     void sendGameOver() {
         status = GameStatus.游戏结算中;
 
-        boolean winnerIsUndercover = GameUtil.isUndercoverWin(this);
+        boolean winnerIsUndercover = WdUtil.isUndercoverWin(this);
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(StrUtil.format(GAME_OVER, "", winnerIsUndercover ? "🤡卧底" : "👨‍🌾平民"))
                 .append(DIVIDING_LINE);
 
-        long undercoverNum = GameUtil.getUndercoverNumber(this);
-        long undercoverSurviveNum = GameUtil.getUndercoverSurvivesNumber(this);
-        long spaceNum = GameUtil.getSpaceNumber(this);
-        long spaceSurviveNum = GameUtil.getSpaceSurviveNumber(this);
-        long peopleSurviveNum = GameUtil.getPeopleSurviveNumber(this);
-        long peopleNum = GameUtil.getPeopleNumber(this);
-        long surviveNum = GameUtil.getSurvivesNumber(this);
-        long noSpaceNum = GameUtil.getNoSpaceNumber(this);
+        long undercoverNum = WdUtil.getUndercoverNumber(this);
+        long undercoverSurviveNum = WdUtil.getUndercoverSurvivesNumber(this);
+        long spaceNum = WdUtil.getSpaceNumber(this);
+        long spaceSurviveNum = WdUtil.getSpaceSurviveNumber(this);
+        long peopleSurviveNum = WdUtil.getPeopleSurviveNumber(this);
+        long peopleNum = WdUtil.getPeopleNumber(this);
+        long surviveNum = WdUtil.getSurvivesNumber(this);
+        long noSpaceNum = WdUtil.getNoSpaceNumber(this);
 
         // 如果卧底全部存活 积分翻倍
         boolean allUnderCoverSurvive = undercoverNum > 1 && undercoverNum == undercoverSurviveNum;
@@ -748,7 +748,7 @@ public class Game {
                 m.fraction += undercoverNum / 2;
 
                 Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
                     realFraction = 1;
                 }
 
@@ -765,7 +765,7 @@ public class Game {
                     m.fraction -= 2;
                 }
                 Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
                     realFraction = 1;
                 }
                 noSurviveStr.add(sb.append("☠️ ")
@@ -791,16 +791,16 @@ public class Game {
     void sendSpecialGameOver() {
         status = GameStatus.游戏结算中;
 
-        boolean winnerIsUndercover = GameUtil.isUndercoverWin(this);
+        boolean winnerIsUndercover = WdUtil.isUndercoverWin(this);
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(StrUtil.format(GAME_OVER, "<b>👿特殊模式👿 </b>",
                         winnerIsUndercover ? "🤡卧底" : "👨‍🌾平民"))
                 .append(DIVIDING_LINE);
 
-        long undercoverNum = GameUtil.getUndercoverNumber(this);
-        long peopleSurviveNum = GameUtil.getPeopleSurviveNumber(this);
-        long surviveNum = GameUtil.getSurvivesNumber(this);
+        long undercoverNum = WdUtil.getUndercoverNumber(this);
+        long peopleSurviveNum = WdUtil.getPeopleSurviveNumber(this);
+        long surviveNum = WdUtil.getSurvivesNumber(this);
 
         // 如果卧底胜利 三倍积分
         if (winnerIsUndercover) {
@@ -833,7 +833,7 @@ public class Game {
 
                 Integer realFraction = m.fraction;
                 String boomStr = "";
-                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
                     realFraction = 1;
                 } else {
                     boomStr = buildSpecialAchievementStr(m, allPeopleSurvive, winnerIsUndercover);
@@ -849,7 +849,7 @@ public class Game {
                     m.fraction -= 2;
                 }
                 Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
                     realFraction = 1;
                 }
 
@@ -884,7 +884,7 @@ public class Game {
                                          long surviveNum, long noSpaceSurviveNum, long noSpaceNum) {
         String boomStr = "";
         Integer realFraction = member.fraction;
-        if (member.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+        if (member.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
             realFraction = 1;
         } else {
             if (surviveNum == 3) {
@@ -997,7 +997,7 @@ public class Game {
                     isVictory = true;
                 }
                 Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > GameUtil.effectiveGameFreq()) {
+                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
                     realFraction = 1;
                 }
                 wodiUserDao.upFraction(userId, realFraction);
@@ -1015,7 +1015,7 @@ public class Game {
             // 发币
             StringBuilder mailBuilder = new StringBuilder();
             memberList.forEach(m -> {
-                Integer level = GameUtil.scoreToLv(m.wodiUser.getFraction());
+                Integer level = WdUtil.scoreToLv(m.wodiUser.getFraction());
                 m.dmailUp = (int) ((m.fraction - 4) * (1 + 0.1 * level));
                 mailBuilder.append(StrUtil.format(USER_DMAIL, level, TgUtil.tgNameOnUrl(m.user), m.dmailUp));
                 embyDao.upIv(m.user.getId(), m.dmailUp);
@@ -1055,9 +1055,9 @@ public class Game {
             List<GameUser> upMember = CollUtil.newArrayList();
             memberList.forEach(m -> {
                 String oldLevel = m.oldLevel;
-                String newLevel = GameUtil.scoreToTitle(m.wodiUser.getFraction());
+                String newLevel = WdUtil.scoreToTitle(m.wodiUser.getFraction());
                 if (!StrUtil.equals(oldLevel, newLevel)) {
-                    m.dmailUp = GameUtil.scoreToFirstUpGift(m.wodiUser.getFraction());
+                    m.dmailUp = WdUtil.scoreToFirstUpGift(m.wodiUser.getFraction());
                     upBuilder.append(StrUtil.format(USER_LEVEL_UP,
                             TgUtil.tgNameOnUrl(m.user), newLevel, m.dmailUp));
                     embyDao.upIv(m.user.getId(), m.dmailUp);
@@ -1071,11 +1071,11 @@ public class Game {
                         .max(Comparator.comparingInt(m -> m.wodiUser.getFraction()))
                         .orElse(null);
                 if (null != maxMember) {
-                    Integer lv = GameUtil.scoreToLv(maxMember.wodiUser.getFraction());
+                    Integer lv = WdUtil.scoreToLv(maxMember.wodiUser.getFraction());
                     WodiTop top = wodiTopDao.selectByLevel(lv);
                     // List<WodiUser> gtF = wodiUserDao.findGtFraction(maxMember.wodiUser.getFraction());
                     if (null == top) {
-                        Integer upScore = GameUtil.lvToFirstUpGift(lv);
+                        Integer upScore = WdUtil.lvToFirstUpGift(lv);
                         String registerMsg = "";
                         String registerCode = "";
                         if (lv >= 9) {
@@ -1085,11 +1085,11 @@ public class Game {
                         // maxMember.dmailUp = upScore;
                         String upFirst = StrUtil.format(USER_LEVEL_UP_FIRST,
                                 TgUtil.tgNameOnUrl(maxMember.user),
-                                GameUtil.lvToTitle(lv), upScore, registerMsg);
+                                WdUtil.lvToTitle(lv), upScore, registerMsg);
                         if (lv >= 10) {
                             upFirst = StrUtil.format(SEASON_ENDS,
                                     TgUtil.tgNameOnUrl(maxMember.user),
-                                    GameUtil.lvToTitle(lv), upScore, registerMsg);
+                                    WdUtil.lvToTitle(lv), upScore, registerMsg);
                             embyDao.upIv(maxMember.id, -50);
                             embyDao.allUpIv(50);
                             seasonEnds = true;

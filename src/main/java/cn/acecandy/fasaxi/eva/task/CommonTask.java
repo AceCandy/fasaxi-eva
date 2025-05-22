@@ -1,7 +1,7 @@
 package cn.acecandy.fasaxi.eva.task;
 
 import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
-import cn.acecandy.fasaxi.eva.task.impl.CommonGameService;
+import cn.acecandy.fasaxi.eva.task.impl.GameService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class CommonTask {
 
     @Resource
-    private CommonGameService service;
+    private GameService gameService;
 
     @Resource
     private CommonGameConfig commonGameConfig;
@@ -36,7 +36,7 @@ public class CommonTask {
                 return;
             }
 
-            service.execKtccy();
+            gameService.execKtccy();
         } catch (Exception e) {
             log.error("执行异常-看图猜成语 ", e);
         }
@@ -53,7 +53,7 @@ public class CommonTask {
                 return;
             }
 
-            service.execKtcfh();
+            gameService.execKtcfh();
         } catch (Exception e) {
             log.error("执行异常-看图猜番号 ", e);
         }

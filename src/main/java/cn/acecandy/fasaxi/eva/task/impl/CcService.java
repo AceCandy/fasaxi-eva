@@ -8,7 +8,7 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
-import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
@@ -66,14 +66,10 @@ public class CcService {
 
     @Transactional(rollbackFor = Exception.class)
     public void process(@NotNull String cmd, Message message) {
-        String chatId = message.getChatId().toString();
-        Long userId = message.getFrom().getId();
-        Integer msgId = message.getMessageId();
-
         switch (cmd) {
             case 生成传承邀请 -> xInvite(message);
             case 获取传承名单 -> xInviteList(message);
-            case 传承帮助 -> tgService.sendMsg(chatId, INVITE_HELP, 300 * 1000);
+            case 传承帮助 -> tgService.sendMsg(message.getChatId().toString(), INVITE_HELP, 300 * 1000);
             default -> {
             }
         }
@@ -101,7 +97,7 @@ public class CcService {
         }
 
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
-        Integer lv = GameUtil.scoreToLv(wodiUser.getFraction());
+        Integer lv = WdUtil.scoreToLv(wodiUser.getFraction());
         Integer canInviteCnt = lv / 3 + 1;
         Long cnt = xInviteDao.cntByInviterToday(userId);
         if (cnt >= canInviteCnt) {
@@ -180,7 +176,7 @@ public class CcService {
                                 (int) (bean.getFraction() * 0.5 + bean.getTiv() * 0.2))
                 ));
         SendMessage sendMsg = SendMessage.builder()
-                .chatId(chatId).text(GameUtil.getInviteList(wodiUser, xInvites, embyMap, newIvMap))
+                .chatId(chatId).text(WdUtil.getInviteList(wodiUser, xInvites, embyMap, newIvMap))
                 .build();
         tgService.sendMsg(sendMsg, 300 * 1000);
     }

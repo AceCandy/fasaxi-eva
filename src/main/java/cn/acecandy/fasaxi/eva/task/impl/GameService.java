@@ -5,9 +5,9 @@ import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
-import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
-import cn.acecandy.fasaxi.eva.utils.FhUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
+import cn.acecandy.fasaxi.eva.utils.FhUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.ImgUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -43,7 +43,7 @@ import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.GAME_SPEAK_CNT;
  */
 @Slf4j
 @Component
-public class CommonGameService {
+public class GameService {
 
     @Resource
     private TgService tgService;
@@ -63,18 +63,18 @@ public class CommonGameService {
     @Transactional(rollbackFor = Exception.class)
     public void execKtccy() {
         // 未猜完无法出题
-        if (CollUtil.isNotEmpty(CommonGameUtil.GAME_CACHE)) {
+        if (CollUtil.isNotEmpty(GameUtil.GAME_CACHE)) {
             return;
         }
         // 非游戏时间
-        if (GameUtil.isInNotCommonGameTime()) {
+        if (WdUtil.isInNotCommonGameTime()) {
             return;
         }
         // 大于50min无人回答出题 否则静置
         if (System.currentTimeMillis() -
-                CommonGameUtil.endSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
+                GameUtil.endSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
             ktccy();
-            CommonGameUtil.endSpeakTime = System.currentTimeMillis();
+            GameUtil.endSpeakTime = System.currentTimeMillis();
         }
         if (GAME_SPEAK_CNT.get() <= -200) {
             ktccy();
@@ -125,7 +125,7 @@ public class CommonGameService {
                 .photo(new InputFile(picFile))
                 .build();
         Message msg = tgService.sendPhoto(sendPhoto, 60 * 60 * 1000, 看图猜成语);
-        CommonGameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
+        GameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
                 .type(看图猜成语).answer(ktccy.getAnswer()).msgId(msg.getMessageId()).build());
         log.warn("[成语猜猜看] {}", ktccy.getAnswer());
     }
@@ -150,7 +150,7 @@ public class CommonGameService {
                     .photo(new InputFile(input, "ktcfh.jpg")).hasSpoiler(true).build();
             Message msg = tgService.sendPhoto(sendPhoto, 55 * 60 * 1000);
             String fhName = FhUtil.getFhName(path.toString());
-            CommonGameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
+            GameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
                     .type(看图猜番号).answer(fhName).msgId(msg.getMessageId()).build());
             log.warn("[道观我最强] {}", fhName);
         }
@@ -167,11 +167,11 @@ public class CommonGameService {
             return;
         }
         text = StrUtil.removeAllPrefix(text, "。");
-        SmallGameDTO smallGame = CommonGameUtil.checkAnswer(text);
+        SmallGameDTO smallGame = GameUtil.checkAnswer(text);
         if (null == smallGame) {
             return;
         }
-        int lv = CommonGameUtil.getGameRewards(smallGame.getType());
+        int lv = GameUtil.getGameRewards(smallGame.getType());
         commonWin(message, lv);
         tgService.delMsg(message.getChatId().toString(), smallGame.getMsgId());
     }

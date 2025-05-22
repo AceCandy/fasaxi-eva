@@ -11,7 +11,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static cn.acecandy.fasaxi.eva.utils.CommonGameUtil.GAME_CACHE;
+import static cn.acecandy.fasaxi.eva.utils.GameUtil.GAME_CACHE;
 
 /**
  * 删除消息工具类

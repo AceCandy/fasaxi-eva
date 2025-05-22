@@ -148,7 +148,7 @@ public final class TgUtil {
             exitGame.setCallbackData(exitJn.toString());
 
             InlineKeyboardRow rowInline2 = new InlineKeyboardRow(readyGame, exitGame);
-            if (GameUtil.isAllMemberReady(game)) {
+            if (WdUtil.isAllMemberReady(game)) {
                 InlineKeyboardButton openGame = new InlineKeyboardButton(START);
                 JSONObject openJn = new JSONObject();
                 openJn.put("action", GameEventUtil.ACTION_OPEN);

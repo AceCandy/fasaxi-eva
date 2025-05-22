@@ -2,7 +2,7 @@ package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
-import cn.acecandy.fasaxi.eva.task.impl.CommonGameService;
+import cn.acecandy.fasaxi.eva.task.impl.GameService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -46,7 +46,7 @@ public class Command {
     @Resource
     private TgService tgService;
     @Resource
-    private CommonGameService commonGameService;
+    private GameService gameService;
 
 
     @Getter
@@ -82,12 +82,12 @@ public class Command {
                 break;
             case 看图猜成语:
                 if (isAllowCommonGameCommand(tgService.getGroup(), userId)) {
-                    commonGameService.ktccy();
+                    gameService.ktccy();
                 }
                 break;
             case 看图猜番号:
                 if (isAllowCommonGameCommand(tgService.getGroup(), userId)) {
-                    commonGameService.execKtcfh();
+                    gameService.execKtcfh();
                 }
                 break;
             default:

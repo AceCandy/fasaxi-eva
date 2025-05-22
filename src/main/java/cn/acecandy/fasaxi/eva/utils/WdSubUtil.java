@@ -23,7 +23,7 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TOP_TITL
  * @since 2024/10/17
  */
 @Slf4j
-public class GameSubUtil {
+public class WdSubUtil {
 
     /**
      * 统一调用入口

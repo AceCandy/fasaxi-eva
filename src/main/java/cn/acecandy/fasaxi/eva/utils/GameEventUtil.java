@@ -105,7 +105,7 @@ public final class GameEventUtil {
             return;
         }
 
-        if (!GameUtil.isAllMemberReady(game)) {
+        if (!WdUtil.isAllMemberReady(game)) {
             callback.setText("❌ 还有人未准备好噢");
         } else if (!userId.equals(game.homeOwner.getId())) {
             callback.setText("❌ 只有房主能开局");

@@ -23,4 +23,14 @@ public final class CommandUtil {
     public static boolean isWdCommand(String command) {
         return StrUtil.startWith(command, "/wd");
     }
+
+    /**
+     * 是Cc相关命令
+     *
+     * @param command 命令
+     * @return boolean
+     */
+    public static boolean isCcCommand(String command) {
+        return StrUtil.startWith(command, "/cc");
+    }
 }
