@@ -13,7 +13,7 @@ public interface GameTextConstants {
      */
     Integer CURRENT_SEASON = 3;
 
-    String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前已被发现！当前群组信息已上传云端！";
+    String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前群组信息已上传网信部记录！";
     String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，游戏开放时间9～12、14～18、19～22点！";
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_PRIVATE = "请私聊助手使用命令~";
@@ -223,6 +223,7 @@ public interface GameTextConstants {
                          """;
     String INVITE_SINGLE = "{}(<b>当日累计: {}</b>)\t\t加入时间:{} \n";
     String INVITE_COLLECT = "🎉 你的传承弟子们昨日非常用功，你不禁抚须大笑，Dmail+<b>{}</b> \n";
+    String INVITE_COLLECT2 = "🤔 你的传承弟子们都在闭关，宗门竟只你一人好像闲着，Dmail+<b>{}</b> \n";
     String INVITE_HELP = """
                          <b>传承系统</b>:
                          

@@ -57,6 +57,8 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.minMemb
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteReminderVote;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteTimeLimit;
 import static cn.acecandy.fasaxi.eva.utils.GameUtil.isSpecialGameOver;
+import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.addSpeakCnt;
+import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.setSpeakCnt;
 
 /**
  * 游戏主体
@@ -1132,19 +1134,19 @@ public class Game {
             tgService.sendMsg(mailMsg);
         } finally {
             if (null != firstMsg) {
-                Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(50, 80));
+                setSpeakCnt(50, 80);
                 // 重置需要发言的条数
                 if (memberList.size() < 6) {
-                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 40));
+                    addSpeakCnt(20, 40);
                 } else if (memberList.size() < 8) {
-                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 40));
+                    addSpeakCnt(20, 40);
                 }
                 if (rotate < memberList.size() - 2) {
-                    Command.SPEAK_TIME_CNT.getAndAdd(RandomUtil.randomInt(20, 40));
+                    addSpeakCnt(20, 40);
                 }
 
                 if (seasonEnds) {
-                    Command.SPEAK_TIME_CNT.set(1199);
+                    setSpeakCnt(1199, 1999);
                 }
                 tgService.unPinMsg(firstMsg.getChatId().toString(), firstMsg.getMessageId());
             }
@@ -1154,13 +1156,13 @@ public class Game {
     /**
      * 玩家发言
      *
-     * @param userId 用户id
-     * @param text   文本
+     * @param text 文本
      */
-    public void speak(Message message, Long userId, String text) {
+    public void speak(Message message, String text) {
         if (status != GameStatus.讨论时间) {
             return;
         }
+        Long userId = message.getFrom().getId();
         GameUser member = getMember(userId);
         if (member == null || member.speak || !member.survive) {
             return;
@@ -1239,18 +1241,18 @@ public class Game {
      * 白板爆词
      *
      * @param message 消息
-     * @param userId  用户id
      * @param text    文本
      */
-    public void boom(Message message, Long userId, String text) {
-        if (status == GameStatus.讨论时间) {
-            GameUser member = getMember(userId);
-            if (member == null || member.speak || !member.survive || !member.isSpace) {
-                return;
-            }
-            tgService.delMsg(message);
-            member.boom = text;
+    public void boom(Message message, String text) {
+        if (status != GameStatus.讨论时间) {
+            return;
         }
+        GameUser member = getMember(message.getFrom().getId());
+        if (member == null || member.speak || !member.survive || !member.isSpace) {
+            return;
+        }
+        tgService.delMsg(message);
+        member.boom = text;
     }
 
     /**

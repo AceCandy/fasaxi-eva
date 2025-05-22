@@ -1,14 +1,15 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
-import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
 import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
+import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
 import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
 import cn.acecandy.fasaxi.eva.utils.FhUtil;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.ImgUtil;
+import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -29,8 +30,10 @@ import java.nio.file.Path;
 
 import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜成语;
 import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜番号;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.COMMON_WIN;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCCY_TIP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.KTCFH_TIP;
+import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.GAME_SPEAK_CNT;
 
 /**
  * 通用定时任务 实现
@@ -48,14 +51,11 @@ public class CommonGameService {
     @Resource
     private GameKtccyDao gameKtccyDao;
 
-    /*@Value("${game.fh-path}")
-    private String fhPath;
-
-    @Value("${game.ccy-path}")
-    private String ccyPath;*/
-
     @Resource
     private CommonGameConfig commonGameConfig;
+
+    @Resource
+    private EmbyDao embyDao;
 
     /**
      * 看图猜成语
@@ -76,9 +76,9 @@ public class CommonGameService {
             ktccy();
             CommonGameUtil.endSpeakTime = System.currentTimeMillis();
         }
-        if (Command.SPEAK_TIME_CNT.get() <= -200) {
+        if (GAME_SPEAK_CNT.get() <= -200) {
             ktccy();
-            Command.SPEAK_TIME_CNT.set(RandomUtil.randomInt(40, 60));
+            GAME_SPEAK_CNT.set(RandomUtil.randomInt(40, 60));
         }
 
     }
@@ -154,6 +154,41 @@ public class CommonGameService {
                     .type(看图猜番号).answer(fhName).msgId(msg.getMessageId()).build());
             log.warn("[道观我最强] {}", fhName);
         }
+    }
+
+    /**
+     * 发言答题
+     *
+     * @param message 消息
+     */
+    public void speak(Message message) {
+        String text = message.getText();
+        if (!StrUtil.startWith(text, "。")) {
+            return;
+        }
+        text = StrUtil.removeAllPrefix(text, "。");
+        SmallGameDTO smallGame = CommonGameUtil.checkAnswer(text);
+        if (null == smallGame) {
+            return;
+        }
+        int lv = CommonGameUtil.getGameRewards(smallGame.getType());
+        commonWin(message, lv);
+        tgService.delMsg(message.getChatId().toString(), smallGame.getMsgId());
+    }
+
+    /**
+     * 用于通用游戏 获取奖励
+     *
+     * @param message 消息
+     * @param lv      胜利奖励
+     */
+    private void commonWin(Message message, Integer lv) {
+        if (lv == null || lv < 1) {
+            return;
+        }
+        tgService.sendMsg(message.getMessageId(), message.getChatId().toString(),
+                StrUtil.format(COMMON_WIN, TgUtil.tgNameOnUrl(message.getFrom()), lv));
+        embyDao.upIv(message.getFrom().getId(), lv);
     }
 
     public static void main(String[] args) {

@@ -3,7 +3,10 @@ package cn.acecandy.fasaxi.eva.bot.game;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
+import cn.acecandy.fasaxi.eva.task.impl.WdService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
+import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
+import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
@@ -13,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.List;
@@ -36,24 +38,22 @@ public class GameEvent {
     @Resource
     private Command command;
     @Resource
+    private WdService wdService;
+    @Resource
     private EmbyDao embyDao;
 
 
-    public void onClick(Update update, boolean isGroupMessage) {
-        CallbackQuery callbackQuery = update.getCallbackQuery();
-        if (!JSONUtil.isTypeJSON(callbackQuery.getData())) {
-            return;
-        }
-        JSONObject callbackJn = JSONUtil.parseObj(callbackQuery.getData());
+    public void onClick(CallbackQuery callback) {
+        JSONObject callbackJn = JSONUtil.parseObj(callback.getData());
         String action = callbackJn.getStr("action");
 
         if (isPublicAction(action)) {
-            handlePublicAction(callbackQuery, action);
+            handlePublicAction(callback, action);
         } else {
-            if (!isGroupMessage) {
+            if (!TgUtil.isGroupMsg(callback)) {
                 return;
             }
-            handleGroupAction(callbackQuery, callbackJn, action);
+            handleGroupAction(callback, callbackJn, action);
         }
     }
 
@@ -141,10 +141,10 @@ public class GameEvent {
         action = CollUtil.getFirst(actionList);
 
         if (action.equals(PUBLIC_ACTION_RANKS)) {
-            if (null == command.getRankMsg()) {
+            if (null == GlobalUtil.rankMsg) {
                 return;
             }
-            command.handleEditRank(Integer.valueOf(CollUtil.getLast(actionList)));
+            wdService.handleEditRank(Integer.valueOf(CollUtil.getLast(actionList)));
         } else if (action.equals(PUBLIC_ACTION_SB)) {
             AnswerCallbackQuery callback = new AnswerCallbackQuery(callbackQuery.getId());
             command.handleEditSb(callback, callbackQuery.getFrom());

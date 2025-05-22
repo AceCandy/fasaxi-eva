@@ -11,16 +11,16 @@ import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.Console;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.List;
@@ -29,19 +29,21 @@ import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.GENERATE_INVITE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.INVITE_COLLECT;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.INVITE_COLLECT2;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.INVITE_HELP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_GROUP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_INVITE;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_PRIVATE;
 
 /**
- * x功能 实现
+ * 传承逻辑实现
  *
- * @author tangningzhu
- * @since 2025/3/3
+ * @author AceCandy
+ * @since 2025/05/21
  */
 @Slf4j
 @Component
-public class XService {
+public class CcService {
 
     @Resource
     private TgService tgService;
@@ -58,17 +60,36 @@ public class XService {
     @Resource
     private WodiUserLogDao wodiUserLogDao;
 
+    public final static String 生成传承邀请 = "/cc_inv";
+    public final static String 获取传承名单 = "/cc_info";
+    public final static String 传承帮助 = "/cc_help";
+
+    @Transactional(rollbackFor = Exception.class)
+    public void process(@NotNull String cmd, Message message) {
+        String chatId = message.getChatId().toString();
+        Long userId = message.getFrom().getId();
+        Integer msgId = message.getMessageId();
+
+        switch (cmd) {
+            case 生成传承邀请 -> xInvite(message);
+            case 获取传承名单 -> xInviteList(message);
+            case 传承帮助 -> tgService.sendMsg(chatId, INVITE_HELP, 300 * 1000);
+            default -> {
+            }
+        }
+    }
+
+
     /**
      * 传承邀请
      */
-    @Transactional(rollbackFor = Exception.class)
     public void xInvite(Message message) {
         String chatId = message.getChatId().toString();
-        Long userId = message.getFrom().getId();
         if (TgUtil.isGroupMsg(message)) {
             tgService.sendMsg(chatId, TIP_IN_PRIVATE, 10 * 1000);
             return;
         }
+        Long userId = message.getFrom().getId();
         Emby emby = embyDao.findByTgId(userId);
         if (null == emby) {
             return;
@@ -101,16 +122,20 @@ public class XService {
 
         String inviteUrl = tgService.generateInvite(userId, 1);
         log.info("{} 生成了一个传承邀请:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
-        tgService.sendMsg(message.getMessageId(), message.getChatId().toString(), StrUtil.format(GENERATE_INVITE, inviteUrl));
+        tgService.sendMsg(message.getMessageId(), message.getChatId().toString(),
+                StrUtil.format(GENERATE_INVITE, inviteUrl));
         xInviteDao.insertInviter(userId, inviteUrl);
     }
 
     /**
      * 传承邀请名单
      */
-    @Transactional(rollbackFor = Exception.class)
     public void xInviteList(Message message) {
         String chatId = message.getChatId().toString();
+        if (TgUtil.isPrivateMsg(message)) {
+            tgService.sendMsg(chatId, TIP_IN_GROUP, 10 * 1000);
+            return;
+        }
         Long userId = message.getFrom().getId();
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
         Emby emby = embyDao.findByTgId(userId);
@@ -118,10 +143,7 @@ public class XService {
             tgService.sendMsg(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
             return;
         }
-        if (TgUtil.isPrivateMsg(message)) {
-            tgService.sendMsg(chatId, TIP_IN_GROUP, 10 * 1000);
-            return;
-        }
+
         // 查询弟子名单 小于21天为未出师弟子（计算22天是为了取昨日）
         List<XInvite> xInvites = xInviteDao.findInviteeByInviter(userId);
         xInvites = xInvites.stream().filter(x ->
@@ -140,9 +162,11 @@ public class XService {
             xInviteDao.updateCollectTime(yesInviteeIds, DateUtil.yesterday());
             int ivTotal = ivMap.values().stream().mapToInt(v -> v).sum();
             if (ivTotal > 0) {
-                // 扣除2分领取
-                embyDao.upIv(userId, ivTotal - 2);
+                embyDao.upIv(userId, ivTotal);
                 tgService.sendMsg(userId.toString(), StrUtil.format(INVITE_COLLECT, ivTotal));
+            } else {
+                embyDao.upIv(userId, yesInviteeIds.size());
+                tgService.sendMsg(userId.toString(), StrUtil.format(INVITE_COLLECT2, yesInviteeIds.size()));
             }
         }
 
@@ -161,8 +185,37 @@ public class XService {
         tgService.sendMsg(sendMsg, 300 * 1000);
     }
 
-    public static void main(String[] args) {
-        DateTime d = DateUtil.parse("2025-04-20 03:35:16");
-        Console.log(DateUtil.betweenDay(DateUtil.date(), d, false));
+
+    /**
+     * 自动批准
+     *
+     * @param joinRequest 加入请求
+     */
+    public void autoApprove(ChatJoinRequest joinRequest) {
+        Long tgId = joinRequest.getUser().getId();
+        String inviteLink = joinRequest.getInviteLink().getInviteLink();
+
+        // 更新db
+        XInvite xInvite = xInviteDao.findByUrl(inviteLink);
+        if (null == xInvite) {
+            xInvite = new XInvite();
+            xInvite.setUrl(inviteLink);
+        }
+        // 自动拒绝
+        if (null != xInvite.getInviteeId()) {
+            tgService.declineJoin(tgId);
+            log.error("传承邀请{} 已被 {} 使用,拒绝 {} 加入", inviteLink, xInvite.getInviteeId(), tgId);
+            // 过期邀请链接
+            tgService.revokeInvite(inviteLink);
+            return;
+        }
+        // 自动批准
+        tgService.approveJoin(tgId);
+        log.warn("传承邀请{} 已被 {} 使用,已自动批准加入", inviteLink, tgId);
+        xInvite.setInviteeId(tgId);
+        xInvite.setJoinTime(DateUtil.date());
+        xInviteDao.updateInvitee(xInvite);
+        // 过期邀请链接
+        tgService.revokeInvite(inviteLink);
     }
 }

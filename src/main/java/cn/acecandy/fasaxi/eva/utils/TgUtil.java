@@ -9,7 +9,9 @@ import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -26,7 +28,6 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.READY;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.START;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.ViewWord;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.abstain;
-import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
 
 /**
  * tg工具类
@@ -120,32 +121,6 @@ public final class TgUtil {
             name += " " + user.getLastName();
         }*/
         return StrUtil.subPre(name, 20);
-    }
-
-    /**
-     * 游戏讨论
-     *
-     * @param message 消息
-     */
-    public static void gameSpeak(Message message) {
-        String text = message.getText();
-        if (StrUtil.isBlank(text) || !StrUtil.startWith(text, "，")) {
-            return;
-        }
-        Game game = GameListUtil.getGame(message.getChatId().toString());
-        if (game == null || !讨论时间.equals(game.getStatus())) {
-            return;
-        }
-        text = StrUtil.removePrefix(text, "，");
-        // 第一轮不能爆；非。开头不能爆；第二轮时如果第一轮发言人数<2不能爆
-        boolean canBoom = game.rotate != 1 && StrUtil.startWith(text, "。") &&
-                !(game.rotate == 2 && game.firstSpeakList.size() < 2);
-        if (canBoom) {
-            text = StrUtil.removePrefix(text, "。");
-            game.boom(message, message.getFrom().getId(), text);
-        } else {
-            game.speak(message, message.getFrom().getId(), text);
-        }
     }
 
     /**
@@ -323,6 +298,17 @@ public final class TgUtil {
     /**
      * 是群消息
      *
+     * @param callbackQuery 消息
+     * @return boolean
+     */
+    public static boolean isGroupMsg(CallbackQuery callbackQuery) {
+        MaybeInaccessibleMessage message = callbackQuery.getMessage();
+        return message.isGroupMessage() || message.isSuperGroupMessage();
+    }
+
+    /**
+     * 是群消息
+     *
      * @param message 消息
      * @return boolean
      */
@@ -347,7 +333,7 @@ public final class TgUtil {
      * @return boolean
      */
     public static boolean isMessageValid(Message msg) {
-        if (!msg.hasText()) {
+        if (null == msg || !msg.hasText() || null != msg.getForwardDate()) {
             return false;
         }
         if (System.currentTimeMillis() / 1000 - msg.getDate() > 60) {
@@ -358,8 +344,8 @@ public final class TgUtil {
     }
 
     public static void main(String[] args) {
-        Console.log(extractCommand("/wd_rank@WorldLineGame_bot", "WorldLineGame_bot"));
+        Console.log(extractCommand("/wd_rank@WorldLineGame_bot 123", "WorldLineGame_bot"));
         Console.log(extractCommand("/wd_rank@WorldLi", "WorldLineGame_bot"));
-        Console.log(extractCommand("/wd_rank", "WorldLineGame_bot"));
+        Console.log(extractCommand("/wd_rank 123", "WorldLineGame_bot"));
     }
 }

@@ -4,17 +4,19 @@ import cn.acecandy.fasaxi.eva.bot.game.Command;
 import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.bot.game.GameEvent;
 import cn.acecandy.fasaxi.eva.bot.game.GameUser;
-import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
+import cn.acecandy.fasaxi.eva.common.ex.BaseException;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
-import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
-import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
-import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
+import cn.acecandy.fasaxi.eva.task.impl.CcService;
+import cn.acecandy.fasaxi.eva.task.impl.CommonGameService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
-import cn.acecandy.fasaxi.eva.utils.CommonGameUtil;
+import cn.acecandy.fasaxi.eva.task.impl.WdService;
+import cn.acecandy.fasaxi.eva.utils.CommandUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
+import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
-import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -27,7 +29,7 @@ import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.COMMON_WIN;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.NO_AUTH_GROUP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.WARNING_EDIT;
 import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
 
@@ -47,13 +49,15 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     @Resource
     public Command command;
     @Resource
-    public GameEvent gameEvent;
+    public WdService wdService;
+    @Resource
+    public CommonGameService commonGameService;
     @Resource
     public EmbyBossConfig embyBossConfig;
     @Resource
-    public EmbyDao embyDao;
+    public GameEvent gameEvent;
     @Resource
-    public XInviteDao xInviteDao;
+    public CcService ccService;
 
     @Override
     public String getBotToken() {
@@ -68,7 +72,13 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
 
     @Override
     public void consume(Update update) {
-        handleUpdate(update);
+        try {
+            handleUpdate(update);
+        } catch (BaseException e) {
+            log.warn("业务提示: {}", ExceptionUtil.getSimpleMessage(e));
+        } catch (Exception e) {
+            log.error("未知异常: ", e);
+        }
     }
 
     private void handleUpdate(Update update) {
@@ -78,12 +88,12 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         ChatJoinRequest joinRequest = update.getChatJoinRequest();
         CallbackQuery callback = update.getCallbackQuery();
 
-        if (msg != null && TgUtil.isMessageValid(msg)) {
+        if (TgUtil.isMessageValid(msg)) {
             handleMsg(msg);
         } else if (editMsg != null) {
             handleEditMsg(editMsg);
         } else if (callback != null) {
-            handleCallbackQuery(update);
+            handleCallbackQuery(callback);
         } else if (joinRequest != null) {
             handleChatJoinRequest(joinRequest);
         }
@@ -96,26 +106,60 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
      * @param message 消息
      */
     private void handleMsg(Message message) {
-        boolean isCommand = message.isCommand();
-        boolean isGroupMessage = TgUtil.isGroupMsg(message);
-        String msgData = message.getText();
+        checkGroupAuth(message);
+        processCommand(message);
+        processSpeak(message);
+    }
 
-        if (isCommand) {
-            String msg = TgUtil.extractCommand(msgData, tgService.getBotUsername());
-            command.process(msg, message, isGroupMessage);
+    /**
+     * 检查是否拥有群组权限
+     *
+     * @param message 消息
+     */
+    private void checkGroupAuth(Message message) {
+        if (!TgUtil.isGroupMsg(message)) {
+            return;
+        }
+        String chatId = message.getChatId().toString();
+        if (StrUtil.equals(chatId, tgService.getGroup())) {
+            return;
+        }
+        tgService.sendMsg(chatId, NO_AUTH_GROUP);
+        throw new BaseException(StrUtil.format("非授权群组私自拉bot入群已被发现：{}, chat: {}",
+                chatId, JSONUtil.toJsonStr(message.getChat())));
+    }
+
+    /**
+     * 处理命令
+     *
+     * @param message 消息
+     */
+    private void processCommand(Message message) {
+        if (!message.isCommand()) {
+            return;
+        }
+        String cmd = TgUtil.extractCommand(message.getText(), tgService.getBotUsername());
+        if (CommandUtil.isWdCommand(cmd)) {
+            wdService.process(cmd, message);
         } else {
-            if (isGroupMessage) {
-                CommonGameUtil.endSpeakTime = System.currentTimeMillis();
-                SmallGameDTO smallGame = CommonGameUtil.commonGameSpeak(message);
-                if (null != smallGame) {
-                    int lv = CommonGameUtil.getGameRewards(smallGame.getType());
-                    commonWin(tgService.getGroup(), message, lv);
-                    tgService.delMsg(tgService.getGroup(), smallGame.getMsgId());
-                } else {
-                    TgUtil.gameSpeak(message);
-                }
-                Command.SPEAK_TIME_CNT.getAndDecrement();
-            }
+            command.process(cmd, message);
+        }
+    }
+
+    /**
+     * 处理聊天
+     *
+     * @param message 消息
+     */
+    private void processSpeak(Message message) {
+        if (!TgUtil.isGroupMsg(message)) {
+            return;
+        }
+        try {
+            commonGameService.speak(message);
+            wdService.speak(message);
+        } finally {
+            GlobalUtil.updateSpeak();
         }
     }
 
@@ -143,13 +187,13 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
     /**
      * 处理回调查询
      *
-     * @param update 更新
+     * @param callback 更新
      */
-    private void handleCallbackQuery(Update update) {
-        CallbackQuery callbackQuery = update.getCallbackQuery();
-        boolean isGroupMessage = callbackQuery.getMessage().isGroupMessage()
-                || callbackQuery.getMessage().isSuperGroupMessage();
-        gameEvent.onClick(update, isGroupMessage);
+    private void handleCallbackQuery(CallbackQuery callback) {
+        if (!JSONUtil.isTypeJSON(callback.getData())) {
+            return;
+        }
+        gameEvent.onClick(callback);
     }
 
     /**
@@ -163,45 +207,6 @@ public class EmbyTelegramBot implements SpringLongPollingBot, LongPollingSingleT
         if (joinRequest.getInviteLink() == null) {
             return;
         }
-        Long tgId = joinRequest.getUser().getId();
-        String inviteLink = joinRequest.getInviteLink().getInviteLink();
-
-        // 更新db
-        XInvite xInvite = xInviteDao.findByUrl(inviteLink);
-        if (null == xInvite) {
-            xInvite = new XInvite();
-            xInvite.setUrl(inviteLink);
-        }
-        // 自动拒绝
-        if (null != xInvite.getInviteeId()) {
-            tgService.declineJoin(tgId);
-            log.error("传承邀请{} 已被 {} 使用,拒绝 {} 加入", inviteLink, xInvite.getInviteeId(), tgId);
-            // 过期邀请链接
-            tgService.revokeInvite(inviteLink);
-            return;
-        }
-        // 自动批准
-        tgService.approveJoin(tgId);
-        log.warn("传承邀请{} 已被 {} 使用,已自动批准加入", inviteLink, tgId);
-        xInvite.setInviteeId(tgId);
-        xInvite.setJoinTime(DateUtil.date());
-        xInviteDao.updateInvitee(xInvite);
-        // 过期邀请链接
-        tgService.revokeInvite(inviteLink);
-    }
-
-    /**
-     * 用于通用游戏 获取奖励
-     *
-     * @param message 消息
-     * @param lv      胜利奖励
-     */
-    private void commonWin(String groupId, Message message, Integer lv) {
-        if (lv == null || lv < 1) {
-            return;
-        }
-        tgService.sendMsg(message.getMessageId(), groupId,
-                StrUtil.format(COMMON_WIN, TgUtil.tgNameOnUrl(message.getFrom()), lv));
-        embyDao.upIv(message.getFrom().getId(), lv);
+        ccService.autoApprove(joinRequest);
     }
 }

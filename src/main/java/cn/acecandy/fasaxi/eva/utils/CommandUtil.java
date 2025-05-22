@@ -1,0 +1,26 @@
+package cn.acecandy.fasaxi.eva.utils;
+
+import cn.hutool.core.util.StrUtil;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 命令 工具类
+ *
+ * @author tangningzhu
+ * @since 2024/10/16
+ */
+@Slf4j
+public final class CommandUtil {
+    private CommandUtil() {
+    }
+
+    /**
+     * 是wd相关命令
+     *
+     * @param command 命令
+     * @return boolean
+     */
+    public static boolean isWdCommand(String command) {
+        return StrUtil.startWith(command, "/wd");
+    }
+}

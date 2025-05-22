@@ -3,7 +3,6 @@ package cn.acecandy.fasaxi.eva.utils;
 import cn.acecandy.fasaxi.eva.common.dto.SmallGameDTO;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -32,25 +31,16 @@ public final class CommonGameUtil {
     public static Queue<SmallGameDTO> GAME_CACHE = new ConcurrentLinkedQueue<>();
 
     /**
-     * 通用游戏 发言
+     * 检查答案 正确就返回对应实体 否则就返回空
      *
-     * @param message 消息
+     * @param text 答案
      */
-    public static SmallGameDTO commonGameSpeak(Message message) {
-        String text = message.getText();
-        if (StrUtil.isBlank(text) || !StrUtil.startWith(text, "。")) {
-            return null;
-        }
-        text = StrUtil.removeAllPrefix(text, "。");
-        for (SmallGameDTO smallGame : GAME_CACHE) {
-            if (StrUtil.equalsIgnoreCase(text, smallGame.getAnswer())) {
-                // return GAME_CACHE.poll();
-                if (GAME_CACHE.remove(smallGame)) {
-                    return smallGame;
-                }
-            }
-        }
-        return null;
+    public static SmallGameDTO checkAnswer(String text) {
+        return GAME_CACHE.stream().filter(e -> StrUtil.equalsIgnoreCase(text, e.getAnswer()))
+                .findFirst().map(e -> {
+                    GAME_CACHE.remove(e);
+                    return e;
+                }).orElse(null);
     }
 
     /**
