@@ -19,6 +19,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
@@ -39,7 +40,7 @@ import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
  * @author AceCandy
  * @since 2024/10/21
  */
-@Lazy
+// @Lazy
 @Slf4j
 @Component
 public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {

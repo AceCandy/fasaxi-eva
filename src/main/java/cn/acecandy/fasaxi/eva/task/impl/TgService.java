@@ -8,6 +8,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
@@ -35,6 +36,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.List;
 
 import static cn.hutool.core.text.StrPool.COMMA;
@@ -54,6 +57,9 @@ public class TgService {
 
     public TgService(EmbyBossConfig config) {
         this.config = config;
+        // this.tgClient = new OkHttpTelegramClient(new OkHttpClient.Builder()
+        //         .proxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("192.168.1.205", 7890)))
+        //         .build(), config.getToken());
         this.tgClient = new OkHttpTelegramClient(config.getToken());
     }
 
