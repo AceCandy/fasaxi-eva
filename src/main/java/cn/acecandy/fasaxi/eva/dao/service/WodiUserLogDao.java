@@ -6,8 +6,8 @@ import cn.acecandy.fasaxi.eva.dao.mapper.WodiUserLogMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.Console;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -95,8 +95,7 @@ public class WodiUserLogDao {
         LambdaQueryWrapper<WodiUserLog> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(WodiUserLog::getTelegramId, tgIds)
                 // 大于等于今天的开始时间 小于等于今天的结束时间
-                .between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(new Date()), DateUtil.endOfDay(new Date()))
-        ;
+                .between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(new Date()), DateUtil.endOfDay(new Date()));
         return wodiUserLogMapper.selectList(wrapper);
     }
 
@@ -114,8 +113,7 @@ public class WodiUserLogDao {
         DateTime date = DateUtil.yesterday();
         wrapper.in(WodiUserLog::getTelegramId, tgIds)
                 // 大于等于昨天的开始时间 小于等于昨天的结束时间
-                .between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(date), DateUtil.endOfDay(date))
-        ;
+                .between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(date), DateUtil.endOfDay(date));
         return wodiUserLogMapper.selectList(wrapper);
     }
 
@@ -128,20 +126,42 @@ public class WodiUserLogDao {
      * @param season 季节
      * @return {@link List }<{@link WodiUserLog }>
      */
-    public List<WodiUserLog> findAllBySeason(Integer season) {
+    public List<WodiUserLog> findAllWinBySeason(Integer season) {
         if (null == season) {
             season = CURRENT_SEASON;
         }
+        QueryWrapper<WodiUserLog> wrapper = new QueryWrapper<>();
+        wrapper.eq("season", season)
+                .eq("is_victory", true)
+                .lt("create_time", LocalDate.now())
+                .orderByAsc("telegram_id")
+                .orderByAsc("DATE(create_time)")
+                .orderByDesc("fraction");
+        return wodiUserLogMapper.selectList(wrapper);
+    }
+
+    /**
+     * 按赛季查找
+     * <p>
+     * 时间是今天之前的所有（不包含今天）
+     * 按telegram_id升序、fraction降序、create_time降序排列
+     *
+     * @param season 季节
+     * @return {@link List }<{@link WodiUserLog }>
+     */
+    public List<WodiUserLog> findYesterdayWinBySeason(Integer season) {
+        if (null == season) {
+            season = CURRENT_SEASON;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+
         LambdaQueryWrapper<WodiUserLog> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(WodiUserLog::getSeason, season)
-                .lt(WodiUserLog::getCreateTime, LocalDate.now())
-                .orderByAsc(WodiUserLog::getTelegramId)
-                .orderByDesc(WodiUserLog::getFraction, WodiUserLog::getCreateTime)
-        ;
+        wrapper.eq(WodiUserLog::getSeason, season).eq(WodiUserLog::getIsVictory, true)
+                .between(WodiUserLog::getCreateTime, yesterday, today);
         return wodiUserLogMapper.selectList(wrapper);
     }
 
     public static void main(String[] args) {
-        Console.log(LocalDate.now());
     }
 }

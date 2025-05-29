@@ -20,8 +20,7 @@ public interface GameTextConstants {
     String TIP_IN_OWNER = "您无法使用该命令~";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
     String TIP_IN_INVITE = "您花费100封Dmail创建传承邀请";
-    String TIP_IN_RANK = "您花费15封Dmail进行开启榜单";
-    String TIP_IN_TOP = "您花费10封Dmail进行开启榜单";
+    String TIP_IN_RANK = "您花费{}封Dmail进行开启榜单";
     String TIP_HELP = """
                       使用命令可创建游戏（<b>花费10封Dmail 成功开局才扣除</b>），游戏开始后每个人会得到自己的游戏词语。
                       
@@ -46,8 +45,9 @@ public interface GameTextConstants {
                       
                       /wd 创建游戏（10Dmail 成功开局后扣取）
                       /wd_info 查看自身游戏积分记录（2Dmail）
-                      /wd_rank 翻阅游戏积分排行榜（15Dmail）
-                      /wd_top 翻阅首飞霸王榜（10Dmail）
+                      /wd_rank 开启积分榜（10Dmail）
+                      /wd_real_rank Top战力榜(累计至昨日)（15Dmail）
+                      /wd_top 开启霸王榜（10Dmail）
                       /wd_exit 关闭游戏（3Dmail）
                       """;
     String SPEAK_TIME_LIMIT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
@@ -79,6 +79,7 @@ public interface GameTextConstants {
                             你在<b>{}</b>群组中的游戏词语是: <b>{}</b>
                       """;
     String EXIT_GAME = "{} 花费3Dmail强行关闭了游戏";
+    String EXIT_GAME2 = "{} 强行关闭了游戏，由于游戏异常，返回9Dmail";
     String EXIT_GAME_ERROR = "❌ 只有房主可以关闭游戏";
     String SPEECH_TIME = """
                          当前存活人: {}
@@ -134,7 +135,7 @@ public interface GameTextConstants {
     String USER_LEVEL_UP_FIRST = """
                                  🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
                                  🚨
-                                 🚨  🏆 {}成为<b>【{}】</b>飞升第一人
+                                 🚨  🏆 {}成为<b>【{}·之王】</b>
                                  🚨  💰 收获<b>{}</b>封Dmail！{}
                                  🚨  💓 <b>群内所有成员Dmail+5</b>
                                  🚨  🎉 大家恭喜这个b！！！！！
@@ -145,12 +146,12 @@ public interface GameTextConstants {
                          🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
                          🚨  🎇 游 戏 通 关，赛 季 结 束！🎇
                          🚨
-                         🚨  🏆 {}成为<b>【{}】</b>飞升第一人
+                         🚨  🏆 {}成为<b>【{}·之王】</b>
                          🚨  💰 收获<b>{}</b>封Dmail！{}
                          🚨  💓 <b>群内所有成员Dmail+50</b>
                          🚨  🎉 大家恭喜这个b！！！！！
                          🚨
-                         🚨  <b>新赛季即将开始</b>，当前进入季后赛阶段！
+                         🚨  <b>S{}赛季结束</b>，进入季后赛阶段！
                          🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
                          """;
     String USER_LEVEL_UP_HIGH = "注册码<b>{}</b>个";
@@ -166,17 +167,9 @@ public interface GameTextConstants {
     String SPEAK_NOWAY = "❓️{} 违禁爆词，扣除5封Dmail🫶\n";
     String SPEAK_NOWAY_BIG = "❗️❗️❗️{} 严重违禁爆词，受到天罚，扣除{}(10%)封Dmail🤡\n";
 
-    String RIGISTER_TIPS = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";
-    String RIGISTER_CODE1 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_Y7OE1csLqg\n";
-    String RIGISTER_CODE2 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_3xl3qhhig0\n";
-    String RIGISTER_CODE3 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_5VoOWFteXV\n";
-    String RIGISTER_CODE4 = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_qBZaZ6NEIP\n";
-    String RIGISTER_CODE5 = """
-                            t.me/WorldLineEmby_bot?start=WorldLine-30-Register_5CL4LdTaYL
-                            """;
-    String RIGISTER_CODE = "t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL";
-    // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_fuhUWPnxjL
-    // t.me/WorldLineEmby_bot?start=WorldLine-30-Register_p900zgDCBG
+    String RIGISTER_CODE1 = "WorldLine-7-Register_1ahvc4W1FF";
+    String RIGISTER_CODE2 = "WorldLine-7-Register_p2WD69Zkwj";
+    String RIGISTER_CODE3 = "WorldLine-30-Register_gJWA2BVMhV";
 
     String BOOM_WAITING = """
                           🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪

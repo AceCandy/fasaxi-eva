@@ -147,10 +147,48 @@ public final class WdUtil extends WdSubUtil {
         return rankFinal.toString();
     }
 
+    /**
+     * 获取排行榜
+     *
+     * @param top10   Top 10
+     * @param userMap 用户映射
+     * @return {@link String }
+     */
+    public static String getRealRank(Map<Long, Integer> top10, Map<Long, WodiUser> userMap) {
+        StringBuilder rankFinal = new StringBuilder(StrUtil.format(RANK, CURRENT_SEASON));
+        String[] nos = {"👑", "🃏", "🏳️‍🌈"};
+        String rankSingleFormat = "{} | {} | 战力:<b>{}</b> \n";
+        String detailSingleFormat = "      <u>总场次:<b>{}</b>  |  民/卧胜率:<b>{}</b>/ <b>{}</b></u>\n";
+
+        List<Map.Entry<Long, Integer>> topList = CollUtil.newArrayList(top10.entrySet());
+        for (int i = 0; i < topList.size(); i++) {
+            Map.Entry<Long, Integer> en = topList.get(i);
+            Long userId = en.getKey();
+            Integer fraction = en.getValue();
+            boolean top3 = i < nos.length;
+            String no = top3 ? nos[i] : "🏅";
+            String noSingle = StrUtil.format(top3 ? "<b>{}No.{}</b>" : "{}No.{}",
+                    no, i + 1);
+
+            WodiUser user = userMap.get(userId);
+            String rankSingle = StrUtil.format(rankSingleFormat, noSingle,
+                    TgUtil.tgNameOnUrl(user), fraction);
+            String detailSingle = StrUtil.format(detailSingleFormat, user.getCompleteGame(),
+                    NumberUtil.formatPercent(user.getWordPeopleVictory()
+                            / NumberUtil.toDouble(user.getWordPeople()), 0),
+                    NumberUtil.formatPercent(user.getWordSpyVictory()
+                            / NumberUtil.toDouble(user.getWordSpy()), 0));
+
+            rankFinal.append(rankSingle).append(detailSingle);
+        }
+        rankFinal.append(StrUtil.format("\n#WodiRealRank {}", DateUtil.now()));
+        return rankFinal.toString();
+    }
+
     public static String getTop(List<WodiTop> topList, Integer season) {
         StringBuilder rankFinal = new StringBuilder(getTopTitle(season != null ? season : CURRENT_SEASON));
         String topSingle = """
-                           👑 <b>{}</b> <i>飞升第一人</i> | {}
+                           👑 <b>{}</b> <i>境内无敌</i> | {}
                                         <b>{}</b>
                            """;
 

@@ -87,6 +87,10 @@ public enum Season2Lv {
         throw new RuntimeException("等级缺失");
     }
 
+    public static Integer lvToMin(int lv) {
+        return lvTo(lv).min;
+    }
+
     public static String lvToTitle(int lv) {
         return lvTo(lv).title;
     }

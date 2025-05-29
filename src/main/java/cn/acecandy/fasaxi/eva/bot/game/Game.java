@@ -2,7 +2,6 @@ package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
-import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
@@ -11,13 +10,11 @@ import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
-import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
-import cn.hutool.core.bean.BeanUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
-import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.io.resource.ResourceUtil;
@@ -39,7 +36,6 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,9 +52,9 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.Waiting
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.minMemberSize;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteReminderVote;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.voteTimeLimit;
-import static cn.acecandy.fasaxi.eva.utils.WdUtil.isSpecialGameOver;
 import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.addSpeakCnt;
 import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.setSpeakCnt;
+import static cn.acecandy.fasaxi.eva.utils.WdUtil.isSpecialGameOver;
 
 /**
  * 游戏主体
@@ -729,12 +725,14 @@ public class Game {
             } else if (allPeopleSurvive && undercover) {
                 // 民全活成就下 卧底分为1
                 m.fraction = 1;
-            } else if (undercover) {
-                // 卧底4
-                m.fraction = 4;
-            } else if (!undercover) {
-                // 平民3
-                m.fraction = 3;
+            } else {
+                if (undercover) {
+                    // 卧底4
+                    m.fraction = 4;
+                } else {
+                    // 平民3
+                    m.fraction = 3;
+                }
             }
             // 每活2个回合(超过人数回合不算)，积分+1
             if (undercoverNum == 1) {
@@ -1067,7 +1065,7 @@ public class Game {
             });
             if (CollUtil.isNotEmpty(upMember)) {
                 tgService.sendMsg(chatId, upBuilder.toString());
-                GameUser maxMember = upMember.stream()
+                /*GameUser maxMember = upMember.stream()
                         .max(Comparator.comparingInt(m -> m.wodiUser.getFraction()))
                         .orElse(null);
                 if (null != maxMember) {
@@ -1125,7 +1123,7 @@ public class Game {
                         Message msg = tgService.sendPhoto(sendPhoto);
                         tgService.pinMsg(msg.getChatId().toString(), msg.getMessageId());
                     }
-                }
+                }*/
             }
 
         } catch (Exception e) {
@@ -1143,10 +1141,6 @@ public class Game {
                 }
                 if (rotate < memberList.size() - 2) {
                     addSpeakCnt(20, 40);
-                }
-
-                if (seasonEnds) {
-                    setSpeakCnt(1199, 1999);
                 }
                 tgService.unPinMsg(firstMsg.getChatId().toString(), firstMsg.getMessageId());
             }

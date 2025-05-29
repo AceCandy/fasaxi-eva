@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
-
 /**
  * 实力排名榜刷新 定时任务
  *
@@ -24,9 +22,9 @@ public class PowerRankTask {
     @Scheduled(cron = "0 59 7 * * ?")
     public void powerRankCheck() {
         try {
-            powerRankService.powerRankCheck(CURRENT_SEASON);
+            powerRankService.powerRankCheck();
         } catch (Exception e) {
-            log.error("执行异常-看图猜番号 ", e);
+            log.error("执行异常-战力统计 ", e);
         }
     }
 }

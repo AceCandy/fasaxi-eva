@@ -1,15 +1,16 @@
 package cn.acecandy.fasaxi.eva.dao.service;
 
+import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.dao.mapper.WodiUserMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
-import cn.acecandy.fasaxi.eva.dao.mapper.WodiUserMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -34,7 +35,7 @@ public class WodiUserDao {
         return wodiUserMapper.selectList(wrapper);
     }
 
-    public List<WodiUser> findByTgId(List<Long> telegramIds) {
+    public List<WodiUser> findByTgId(Collection<Long> telegramIds) {
         if (CollUtil.isEmpty(telegramIds)) {
             return CollUtil.newArrayList();
         }

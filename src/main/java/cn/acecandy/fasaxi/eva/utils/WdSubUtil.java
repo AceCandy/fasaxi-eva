@@ -56,6 +56,10 @@ public class WdSubUtil {
         return (String) invoke(season, lv);
     }
 
+    public static Integer lvToMin(Integer lv) {
+        return (Integer) invoke(CURRENT_SEASON, lv);
+    }
+
     public static String scoreToTitle(Integer score) {
         return (String) invoke(CURRENT_SEASON, score);
     }

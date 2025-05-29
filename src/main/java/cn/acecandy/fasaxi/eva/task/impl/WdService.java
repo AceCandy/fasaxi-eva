@@ -9,9 +9,9 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
-import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.NumberUtil;
@@ -28,6 +28,8 @@ import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
 import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
@@ -51,10 +53,13 @@ public class WdService {
     private WodiUserDao wodiUserDao;
     @Resource
     private WodiTopDao wodiTopDao;
+    @Resource
+    private PowerRankService powerRankService;
 
     private final static String 新建游戏 = "/wd";
     private final static String 个人信息 = "/wd_info";
-    private final static String 游戏排行 = "/wd_rank";
+    private final static String 积分排行 = "/wd_rank";
+    private final static String 战力排行 = "/wd_real_rank";
     private final static String 大佬榜单 = "/wd_top";
     private final static String 关闭游戏 = "/wd_exit";
     private final static String 游戏帮助 = "/wd_help";
@@ -64,15 +69,16 @@ public class WdService {
 
     public void process(String cmd, Message message) {
         String chatId = message.getChatId().toString();
-        if (!TgUtil.isGroupMsg(message)) {
+        Long userId = message.getFrom().getId();
+        if (!TgUtil.isGroupMsg(message) && !CollUtil.contains(tgService.getAdmins(), userId)) {
             tgService.sendMsg(chatId, TIP_IN_GROUP, 10 * 1000);
             return;
         }
-        Long userId = message.getFrom().getId();
         switch (cmd) {
             case 新建游戏 -> handleNewGameCommand(message.getFrom(), message.getChat());
             case 个人信息 -> handleRecordCommand(chatId, userId);
-            case 游戏排行 -> handleRankCommand(chatId, userId);
+            case 积分排行 -> handleRankCommand(chatId, userId);
+            case 战力排行 -> handleRealRankCommand(chatId, userId);
             case 大佬榜单 -> handleTopCommand(chatId, userId, message.getText());
             case 关闭游戏 -> handleExitCommand(message, chatId, userId);
             case 游戏帮助 -> tgService.sendMsg(chatId, TIP_HELP, 300 * 1000);
@@ -132,7 +138,7 @@ public class WdService {
         if (null == emby) {
             return;
         }
-        Integer costIv = 15;
+        Integer costIv = 10;
         if (emby.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
             return;
@@ -140,7 +146,7 @@ public class WdService {
         if (!CollUtil.contains(tgService.getAdmins(), userId)) {
             embyDao.upIv(userId, -costIv);
         }
-        tgService.sendMsg(chatId, TIP_IN_RANK, 2 * 1000);
+        tgService.sendMsg(chatId, StrUtil.format(TIP_IN_RANK, costIv), 2 * 1000);
 
         List<WodiUser> rankUserList = wodiUserDao.selectRank();
         if (CollUtil.isEmpty(rankUserList)) {
@@ -150,11 +156,44 @@ public class WdService {
         SendPhoto sendPhoto = SendPhoto.builder()
                 .chatId(chatId).caption(WdUtil.getRank(rankUserList, 1))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
-                        "static/pic/s{}/名人榜.webp", CURRENT_SEASON)), "名人榜"))
+                        "static/pic/s{}/排行榜.webp", CURRENT_SEASON)), "名人榜"))
                 .replyMarkup(TgUtil.rankPageBtn(1, CollUtil.size(rankUserList)))
                 .build();
         GlobalUtil.rankMsg = tgService.sendPhoto(sendPhoto, 300 * 1000);
         // Console.log(rankMsg);
+    }
+
+    @SneakyThrows
+    private void handleRealRankCommand(String chatId, Long userId) {
+        Emby emby = isEmbyUser(chatId, userId);
+        if (null == emby) {
+            return;
+        }
+        Integer costIv = 15;
+        if (emby.getIv() < costIv) {
+            tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
+            return;
+        }
+        if (!CollUtil.contains(tgService.getAdmins(), userId)) {
+            embyDao.upIv(userId, -costIv);
+        }
+        tgService.sendMsg(chatId, StrUtil.format(TIP_IN_RANK, costIv), 2 * 1000);
+
+        Map<Long, Integer> top10 = powerRankService.findTopByCache();
+        if (CollUtil.isEmpty(top10)) {
+            return;
+        }
+        // 通过id获取用户信息
+        List<WodiUser> userList = wodiUserDao.findByTgId(top10.keySet());
+        Map<Long, WodiUser> userMap = userList.stream().collect(
+                Collectors.toMap(WodiUser::getTelegramId, v -> v, (k1, k2) -> k2));
+
+        SendPhoto sendPhoto = SendPhoto.builder()
+                .chatId(chatId).caption(WdUtil.getRealRank(top10, userMap))
+                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
+                        "static/pic/s{}/名人榜.webp", CURRENT_SEASON)), "名人榜"))
+                .build();
+        GlobalUtil.rankMsg = tgService.sendPhoto(sendPhoto, 300 * 1000);
     }
 
     @SneakyThrows
@@ -171,7 +210,7 @@ public class WdService {
         if (!CollUtil.contains(tgService.getAdmins(), userId)) {
             embyDao.upIv(userId, -costIv);
         }
-        tgService.sendMsg(chatId, TIP_IN_TOP, 2 * 1000);
+        tgService.sendMsg(chatId, StrUtil.format(TIP_IN_RANK, costIv), 2 * 1000);
 
         String seasonStr = StrUtil.trim(StrUtil.removePrefix(text, 大佬榜单));
         if (!NumberUtil.isNumber(seasonStr)) {
@@ -281,9 +320,14 @@ public class WdService {
             tgService.sendMsg(chatId, EXIT_GAME_ERROR, 5 * 1000);
             return;
         }
-        wodiUserDao.upFraction(userId, -3);
         game.setStatus(GameStatus.游戏关闭);
-        tgService.sendMsg(chatId, StrUtil.format(EXIT_GAME, message.getFrom().getFirstName()));
+        if (game.rotate < 2) {
+            wodiUserDao.upFraction(userId, 9);
+            tgService.sendMsg(chatId, StrUtil.format(EXIT_GAME2, message.getFrom().getFirstName()));
+        } else {
+            wodiUserDao.upFraction(userId, -3);
+            tgService.sendMsg(chatId, StrUtil.format(EXIT_GAME, message.getFrom().getFirstName()));
+        }
     }
 
     /**

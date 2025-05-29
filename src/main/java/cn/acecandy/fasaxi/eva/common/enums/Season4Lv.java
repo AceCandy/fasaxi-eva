@@ -1,5 +1,6 @@
 package cn.acecandy.fasaxi.eva.common.enums;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -80,10 +81,17 @@ public enum Season4Lv {
      * @return {@link Integer }
      */
     public static Integer lvToFirstUpGift(int lv) {
-        if (lv >= LV_10.lv) {
+        Season4Lv sl = lvTo(lv);
+        if (StrUtil.equals(sl.realm, "人界")) {
+            return 100;
+        } else if (StrUtil.equals(sl.realm, "灵界")) {
+            return 250;
+        } else if (StrUtil.equals(sl.realm, "仙界")) {
+            return 400;
+        } else if (StrUtil.equals(sl.realm, "天道")) {
             return 1000;
         }
-        return 50 + lv * 50;
+        throw new RuntimeException("领域缺失");
     }
 
     public static Season4Lv lvTo(int lv) {
@@ -93,6 +101,10 @@ public enum Season4Lv {
             }
         }
         throw new RuntimeException("等级缺失");
+    }
+
+    public static Integer lvToMin(int lv) {
+        return lvTo(lv).min;
     }
 
     public static String lvToTitle(int lv) {
