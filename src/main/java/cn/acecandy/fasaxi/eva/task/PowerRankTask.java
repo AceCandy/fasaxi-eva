@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * 实力排名榜刷新 定时任务
+ * 战力排名榜刷新 定时任务
  *
  * @author tangningzhu
  * @since 2025/3/3

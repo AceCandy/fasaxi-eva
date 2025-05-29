@@ -16,12 +16,14 @@ import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
 import static cn.acecandy.fasaxi.eva.common.constants.GameValueConstants.CONTINUOUS_ABSTAINED;
@@ -51,18 +53,89 @@ public final class WdUtil extends WdSubUtil {
      */
     public final static Map<String, List<GameUser>> OUT_USER = MapUtil.newHashMap();
 
-    public static String getRecord(WodiUser user, Emby embyUser) {
+    /**
+     * 获得等级、排名、头衔增益
+     *
+     * @param level    数量
+     * @param wodiTops 水上衣
+     * @param topList  排行榜
+     * @return double
+     */
+    public static double getRankBuff(Long tgId, Integer level, List<WodiTop> wodiTops,
+                                     ArrayList<Map.Entry<Long, Integer>> topList) {
+        double buff = 0.05 * level;
+
+        // 战力排名buff
+        int rank = IntStream.range(0, topList.size())
+                .filter(i -> topList.get(i).getKey().equals(tgId))
+                .findFirst().orElse(0);
+        if (rank == 1) {
+            buff += 0.25;
+        } else if (rank == 2) {
+            buff += 0.20;
+        } else if (rank == 3) {
+            buff += 0.15;
+        } else if (rank > 0) {
+            buff += 0.1;
+        }
+        // top头衔buff
+        buff += CollUtil.size(wodiTops) * 0.1;
+        return buff;
+    }
+
+    /**
+     * 获得等级、排名、头衔增益
+     *
+     * @param level    数量
+     * @param wodiTops 水上衣
+     * @param topList  排行榜
+     * @return double
+     */
+    public static String getRankBuffStr(Long tgId, Integer level, List<WodiTop> wodiTops,
+                                        ArrayList<Map.Entry<Long, Integer>> topList) {
+        StringBuilder sb = new StringBuilder();
+        double buff1 = NumberUtil.mul(0.05, level * 1.0);
+        if (buff1 > 0) {
+            sb.append(StrUtil.format("等级({}) ", buff1));
+        }
+
+        // 战力排名buff
+        int rank = IntStream.range(0, topList.size())
+                .filter(i -> topList.get(i).getKey().equals(tgId))
+                .findFirst().orElse(0);
+        double buff2 = 0;
+        if (rank == 1) {
+            buff2 += 0.25;
+        } else if (rank == 2) {
+            buff2 += 0.20;
+        } else if (rank == 3) {
+            buff2 += 0.15;
+        } else if (rank > 0) {
+            buff2 += 0.1;
+        }
+        if (buff2 > 0) {
+            sb.append(StrUtil.format("战力({}) ", buff2));
+        }
+
+        // top头衔buff
+        double buff3 = NumberUtil.mul(0.1, CollUtil.size(wodiTops));
+        if (buff3 > 0) {
+            sb.append(StrUtil.format("头衔({}) ", buff3));
+        }
+
+        return sb.toString();
+    }
+
+    public static String getRecord(WodiUser user, Emby embyUser, List<WodiTop> wodiTops,
+                                   ArrayList<Map.Entry<Long, Integer>> topList) {
         Integer completeGame = NumberUtil.nullToZero(user.getCompleteGame());
         Integer wordPeople = NumberUtil.nullToZero(user.getWordPeople());
         Integer wordSpy = NumberUtil.nullToZero(user.getWordSpy());
         Integer wordPeopleVictory = NumberUtil.nullToZero(user.getWordPeopleVictory());
         Integer wordSpyVictory = NumberUtil.nullToZero(user.getWordSpyVictory());
-        int totalVictory = wordPeopleVictory + wordSpyVictory;
         String recordTxt = RECORD_TXT
                 .replace("{userName}", TgUtil.tgNameOnUrl(user))
                 .replace("{completeGame}", completeGame + "")
-                .replace("{total_percentage}", NumberUtil.formatPercent(
-                        totalVictory / NumberUtil.toDouble(completeGame), 1))
                 .replace("{word_people}", wordPeople + "")
                 .replace("{word_spy}", wordSpy + "")
                 .replace("{word_people_victory}", wordPeopleVictory + "")
@@ -75,9 +148,16 @@ public final class WdUtil extends WdSubUtil {
                 .replace("{level}", scoreToTitle(user.getFraction()))
                 .replace("{dm}", embyUser.getIv() + "");
         Integer level = scoreToLv(user.getFraction());
-        if (level > 0) {
-            recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍加成");
+        // if (level > 0) {
+        // recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍加成");
+        recordTxt = recordTxt.replace("无加成", getRankBuffStr(
+                user.getTelegramId(), level, wodiTops, topList));
+        if (CollUtil.isNotEmpty(wodiTops)) {
+            String title = StrUtil.join("、", wodiTops.stream().map(w ->
+                    lvToTitle(w.getLevel()) + "·之王").toList());
+            recordTxt = recordTxt.replace("无头衔", title);
         }
+        // }
         return recordTxt;
     }
 
@@ -154,15 +234,15 @@ public final class WdUtil extends WdSubUtil {
      * @param userMap 用户映射
      * @return {@link String }
      */
-    public static String getRealRank(Map<Long, Integer> top10, Map<Long, WodiUser> userMap) {
+    public static String getRealRank(ArrayList<Map.Entry<Long, Integer>> top10,
+                                     Map<Long, WodiUser> userMap) {
         StringBuilder rankFinal = new StringBuilder(StrUtil.format(RANK, CURRENT_SEASON));
         String[] nos = {"👑", "🃏", "🏳️‍🌈"};
         String rankSingleFormat = "{} | {} | 战力:<b>{}</b> \n";
         String detailSingleFormat = "      <u>总场次:<b>{}</b>  |  民/卧胜率:<b>{}</b>/ <b>{}</b></u>\n";
 
-        List<Map.Entry<Long, Integer>> topList = CollUtil.newArrayList(top10.entrySet());
-        for (int i = 0; i < topList.size(); i++) {
-            Map.Entry<Long, Integer> en = topList.get(i);
+        for (int i = 0; i < top10.size(); i++) {
+            Map.Entry<Long, Integer> en = top10.get(i);
             Long userId = en.getKey();
             Integer fraction = en.getValue();
             boolean top3 = i < nos.length;
@@ -188,7 +268,7 @@ public final class WdUtil extends WdSubUtil {
     public static String getTop(List<WodiTop> topList, Integer season) {
         StringBuilder rankFinal = new StringBuilder(getTopTitle(season != null ? season : CURRENT_SEASON));
         String topSingle = """
-                           👑 <b>{}</b> <i>境内无敌</i> | {}
+                           👑 <b>{}·之王</b> <i>境内无敌</i> | {}
                                         <b>{}</b>
                            """;
 
@@ -230,7 +310,6 @@ public final class WdUtil extends WdSubUtil {
             if (member.toUser != null) {
                 // 公示投票
                 finishVoteStr.add(StrUtil.format(VOTE_PUBLICITY, TgUtil.tgNameOnUrl(member.user),
-                        // anonymousVote ? "🀫🀫🀫🀫" : TgUtil.tgNameOnUrl(member.toUser.user)));
                         anonymousVote ? "████" : TgUtil.tgNameOnUrl(member.toUser.user)));
                 member.notVote = 0;
             } else if (member.finishVote) {
@@ -599,16 +678,6 @@ public final class WdUtil extends WdSubUtil {
         // 判断当前时间是否在10:00 AM到10:00 PM之间
         return DateUtil.isIn(now, am1, am2) || DateUtil.isIn(now, pm4, pm6)
                 || DateUtil.isIn(now, pm7, pm8) || DateUtil.isIn(now, pm21, pm23);
-    }
-
-    /**
-     * 有效游戏场次
-     *
-     * @return long
-     */
-    public static long effectiveGameFreq() {
-        long day = DateUtil.betweenDay(DateUtil.date(), DateUtil.parse("2025-01-14"), true);
-        return day * 25;
     }
 
 }

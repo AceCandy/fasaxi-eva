@@ -54,12 +54,15 @@ public interface GameTextConstants {
     String userCreateGame = "{} 花费10封Dmail（成功开局后才扣取），创建了一个新游戏";
     String RECORD_TXT = """
                         \n
-                        ◎ <b>{level}</b> {userName} ({fraction})
+                        🔹 <b>{level}</b> {userName} (战力:{power})
                         
-                        🎮 <b>竞技场次</b>：{completeGame} ({total_percentage})
-                        👨‍🌾 <b>平民场次</b>：{word_people_victory} / {word_people} ({people_percentage})
-                        🤡 <b>卧底场次</b>：{word_spy_victory} / {word_spy} ({spy_percentage})
-                        💰 <b>流通货币</b>：{dm}<b> (无加成)</b>
+                        
+                        🎮 <b>竞技积分</b>：{fraction} / {completeGame}场
+                        🤵 <b>平民场次</b>：{word_people_victory} / {word_people} ({people_percentage})
+                        ⛄ <b>卧底场次</b>：{word_spy_victory} / {word_spy} ({spy_percentage})
+                        💎 <b>流通货币</b>：{dm} <b>「无加成」</b>
+                        🕯️ <b>头衔</b>：无头衔
+                        
                         """;
     String RANK = "\n<b>▎🏆 [谁是卧底] 无限远点的牵牛星 S{}赛季 ♪</b>\n\n";
     String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
@@ -227,7 +230,7 @@ public interface GameTextConstants {
                          5. 门主可以通过指令获取弟子(未出师)名单，并且获取到传承弟子昨日游戏表现对应的Dmail奖励(每日一次)。
                          
                          /cc_inv 创建传承邀请（200Dmail）
-                         /cc_info 查看弟子(未出师)名单/领取昨日弟子奖励（领取成功时扣除2Dmail）
+                         /cc_info 查看弟子(未出师)名单/领取昨日弟子奖励
                          /cc_help 召唤出当前帮助
                          """;
 }

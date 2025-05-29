@@ -27,6 +27,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -108,8 +109,10 @@ public class WdService {
         if (!CollUtil.contains(tgService.getAdmins(), userId)) {
             embyDao.upIv(userId, -costIv);
         }
+        List<WodiTop> wodiTops = wodiTopDao.selectByTgId(userId);
+        ArrayList<Map.Entry<Long, Integer>> topList = powerRankService.findTopByCache();
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(chatId).caption(WdUtil.getRecord(user, embyUser))
+                .chatId(chatId).caption(WdUtil.getRecord(user, embyUser, wodiTops, topList))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/lv{}.webp", CURRENT_SEASON, WdUtil.scoreToLv(user.getFraction()))),
                         "谁是卧底个人信息"))
@@ -169,6 +172,11 @@ public class WdService {
         if (null == emby) {
             return;
         }
+        ArrayList<Map.Entry<Long, Integer>> top10 = powerRankService.findTopByCache();
+        if (CollUtil.isEmpty(top10)) {
+            return;
+        }
+
         Integer costIv = 15;
         if (emby.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
@@ -179,12 +187,8 @@ public class WdService {
         }
         tgService.sendMsg(chatId, StrUtil.format(TIP_IN_RANK, costIv), 2 * 1000);
 
-        Map<Long, Integer> top10 = powerRankService.findTopByCache();
-        if (CollUtil.isEmpty(top10)) {
-            return;
-        }
         // 通过id获取用户信息
-        List<WodiUser> userList = wodiUserDao.findByTgId(top10.keySet());
+        List<WodiUser> userList = wodiUserDao.findByTgId(top10.stream().map(Map.Entry::getKey).toList());
         Map<Long, WodiUser> userMap = userList.stream().collect(
                 Collectors.toMap(WodiUser::getTelegramId, v -> v, (k1, k2) -> k2));
 

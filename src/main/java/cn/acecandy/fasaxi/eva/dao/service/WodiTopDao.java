@@ -38,6 +38,13 @@ public class WodiTopDao {
         return wodiTopMapper.selectList(queryWrapper);
     }
 
+    public List<WodiTop> selectByTgId(Long tgId) {
+        LambdaQueryWrapper<WodiTop> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(WodiTop::getSeason, CURRENT_SEASON).eq(WodiTop::getTelegramId, tgId)
+                .orderByAsc(WodiTop::getLevel);
+        return wodiTopMapper.selectList(queryWrapper);
+    }
+
 
     public WodiTop selectByLevel(Integer level) {
         return selectByLevel(level, CURRENT_SEASON);

@@ -11,7 +11,6 @@ import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.collection.IterUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
@@ -27,6 +26,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -44,7 +44,7 @@ import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.USER_LEV
 import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.setSpeakCnt;
 
 /**
- * 实力榜单 实现
+ * 战力榜单 实现
  *
  * @author tangningzhu
  * @since 2025/3/3
@@ -73,15 +73,16 @@ public class PowerRankService {
      * <p>
      * 主要是今天的缓存上就行
      */
-    public static final Map<String, Map<Long, Integer>> DAY_TOP10 = MapUtil.newHashMap(4);
+    public static final Map<String, ArrayList<Map.Entry<Long, Integer>>> DAY_TOP10
+            = MapUtil.newHashMap(4);
 
     /**
-     * 检查更新实力排行榜单
+     * 检查更新战力排行榜单
      */
     @Transactional(rollbackFor = Exception.class)
     public void powerRankCheck() {
-        Map<Long, Integer> top10 = findTopByCache();
-        if (MapUtil.isEmpty(top10)) {
+        ArrayList<Map.Entry<Long, Integer>> top10 = findTopByCache();
+        if (CollUtil.isEmpty(top10)) {
             return;
         }
         // 获取当前需要选出的下一阶段王者
@@ -91,7 +92,7 @@ public class PowerRankService {
         Integer nextLv = maxTop == null ? 1 : maxTop.getLevel() + 1;
         int nextMinScore = WdUtil.lvToMin(nextLv);
 
-        Map.Entry<Long, Integer> king = IterUtil.get(top10.entrySet().iterator(), 0);
+        Map.Entry<Long, Integer> king = CollUtil.getFirst(top10);
         if (king.getValue() < nextMinScore) {
             return;
         }
@@ -151,31 +152,37 @@ public class PowerRankService {
         tgService.pinMsg(msg.getChatId().toString(), msg.getMessageId());
     }
 
-    public Map<Long, Integer> findTopByCache() {
+    public ArrayList<Map.Entry<Long, Integer>> findTopByCache() {
         return DAY_TOP10.computeIfAbsent(DateUtil.today(), k -> findTopByDb());
     }
 
     /**
      * 按db查找Top10并缓存到map
      */
-    private Map<Long, Integer> findTopByDb() {
+    private ArrayList<Map.Entry<Long, Integer>> findTopByDb() {
         List<WodiUserLog> wdLog = wodiUserLogDao.findAllWinBySeason(null);
         if (CollUtil.isEmpty(wdLog)) {
             return null;
         }
         Map<Long, Integer> userMap = buildTop3UserMap(wdLog);
+        if (MapUtil.isEmpty(userMap)) {
+            return null;
+        }
         // 设置获取排名前十
         Map<Long, Integer> top10 = userMap.entrySet().stream()
+                .filter(entry -> entry.getValue() != 0)
                 .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
                 .limit(10)
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (a, b) -> a,
-                        LinkedHashMap::new
+                        Map.Entry::getKey, Map.Entry::getValue,
+                        (a, b) -> a, LinkedHashMap::new
                 ));
-        DAY_TOP10.put(DateUtil.today(), top10);
-        return top10;
+        if (MapUtil.isEmpty(userMap)) {
+            return null;
+        }
+        ArrayList<Map.Entry<Long, Integer>> top10List = CollUtil.newArrayList(top10.entrySet());
+        DAY_TOP10.put(DateUtil.today(), top10List);
+        return top10List;
     }
 
     /**

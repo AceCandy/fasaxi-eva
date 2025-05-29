@@ -97,8 +97,8 @@ public final class PinYinUtil extends PinyinUtil {
     /**
      * 查找字符在所有文字中存在大于2
      *
-     * @param text 文本
-     * @param have 有
+     * @param text 当前文本
+     * @param have 查找词
      * @return boolean
      */
     public static boolean findTwoChar(String text, String have) {
@@ -136,7 +136,7 @@ public final class PinYinUtil extends PinyinUtil {
     public static void main(String[] args) {
         Console.log(findAllChar("奇奇怪怪的曲", "曲奇1"));
         Console.log(PinYinUtil.findAllChar("白色板子", "白板"));
-        Console.log(PinYinUtil.findTwoChar("白色板子", "白板"));
+        Console.log(PinYinUtil.findTwoChar("一堆垃圾", "堆堆袜"));
         Console.log(PinYinUtil.findTwoChar("白色板子", "白"));
         Console.log(PinYinUtil.findTwoChar("奇奇怪怪的曲", "曲奇1"));
     }

@@ -2,12 +2,14 @@ package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
+import cn.acecandy.fasaxi.eva.task.impl.PowerRankService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
@@ -36,6 +38,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,6 +134,7 @@ public class Game {
     public WodiTopDao wodiTopDao;
     public EmbyDao embyDao;
     public WodiUserLogDao wodiUserLogDao;
+    public PowerRankService powerRankService;
 
     private final ScheduledExecutorService scheduler = ThreadUtil.createScheduledExecutor(1);
 
@@ -152,6 +156,7 @@ public class Game {
         wodiTopDao = SpringUtil.getBean(WodiTopDao.class);
         embyDao = SpringUtil.getBean(EmbyDao.class);
         wodiUserLogDao = SpringUtil.getBean(WodiUserLogDao.class);
+        powerRankService = SpringUtil.getBean(PowerRankService.class);
     }
 
     public void joinGame(User user) {
@@ -640,12 +645,8 @@ public class Game {
             // 存活1回合+1分
             m.fraction += (m.round - 1) / 2;
 
-            Integer realFraction = m.fraction;
-            if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
-                realFraction = 1;
-            }
             stringBuilder.append(m.isUndercover ? "🤡 +" : "👨‍🌾 +")
-                    .append(realFraction).append(isOwner2 ? " 🚩" : "").append("\n");
+                    .append(m.fraction).append(isOwner2 ? " 🚩" : "").append("\n");
         });
 
 
@@ -721,10 +722,10 @@ public class Game {
             // 底分
             if (allUnderCoverSurvive && !undercover) {
                 // 卧底全活成就下 平民分为2
-                m.fraction = 2;
+                m.fraction = 1;
             } else if (allPeopleSurvive && undercover) {
                 // 民全活成就下 卧底分为1
-                m.fraction = 1;
+                m.fraction = 0;
             } else {
                 if (undercover) {
                     // 卧底4
@@ -745,30 +746,21 @@ public class Game {
                 // 加上卧底人数/2的分数（0-2）
                 m.fraction += undercoverNum / 2;
 
-                Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
-                    realFraction = 1;
-                }
-
                 String boomStr = buildAchievementStr(m, allPeopleSurvive, allUnderCoverSurvive,
                         spaceSingleSurvive, allUnderCoverSurviveNoSpace, singleUnderCoverSurvive, brotherSurvive);
 
                 surviveStr.add(sb.append("🏆 ")
                         .append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
-                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
+                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
                 // 输家阵营-2分
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
                 }
-                Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
-                    realFraction = 1;
-                }
                 noSurviveStr.add(sb.append("☠️ ")
                         .append(StrUtil.format(KILL_USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
-                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
+                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
                         .append(isOwner ? " 🚩" : "").append("\n").toString());
             }
         }
@@ -829,31 +821,21 @@ public class Game {
                 // 加上卧底人数/2的分数（0-2）
                 m.fraction += undercoverNum / 2;
 
-                Integer realFraction = m.fraction;
-                String boomStr = "";
-                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
-                    realFraction = 1;
-                } else {
-                    boomStr = buildSpecialAchievementStr(m, allPeopleSurvive, winnerIsUndercover);
-                }
+                String boomStr = buildSpecialAchievementStr(m, allPeopleSurvive, winnerIsUndercover);
 
                 surviveStr.add(sb.append("🏆 ")
                         .append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
-                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
+                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
                 // 输家阵营-2分
                 if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
                 }
-                Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
-                    realFraction = 1;
-                }
 
                 noSurviveStr.add(sb.append("☠️ ")
                         .append(StrUtil.format(KILL_USER_WORD_IS, TgUtil.tgNameOnUrl(m.user), m.word))
-                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(realFraction)
+                        .append(undercover ? "🤡 +" : "👨‍🌾 +").append(m.fraction)
                         .append(isOwner ? " 🚩" : "").append("\n").toString());
             }
         }
@@ -881,30 +863,25 @@ public class Game {
     private void buildBoomAchievementStr(boolean isOwner, GameUser member, StringBuilder stringBuilder,
                                          long surviveNum, long noSpaceSurviveNum, long noSpaceNum) {
         String boomStr = "";
-        Integer realFraction = member.fraction;
-        if (member.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
-            realFraction = 1;
+        if (surviveNum == 3) {
+            member.fraction += 5;
+            boomStr += "<b> +5</b>";
+            stringBuilder.append(GAME_OVER_BOOM_SPACE3);
         } else {
-            if (surviveNum == 3) {
-                member.fraction += 5;
-                boomStr += "<b> +5</b>";
-                stringBuilder.append(GAME_OVER_BOOM_SPACE3);
-            } else {
-                if (noSpaceSurviveNum == 0 && noSpaceNum > 0) {
-                    member.fraction += 4;
-                    boomStr += "<b> + 4</b>";
-                    stringBuilder.append(GAME_OVER_BOOM_SPACE);
-                }
-                if (noSpaceNum > 0 && noSpaceNum == noSpaceSurviveNum) {
-                    member.fraction -= 1;
-                    boomStr += "<b> -1</b>";
-                    stringBuilder.append(GAME_OVER_BOOM_SPACE2);
-                }
+            if (noSpaceSurviveNum == 0 && noSpaceNum > 0) {
+                member.fraction += 4;
+                boomStr += "<b> + 4</b>";
+                stringBuilder.append(GAME_OVER_BOOM_SPACE);
+            }
+            if (noSpaceNum > 0 && noSpaceNum == noSpaceSurviveNum) {
+                member.fraction -= 1;
+                boomStr += "<b> -1</b>";
+                stringBuilder.append(GAME_OVER_BOOM_SPACE2);
             }
         }
         stringBuilder.append("\n\n");
         stringBuilder.append("🏆 ").append(StrUtil.format(USER_WORD_IS, TgUtil.tgNameOnUrl(member), ""))
-                .append(StrUtil.format("🀫 +{}", realFraction))
+                .append(StrUtil.format("🀫 +{}", member.fraction))
                 .append(boomStr).append(isOwner ? " 🚩" : "").append("\n");
     }
 
@@ -994,15 +971,11 @@ public class Game {
                     wordSpyVictoryId.add(userId);
                     isVictory = true;
                 }
-                Integer realFraction = m.fraction;
-                if (m.wodiUser.getCompleteGame() + 1 > WdUtil.effectiveGameFreq()) {
-                    realFraction = 1;
-                }
-                wodiUserDao.upFraction(userId, realFraction);
+                wodiUserDao.upFraction(userId, m.fraction);
                 // 将增加后的积分设置设置到当前变量wodiUser中
-                m.wodiUser.setFraction(m.wodiUser.getFraction() + realFraction);
+                m.wodiUser.setFraction(m.wodiUser.getFraction() + m.fraction);
                 // 写入日志
-                m.setLogId(wodiUserLogDao.addLog(m.id, realFraction, isVictory));
+                m.setLogId(wodiUserLogDao.addLog(m.id, m.fraction, isVictory));
             });
             wodiUserDao.upCompleteGame(completeGameId);
             wodiUserDao.upWordPeople(wordPeopleId);
@@ -1010,11 +983,15 @@ public class Game {
             wodiUserDao.upWordPeopleVictory(wordPeopleVictoryId);
             wodiUserDao.upWordSpyVictory(wordSpyVictoryId);
 
+            ArrayList<Map.Entry<Long, Integer>> topList = powerRankService.findTopByCache();
             // 发币
             StringBuilder mailBuilder = new StringBuilder();
             memberList.forEach(m -> {
                 Integer level = WdUtil.scoreToLv(m.wodiUser.getFraction());
-                m.dmailUp = (int) ((m.fraction - 4) * (1 + 0.1 * level));
+                List<WodiTop> wodiTops = wodiTopDao.selectByTgId(m.id);
+                double buff = WdUtil.getRankBuff(m.id, level, wodiTops, topList);
+
+                m.dmailUp = (int) ((m.fraction - 4) * (1 + buff));
                 mailBuilder.append(StrUtil.format(USER_DMAIL, level, TgUtil.tgNameOnUrl(m.user), m.dmailUp));
                 embyDao.upIv(m.user.getId(), m.dmailUp);
 
@@ -1065,70 +1042,10 @@ public class Game {
             });
             if (CollUtil.isNotEmpty(upMember)) {
                 tgService.sendMsg(chatId, upBuilder.toString());
-                /*GameUser maxMember = upMember.stream()
-                        .max(Comparator.comparingInt(m -> m.wodiUser.getFraction()))
-                        .orElse(null);
-                if (null != maxMember) {
-                    Integer lv = WdUtil.scoreToLv(maxMember.wodiUser.getFraction());
-                    WodiTop top = wodiTopDao.selectByLevel(lv);
-                    // List<WodiUser> gtF = wodiUserDao.findGtFraction(maxMember.wodiUser.getFraction());
-                    if (null == top) {
-                        Integer upScore = WdUtil.lvToFirstUpGift(lv);
-                        String registerMsg = "";
-                        String registerCode = "";
-                        if (lv >= 9) {
-                            registerMsg = StrUtil.format(USER_LEVEL_UP_HIGH, 1);
-                            registerCode = RIGISTER_CODE;
-                        }
-                        // maxMember.dmailUp = upScore;
-                        String upFirst = StrUtil.format(USER_LEVEL_UP_FIRST,
-                                TgUtil.tgNameOnUrl(maxMember.user),
-                                WdUtil.lvToTitle(lv), upScore, registerMsg);
-                        if (lv >= 10) {
-                            upFirst = StrUtil.format(SEASON_ENDS,
-                                    TgUtil.tgNameOnUrl(maxMember.user),
-                                    WdUtil.lvToTitle(lv), upScore, registerMsg);
-                            embyDao.upIv(maxMember.id, -50);
-                            embyDao.allUpIv(50);
-                            seasonEnds = true;
-                        } else {
-                            embyDao.allUpIv(5);
-                        }
-                        embyDao.upIv(maxMember.user.getId(), upScore);
-                        wodiUserLogDao.upTopIvById(maxMember.logId, upScore);
-
-
-                        if (StrUtil.isNotBlank(registerCode)) {
-                            SendMessage sendMessage = new SendMessage(maxMember.id.toString(),
-                                    StrUtil.format("您获得了{}: \n{}", registerMsg, registerCode));
-                            Message message = tgService.sendMsg(sendMessage);
-                        }
-
-                        // 写入碑文
-                        WodiTop wodiTop = new WodiTop();
-                        BeanUtil.copyProperties(maxMember.wodiUser, wodiTop);
-                        wodiTop.setId(null);
-                        wodiTop.setLevel(lv);
-                        wodiTop.setUpTime(new DateTime());
-                        wodiTop.setSeason(CURRENT_SEASON);
-                        wodiTopDao.insertOrUpdate(wodiTop);
-
-                        SendPhoto sendPhoto = SendPhoto.builder()
-                                .chatId(chatId).caption(upFirst)
-                                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
-                                        "static/pic/s{}/lv{}.webp", CURRENT_SEASON, lv)),
-                                        "谁是卧底个人信息"))
-                                .build();
-                        // Message msg = tgBot.sendMessage(chatId, upFirst);
-                        Message msg = tgService.sendPhoto(sendPhoto);
-                        tgService.pinMsg(msg.getChatId().toString(), msg.getMessageId());
-                    }
-                }*/
             }
-
         } catch (Exception e) {
-            log.error("结算失败，本次成绩不计分：", e);
-            SendMessage mailMsg = new SendMessage(chatId, "结算失败，本次成绩不记分");
+            log.error("游戏检测发生异常，本次成绩不计分：", e);
+            SendMessage mailMsg = new SendMessage(chatId, "游戏检测发生异常，本次成绩不记分");
             tgService.sendMsg(mailMsg);
         } finally {
             if (null != firstMsg) {

@@ -23,10 +23,10 @@ public class ApiController {
     @Resource
     private PowerRankService powerRankService;
 
-    @Operation(summary = "当前系统时间")
+    @Operation(summary = "战力榜单更新")
     @GetMapping("powerRankCheck")
     public Rsres<Object> powerRankCheck() {
-        powerRankService.powerRankCheck(2);
+        powerRankService.powerRankCheck();
         return Rsres.success(true);
     }
 

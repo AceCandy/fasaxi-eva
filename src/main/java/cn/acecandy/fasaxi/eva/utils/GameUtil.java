@@ -51,8 +51,8 @@ public final class GameUtil {
      */
     public static int getGameRewards(String gameType) {
         return switch (gameType) {
-            case 看图猜成语 -> RandomUtil.randomInt(6, 8);
-            case 看图猜番号 -> RandomUtil.randomInt(4, 5);
+            case 看图猜成语 -> RandomUtil.randomInt(5, 8);
+            case 看图猜番号 -> RandomUtil.randomInt(3, 5);
             default -> 0;
         };
     }
