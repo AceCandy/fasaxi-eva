@@ -33,4 +33,14 @@ public final class CommandUtil {
     public static boolean isCcCommand(String command) {
         return StrUtil.startWith(command, "/cc");
     }
+
+    /**
+     * 是Xm相关命令
+     *
+     * @param command 命令
+     * @return boolean
+     */
+    public static boolean isXmCommand(String command) {
+        return StrUtil.startWith(command, "/xm");
+    }
 }

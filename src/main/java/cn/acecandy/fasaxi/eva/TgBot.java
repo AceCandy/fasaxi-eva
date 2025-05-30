@@ -10,6 +10,7 @@ import cn.acecandy.fasaxi.eva.task.impl.CcService;
 import cn.acecandy.fasaxi.eva.task.impl.GameService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.task.impl.WdService;
+import cn.acecandy.fasaxi.eva.task.impl.XmService;
 import cn.acecandy.fasaxi.eva.utils.CommandUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
@@ -19,8 +20,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
@@ -59,6 +58,8 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
     public GameEvent gameEvent;
     @Resource
     public CcService ccService;
+    @Resource
+    public XmService xmService;
 
     @Override
     public String getBotToken() {
@@ -142,8 +143,10 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
         String cmd = TgUtil.extractCommand(message.getText(), tgService.getBotUsername());
         if (CommandUtil.isWdCommand(cmd)) {
             wdService.process(cmd, message);
-        }if (CommandUtil.isCcCommand(cmd)) {
+        } else if (CommandUtil.isCcCommand(cmd)) {
             ccService.process(cmd, message);
+        } else if (CommandUtil.isXmCommand(cmd)) {
+            xmService.process(cmd, message);
         } else {
             command.process(cmd, message);
         }
