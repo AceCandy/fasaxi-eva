@@ -26,7 +26,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -73,16 +72,15 @@ public class PowerRankService {
      * <p>
      * 主要是今天的缓存上就行
      */
-    public static final Map<String, ArrayList<Map.Entry<Long, Integer>>> DAY_TOP10
-            = MapUtil.newHashMap(4);
+    public static final Map<String, Map<Long, Integer>> DAY_TOP = MapUtil.newHashMap(4);
 
     /**
      * 检查更新战力排行榜单
      */
     @Transactional(rollbackFor = Exception.class)
     public void powerRankCheck() {
-        ArrayList<Map.Entry<Long, Integer>> top10 = findTopByCache();
-        if (CollUtil.isEmpty(top10)) {
+        List<Map.Entry<Long, Integer>> top20 = findTop20ListByCache();
+        if (CollUtil.isEmpty(top20)) {
             return;
         }
         // 获取当前需要选出的下一阶段王者
@@ -90,9 +88,9 @@ public class PowerRankService {
         WodiTop maxTop = wdTop.stream()
                 .max(Comparator.comparingInt(WodiTop::getLevel)).orElse(null);
         Integer nextLv = maxTop == null ? 1 : maxTop.getLevel() + 1;
-        int nextMinScore = WdUtil.lvToMin(nextLv);
+        int nextMinScore = WdUtil.lvToMin(nextLv) * 7 / 10;
 
-        Map.Entry<Long, Integer> king = CollUtil.getFirst(top10);
+        Map.Entry<Long, Integer> king = CollUtil.getFirst(top20);
         if (king.getValue() < nextMinScore) {
             return;
         }
@@ -152,14 +150,26 @@ public class PowerRankService {
         tgService.pinMsg(msg.getChatId().toString(), msg.getMessageId());
     }
 
-    public ArrayList<Map.Entry<Long, Integer>> findTopByCache() {
-        return DAY_TOP10.computeIfAbsent(DateUtil.today(), k -> findTopByDb());
+    public List<Map.Entry<Long, Integer>> findTopListByCache() {
+        Map<Long, Integer> top = findTopByCache();
+        if (MapUtil.isEmpty(top)) {
+            return CollUtil.newArrayList();
+        }
+        return CollUtil.newArrayList(top.entrySet());
+    }
+
+    public List<Map.Entry<Long, Integer>> findTop20ListByCache() {
+        return CollUtil.sub(findTopListByCache(), 0, 20);
+    }
+
+    public Map<Long, Integer> findTopByCache() {
+        return DAY_TOP.computeIfAbsent(DateUtil.today(), k -> findTopByDb());
     }
 
     /**
      * 按db查找Top10并缓存到map
      */
-    private ArrayList<Map.Entry<Long, Integer>> findTopByDb() {
+    private Map<Long, Integer> findTopByDb() {
         List<WodiUserLog> wdLog = wodiUserLogDao.findAllWinBySeason(null);
         if (CollUtil.isEmpty(wdLog)) {
             return null;
@@ -169,10 +179,10 @@ public class PowerRankService {
             return null;
         }
         // 设置获取排名前十
-        Map<Long, Integer> top10 = userMap.entrySet().stream()
+        Map<Long, Integer> top = userMap.entrySet().stream()
                 .filter(entry -> entry.getValue() != 0)
                 .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
-                .limit(10)
+                // .limit(10)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey, Map.Entry::getValue,
                         (a, b) -> a, LinkedHashMap::new
@@ -180,9 +190,8 @@ public class PowerRankService {
         if (MapUtil.isEmpty(userMap)) {
             return null;
         }
-        ArrayList<Map.Entry<Long, Integer>> top10List = CollUtil.newArrayList(top10.entrySet());
-        DAY_TOP10.put(DateUtil.today(), top10List);
-        return top10List;
+        // DAY_TOP.put(DateUtil.today(), top10);
+        return top;
     }
 
     /**
@@ -233,7 +242,7 @@ public class PowerRankService {
         Map<Long, Integer> userMap = buildTop3UserMap(JSONUtil.toList(userLog, WodiUserLog.class));
         Console.log(userMap);
         Console.log(MapUtil.sortByValue(userMap, true));
-        Map<Long, Integer> top10 = userMap.entrySet().stream()
+        Map<Long, Integer> top20 = userMap.entrySet().stream()
                 .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
                 .limit(3)
                 .collect(Collectors.toMap(
@@ -242,6 +251,6 @@ public class PowerRankService {
                         (a, b) -> a,
                         LinkedHashMap::new
                 ));
-        Console.log(top10);
+        Console.log(top20);
     }
 }

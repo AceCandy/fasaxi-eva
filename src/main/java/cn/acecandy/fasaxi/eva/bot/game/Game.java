@@ -38,7 +38,6 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -983,13 +982,13 @@ public class Game {
             wodiUserDao.upWordPeopleVictory(wordPeopleVictoryId);
             wodiUserDao.upWordSpyVictory(wordSpyVictoryId);
 
-            ArrayList<Map.Entry<Long, Integer>> topList = powerRankService.findTopByCache();
+            List<Map.Entry<Long, Integer>> top20 = powerRankService.findTop20ListByCache();
             // 发币
             StringBuilder mailBuilder = new StringBuilder();
             memberList.forEach(m -> {
                 Integer level = WdUtil.scoreToLv(m.wodiUser.getFraction());
                 List<WodiTop> wodiTops = wodiTopDao.selectByTgId(m.id);
-                double buff = WdUtil.getRankBuff(m.id, level, wodiTops, topList);
+                double buff = WdUtil.getRankBuff(m.id, level, wodiTops, top20);
 
                 m.dmailUp = (int) ((m.fraction - 4) * (1 + buff));
                 mailBuilder.append(StrUtil.format(USER_DMAIL, level, TgUtil.tgNameOnUrl(m.user), m.dmailUp));

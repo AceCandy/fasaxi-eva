@@ -27,7 +27,6 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -110,9 +109,9 @@ public class WdService {
             embyDao.upIv(userId, -costIv);
         }
         List<WodiTop> wodiTops = wodiTopDao.selectByTgId(userId);
-        ArrayList<Map.Entry<Long, Integer>> topList = powerRankService.findTopByCache();
+        Map<Long, Integer> topMap = powerRankService.findTopByCache();
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(chatId).caption(WdUtil.getRecord(user, embyUser, wodiTops, topList))
+                .chatId(chatId).caption(WdUtil.getRecord(user, embyUser, wodiTops, topMap))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/lv{}.webp", CURRENT_SEASON, WdUtil.scoreToLv(user.getFraction()))),
                         "谁是卧底个人信息"))
@@ -172,8 +171,8 @@ public class WdService {
         if (null == emby) {
             return;
         }
-        ArrayList<Map.Entry<Long, Integer>> top10 = powerRankService.findTopByCache();
-        if (CollUtil.isEmpty(top10)) {
+        List<Map.Entry<Long, Integer>> top20 = powerRankService.findTop20ListByCache();
+        if (CollUtil.isEmpty(top20)) {
             return;
         }
 
@@ -188,12 +187,12 @@ public class WdService {
         tgService.sendMsg(chatId, StrUtil.format(TIP_IN_RANK, costIv), 2 * 1000);
 
         // 通过id获取用户信息
-        List<WodiUser> userList = wodiUserDao.findByTgId(top10.stream().map(Map.Entry::getKey).toList());
+        List<WodiUser> userList = wodiUserDao.findByTgId(top20.stream().map(Map.Entry::getKey).toList());
         Map<Long, WodiUser> userMap = userList.stream().collect(
                 Collectors.toMap(WodiUser::getTelegramId, v -> v, (k1, k2) -> k2));
 
         SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(chatId).caption(WdUtil.getRealRank(top10, userMap))
+                .chatId(chatId).caption(WdUtil.getRealRank(top20, userMap))
                 .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                         "static/pic/s{}/名人榜.webp", CURRENT_SEASON)), "名人榜"))
                 .build();

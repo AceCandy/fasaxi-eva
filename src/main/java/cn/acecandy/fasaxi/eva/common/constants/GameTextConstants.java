@@ -11,7 +11,7 @@ public interface GameTextConstants {
     /**
      * 当前赛季
      */
-    Integer CURRENT_SEASON = 3;
+    Integer CURRENT_SEASON = 2;
 
     String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前群组信息已上传网信部记录！";
     String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，游戏开放时间9～12、14～18、19～22点！";
@@ -54,18 +54,21 @@ public interface GameTextConstants {
     String userCreateGame = "{} 花费10封Dmail（成功开局后才扣取），创建了一个新游戏";
     String RECORD_TXT = """
                         \n
-                        🔹 <b>{level}</b> {userName} (战力:{power})
-                        
+                        ††††††††††††††††††††††††
+                        | 🔹 <b>{level}</b> ♡ {userName} (战力:{power})
+                        ††††††††††††††††††††††††
                         
                         🎮 <b>竞技积分</b>：{fraction} / {completeGame}场
                         🤵 <b>平民场次</b>：{word_people_victory} / {word_people} ({people_percentage})
                         ⛄ <b>卧底场次</b>：{word_spy_victory} / {word_spy} ({spy_percentage})
-                        💎 <b>流通货币</b>：{dm} <b>「无加成」</b>
+                        💎 <b>流通货币</b>：{dm}
+                        🎖️ <b>额外加成</b>：无加成
                         🕯️ <b>头衔</b>：无头衔
                         
                         """;
-    String RANK = "\n<b>▎🏆 [谁是卧底] 无限远点的牵牛星 S{}赛季 ♪</b>\n\n";
-    String TOP_TITLE = "\n<b>▎🏆 [谁是卧底] {} S{}赛季 ♪</b>\n\n";
+    String RANK = "\n<b>▎无限远点的牵牛星 🏷 S{}赛季·积分榜 ♪</b>\n\n";
+    String REAL_RANK = "\n<b>▎交叉坐标的星辰 🏷 S{}赛季·战力榜 ♪</b>\n\n";
+    String TOP_TITLE = "\n<b>▎{} 🏷 S{}赛季·霸王榜 ♪</b>\n\n";
     String IN_GAMING = "{},这个群组正在游戏中";
     String JOIN_GAME = "加入游戏";
     String GAME_WAITING = """
