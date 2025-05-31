@@ -155,6 +155,7 @@ public class Game {
         wodiTopDao = SpringUtil.getBean(WodiTopDao.class);
         embyDao = SpringUtil.getBean(EmbyDao.class);
         wodiUserLogDao = SpringUtil.getBean(WodiUserLogDao.class);
+        tgService = SpringUtil.getBean(TgService.class);
         powerRankService = SpringUtil.getBean(PowerRankService.class);
     }
 
@@ -573,6 +574,7 @@ public class Game {
             tgService.sendMsg(chatId, stringBuilder.toString());
             sendSpeechPerform();
         }
+        tgService.unmuteGroup(chatId);
     }
 
     /**
@@ -719,20 +721,12 @@ public class Game {
             boolean isOwner = m.id.equals(homeOwner.getId());
 
             // 底分
-            if (allUnderCoverSurvive && !undercover) {
-                // 卧底全活成就下 平民分为2
-                m.fraction = 1;
-            } else if (allPeopleSurvive && undercover) {
-                // 民全活成就下 卧底分为1
-                m.fraction = 0;
+            if (undercover) {
+                // 卧底4
+                m.fraction = 4;
             } else {
-                if (undercover) {
-                    // 卧底4
-                    m.fraction = 4;
-                } else {
-                    // 平民3
-                    m.fraction = 3;
-                }
+                // 平民3
+                m.fraction = 3;
             }
             // 每活2个回合(超过人数回合不算)，积分+1
             if (undercoverNum == 1) {
@@ -754,7 +748,10 @@ public class Game {
                         .append(boomStr).append(isOwner ? " 🚩" : "").append("\n").toString());
             } else {
                 // 输家阵营-2分
-                if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
+                if (allPeopleSurvive && undercover) {
+                    // 民全活成就下 卧底分为1
+                    m.fraction = 1;
+                } else if ((m.isUndercover && !winnerIsUndercover) || (!m.isUndercover && winnerIsUndercover)) {
                     m.fraction -= 2;
                 }
                 noSurviveStr.add(sb.append("☠️ ")

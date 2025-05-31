@@ -129,7 +129,7 @@ public interface GameTextConstants {
     String GAME_OVER_BOOM_PEOPLE_SPECIAL = "<b>👨‍🌾平民 阵营达成【空白的世界】成就，奖励积分翻倍！！</b>\n";
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER = "<b>🤡卧底 阵营达成【白板怎么能算我们的人】成就，奖励积分+3！</b>\n";
     String GAME_OVER_BOOM_SINGLE_UNDERCOVER2 = "<b>🤡卧底 达成【我是荒原上的一匹孤狼】成就，奖励积分+5！</b>\n";
-    String GAME_OVER_BOOM_SINGLE_PEOPLE = "<b>👨‍🌾平民 阵营达成【兄弟，不愧是你】成就，奖励积分+5！</b>\n";
+    String GAME_OVER_BOOM_SINGLE_PEOPLE = "<b>👨‍🌾平民 阵营达成【兄弟，不愧是你】成就，奖励积分+3！</b>\n";
     String GAME_OVER_BOOM3 = "<b>{}屠夫 达成【哈哈哈哈哈，都没想到吧】成就，奖励积分三倍！！！</b>\n";
     String GAME_OVER_BOOM3_SPECIAL = "<b>{}屠夫 达成【神不在的日子】成就，奖励积分三倍！！！</b>\n";
     String VOTE_COUNT_DOWN = "即将开始投票, 倒计时{}s, ";

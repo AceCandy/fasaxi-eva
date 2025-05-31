@@ -7,6 +7,7 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
 import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.FhUtil;
+import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.ImgUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
@@ -72,9 +73,9 @@ public class GameService {
         }
         // 大于50min无人回答出题 否则静置
         if (System.currentTimeMillis() -
-                GameUtil.endSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
+                GlobalUtil.lastSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
             ktccy();
-            GameUtil.endSpeakTime = System.currentTimeMillis();
+            GlobalUtil.lastSpeakTime = System.currentTimeMillis();
         }
         if (GAME_SPEAK_CNT.get() <= -200) {
             ktccy();
@@ -138,9 +139,9 @@ public class GameService {
         }
         // 大于50min无人回答出题 否则静置
         if (System.currentTimeMillis() -
-                GameUtil.endSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
+                GlobalUtil.lastSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
             ktcfh();
-            GameUtil.endSpeakTime = System.currentTimeMillis();
+            GlobalUtil.lastSpeakTime = System.currentTimeMillis();
         }
         if (GAME_SPEAK_CNT.get() <= -200) {
             ktcfh();

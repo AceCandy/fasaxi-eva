@@ -153,7 +153,10 @@ public final class WdUtil extends WdSubUtil {
                 sb.append(StrUtil.format("头衔({}) ", buff3));
             }
         }
-
+        double buff = buff1 + buff2 + buff3;
+        if (buff == 0) {
+            return "";
+        }
         return 1 + buff1 + buff2 + buff3 + "【" + sb + "】";
     }
 
@@ -420,7 +423,7 @@ public final class WdUtil extends WdSubUtil {
      */
     private static boolean isHighVotedMember(List<GameUser> highMembers,
                                              GameUser member, long weedOut) {
-        return CollUtil.size(highMembers) == 1
+        return CollUtil.size(highMembers) == 1 && member.survive
                 && member.beVoted.get() == CollUtil.getFirst(highMembers).beVoted.get()
                 && (member.beVoted.get() >= MAXIMUM_VOTE || member.beVoted.get() >= weedOut);
     }

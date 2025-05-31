@@ -325,10 +325,10 @@ public class WdService {
         }
         game.setStatus(GameStatus.游戏关闭);
         if (game.rotate < 2) {
-            wodiUserDao.upFraction(userId, 9);
+            embyDao.upIv(userId, 9);
             tgService.sendMsg(chatId, StrUtil.format(EXIT_GAME2, message.getFrom().getFirstName()));
         } else {
-            wodiUserDao.upFraction(userId, -3);
+            embyDao.upIv(userId, -3);
             tgService.sendMsg(chatId, StrUtil.format(EXIT_GAME, message.getFrom().getFirstName()));
         }
     }

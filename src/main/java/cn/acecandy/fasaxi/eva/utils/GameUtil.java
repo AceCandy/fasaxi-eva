@@ -21,11 +21,6 @@ public final class GameUtil {
     }
 
     /**
-     * 最后发言时间
-     */
-    public static long endSpeakTime = System.currentTimeMillis();
-
-    /**
      * 看图猜成语 答案
      */
     public static Queue<SmallGameDTO> GAME_CACHE = new ConcurrentLinkedQueue<>();
