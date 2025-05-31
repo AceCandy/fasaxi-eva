@@ -159,7 +159,7 @@ public class PowerRankService {
     }
 
     public List<Map.Entry<Long, Integer>> findTop20ListByCache() {
-        return CollUtil.sub(findTopListByCache(), 0, 20);
+        return CollUtil.sub(findTopListByCache(), 0, 19);
     }
 
     public Map<Long, Integer> findTopByCache() {

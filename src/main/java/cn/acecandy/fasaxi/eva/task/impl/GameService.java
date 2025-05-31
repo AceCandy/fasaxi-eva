@@ -130,11 +130,30 @@ public class GameService {
         log.warn("[成语猜猜看] {}", ktccy.getAnswer());
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void execKtcfh() {
+        // 非游戏时间
+        if (!WdUtil.isInNotCommonGameTime()) {
+            return;
+        }
+        // 大于50min无人回答出题 否则静置
+        if (System.currentTimeMillis() -
+                GameUtil.endSpeakTime > RandomUtil.randomInt(105, 110) * 60 * 1000) {
+            ktcfh();
+            GameUtil.endSpeakTime = System.currentTimeMillis();
+        }
+        if (GAME_SPEAK_CNT.get() <= -200) {
+            ktcfh();
+            GAME_SPEAK_CNT.set(RandomUtil.randomInt(40, 60));
+        }
+
+    }
+
     /**
      * 看图猜番号
      */
     @SneakyThrows
-    public void execKtcfh() {
+    public void ktcfh() {
         String defaultPath = commonGameConfig.getKtcfh().getPath();
 
         Path path = FhUtil.searchPoster(defaultPath);

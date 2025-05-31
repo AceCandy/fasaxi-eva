@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -29,129 +30,52 @@ public class XRenewDao extends ServiceImpl<XRenewMapper, XRenew> {
     /**
      * 创建
      *
-     * @param tgId tg id
-     * @param url  网址
+     * @param iv    低压
+     * @param codes 代码
      * @return boolean
      */
-    public boolean insertInviter(Long tgId, String url) {
-        if (null == tgId || StrUtil.isBlank(url)) {
+    @Transactional(rollbackFor = Exception.class)
+    public boolean insertXRenw(Integer iv, List<String> codes) {
+        if (null == iv || CollUtil.isEmpty(codes)) {
             return false;
         }
-        XInvite xInvite = new XInvite();
-        xInvite.setUrl(url);
-        xInvite.setInviterId(tgId);
-        return xInviteMapper.insert(xInvite) > 0;
+        List<XRenew> xRenews = codes.stream().map(code -> {
+            XRenew xInvite = new XRenew();
+            xInvite.setIv(iv);
+            xInvite.setCode(code);
+            return xInvite;
+        }).toList();
+
+        return saveBatch(xRenews);
     }
 
     /**
-     * 更新受邀者
+     * 更新
      *
-     * @param xInvite 实体
+     * @param xRenew x续订
      */
-    public void updateInvitee(XInvite xInvite) {
-        if (null == xInvite) {
-            return;
+    public boolean update(XRenew xRenew) {
+        if (null == xRenew) {
+            return false;
         }
-        xInviteMapper.insertOrUpdate(xInvite);
+        return saveOrUpdate(xRenew);
     }
 
     /**
-     * 更新受邀者
+     * 按code查找
      *
-     * @param tgIds 列表
-     */
-    public void updateCollectTime(List<Long> tgIds, Date collectTime) {
-        if (CollUtil.isEmpty(tgIds)) {
-            return;
-        }
-        LambdaUpdateWrapper<XInvite> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.in(XInvite::getInviteeId, tgIds);
-        updateWrapper.set(XInvite::getCollectTime, collectTime);
-        xInviteMapper.update(null, updateWrapper);
-    }
-
-    /**
-     * 按url查找
-     *
-     * @param url 网址
+     * @param code 代码
      * @return {@link XInvite }
      */
-    public XInvite findByUrl(String url) {
-        if (StrUtil.isBlank(url)) {
+    public XRenew findByCode(String code) {
+        if (StrUtil.isBlank(code)) {
             return null;
         }
-        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(XInvite::getUrl, url)
+        LambdaQueryWrapper<XRenew> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(XRenew::getCode, code).eq(XRenew::getIsUse, false);
         ;
-        return xInviteMapper.selectOne(wrapper);
+
+        return baseMapper.selectOne(wrapper);
     }
 
-    /**
-     * 按用户查找最后一次邀请
-     *
-     * @param tgId 网址
-     * @return {@link XInvite }
-     */
-    public XInvite findByInviterLast(Long tgId) {
-        if (null == tgId) {
-            return null;
-        }
-        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(XInvite::getInviterId, tgId)
-                .orderByDesc(XInvite::getCreateTime).last("limit 1");
-        ;
-        return xInviteMapper.selectOne(wrapper);
-    }
-
-    /**
-     * 查询门人名单
-     *
-     * @param tgId 网址
-     * @return {@link XInvite }
-     */
-    public List<XInvite> findInviteeByInviter(Long tgId) {
-        if (null == tgId) {
-            return CollUtil.newArrayList();
-        }
-        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(XInvite::getInviterId, tgId)
-                .isNotNull(XInvite::getInviteeId)
-                .orderByAsc(XInvite::getCreateTime);
-        ;
-        return xInviteMapper.selectList(wrapper);
-    }
-
-    /**
-     * 查询师尊
-     *
-     * @param tgId 网址
-     * @return {@link XInvite }
-     */
-    public XInvite findByInvitee(Long tgId) {
-        if (null == tgId) {
-            return null;
-        }
-        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(XInvite::getInviteeId, tgId)
-                .orderByDesc(XInvite::getCreateTime);
-        ;
-        return CollUtil.getFirst(xInviteMapper.selectList(wrapper));
-    }
-
-    /**
-     * 按用户最近一天创建的数量
-     *
-     * @param tgId 网址
-     * @return {@link XInvite }
-     */
-    public Long cntByInviterToday(Long tgId) {
-        if (null == tgId) {
-            return 0L;
-        }
-        LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(XInvite::getInviterId, tgId)
-                .ge(XInvite::getCreateTime, System.currentTimeMillis() - 24 * 60 * 60 * 1000)
-        ;
-        return xInviteMapper.selectCount(wrapper);
-    }
 }

@@ -137,6 +137,8 @@ public final class WdUtil extends WdSubUtil {
                 buff2 += 0.15;
             } else if (rankIndex <= 10) {
                 buff2 += 0.1;
+            } else if (rankIndex <= 20) {
+                buff2 += 0.05;
             }
             if (buff2 > 0) {
                 sb.append(StrUtil.format("战力({}) ", buff2));
@@ -157,6 +159,7 @@ public final class WdUtil extends WdSubUtil {
 
     public static String getRecord(WodiUser user, Emby embyUser, List<WodiTop> wodiTops,
                                    Map<Long, Integer> topMap) {
+        int rankIndex = findRankIndex(user.getTelegramId(), topMap);
         Integer completeGame = NumberUtil.nullToZero(user.getCompleteGame());
         Integer wordPeople = NumberUtil.nullToZero(user.getWordPeople());
         Integer wordSpy = NumberUtil.nullToZero(user.getWordSpy());
@@ -165,6 +168,7 @@ public final class WdUtil extends WdSubUtil {
         String recordTxt = RECORD_TXT
                 .replace("{userName}", TgUtil.tgNameOnUrl(user))
                 .replace("{power}", MapUtil.getStr(topMap, user.getTelegramId(), "0"))
+                .replace("{rankIndex}", rankIndex > 0 ? rankIndex + "" : "无")
                 .replace("{completeGame}", completeGame + "")
                 .replace("{word_people}", wordPeople + "")
                 .replace("{word_spy}", wordSpy + "")
@@ -180,8 +184,7 @@ public final class WdUtil extends WdSubUtil {
         Integer level = scoreToLv(user.getFraction());
         // if (level > 0) {
         // recordTxt = recordTxt.replace("无加成", 1 + 0.1 * level + "倍加成");
-        String jiaCheng = getRankBuffStr(
-                level, wodiTops, findRankIndex(user.getTelegramId(), topMap));
+        String jiaCheng = getRankBuffStr(level, wodiTops, rankIndex);
         if (StrUtil.isNotBlank(jiaCheng)) {
             recordTxt = recordTxt.replace("无加成", jiaCheng);
         }
@@ -682,38 +685,37 @@ public final class WdUtil extends WdSubUtil {
         Date am1 = DateUtil.beginOfDay(now);
         am1 = DateUtil.offset(am1, DateField.HOUR_OF_DAY, 1);
         // 获取当天的10:00 AM和10:00 PM
-        Date am2 = DateUtil.beginOfDay(now);
-        am2 = DateUtil.offset(am2, DateField.HOUR_OF_DAY, 2)
+        Date am3 = DateUtil.beginOfDay(now);
+        am3 = DateUtil.offset(am3, DateField.HOUR_OF_DAY, 3)
+                .offset(DateField.MINUTE, RandomUtil.randomInt(12, 24));
+
+        Date am7 = DateUtil.beginOfDay(now);
+        am7 = DateUtil.offset(am7, DateField.HOUR_OF_DAY, 7);
+        // 获取当天的10:00 AM和10:00 PM
+        Date am9 = DateUtil.beginOfDay(now);
+        am9 = DateUtil.offset(am9, DateField.HOUR_OF_DAY, 9)
                 .offset(DateField.MINUTE, RandomUtil.randomInt(12, 24));
 
         // 获取当天的10:00 AM和10:00 PM
-        Date pm4 = DateUtil.beginOfDay(now);
-        pm4 = DateUtil.offset(pm4, DateField.HOUR_OF_DAY, 4);
+        Date pm1 = DateUtil.beginOfDay(now);
+        pm1 = DateUtil.offset(pm1, DateField.HOUR_OF_DAY, 1);
 
         // 获取当天的10:00 AM和10:00 PM
-        Date pm6 = DateUtil.beginOfDay(now);
-        pm6 = DateUtil.offset(pm6, DateField.HOUR_OF_DAY, 6)
+        Date pm3 = DateUtil.beginOfDay(now);
+        pm3 = DateUtil.offset(pm3, DateField.HOUR_OF_DAY, 3)
                 .offset(DateField.MINUTE, RandomUtil.randomInt(9, 33));
 
         // 获取当天的10:00 AM和10:00 PM
         Date pm7 = DateUtil.beginOfDay(now);
-        pm7 = DateUtil.offset(pm7, DateField.HOUR_OF_DAY, 7);
+        pm7 = DateUtil.offset(pm7, DateField.HOUR_OF_DAY, 19);
 
-        Date pm8 = DateUtil.beginOfDay(now);
-        pm8 = DateUtil.offset(pm8, DateField.HOUR_OF_DAY, 8)
+        Date pm9 = DateUtil.beginOfDay(now);
+        pm9 = DateUtil.offset(pm9, DateField.HOUR_OF_DAY, 21)
                 .offset(DateField.MINUTE, RandomUtil.randomInt(42, 51));
 
-        // 获取当天的10:00 AM和10:00 PM
-        Date pm21 = DateUtil.beginOfDay(now);
-        pm21 = DateUtil.offset(pm21, DateField.HOUR_OF_DAY, 21);
-
-        Date pm23 = DateUtil.beginOfDay(now);
-        pm23 = DateUtil.offset(pm23, DateField.HOUR_OF_DAY, 23)
-                .offset(DateField.MINUTE, RandomUtil.randomInt(31, 38));
-
         // 判断当前时间是否在10:00 AM到10:00 PM之间
-        return DateUtil.isIn(now, am1, am2) || DateUtil.isIn(now, pm4, pm6)
-                || DateUtil.isIn(now, pm7, pm8) || DateUtil.isIn(now, pm21, pm23);
+        return DateUtil.isIn(now, am1, am3) || DateUtil.isIn(now, am7, am9)
+                || DateUtil.isIn(now, pm1, pm3) || DateUtil.isIn(now, pm7, pm9);
     }
 
     /**

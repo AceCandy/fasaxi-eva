@@ -35,12 +35,12 @@ public class XRenew {
     /**
      * 币值
      */
-    private Long iv;
+    private Integer iv;
 
     /**
      * 是否使用 0-未使用 1-已使用
      */
-    private Integer isUse;
+    private Boolean isUse;
 
     /**
      * 创建时间

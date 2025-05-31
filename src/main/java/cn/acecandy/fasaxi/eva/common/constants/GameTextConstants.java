@@ -11,13 +11,20 @@ public interface GameTextConstants {
     /**
      * 当前赛季
      */
-    Integer CURRENT_SEASON = 2;
+    Integer CURRENT_SEASON = 3;
 
     String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前群组信息已上传网信部记录！";
     String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，游戏开放时间9～12、14～18、19～22点！";
     String TIP_IN_GROUP = "请在群组中使用命令~";
     String TIP_IN_PRIVATE = "请私聊助手使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
+    String TIP_IN_XRENEW_CREATE = "❌ 指令不正确，格式参考： /xm_create [Dmail] [数量]";
+    String TIP_IN_XRENEW_USE = "❌ 指令或码子格式不正确，格式参考： /xm_use [code]";
+    String TIP_IN_XRENEW_USED = "❌ 码子不存在或者已经使用过了，请勿频繁操作";
+    String XRENEW_USE_ERROR = "❌ db更新失败，请联系腐竹";
+    String XRENEW_USE_SUCC = "✅ 使用码子[{}]成功，恭喜您获得了 {} 封Dmail！";
+    String XRENEW_CREATE_ERROR = "❌ 创建续命码失败";
+    String XRENEW_CREATE_SUCC = "✅ 成功创建{}个{}Dmail续命码";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
     String TIP_IN_INVITE = "您花费100封Dmail创建传承邀请";
     String TIP_IN_RANK = "您花费{}封Dmail进行开启榜单";
@@ -44,7 +51,7 @@ public interface GameTextConstants {
                       9. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
                       
                       /wd 创建游戏（10Dmail 成功开局后扣取）
-                      /wd_info 查看自身游戏积分记录（2Dmail）
+                      /wd_info 查看自身游戏积分记录（5Dmail）
                       /wd_rank 开启积分榜（10Dmail）
                       /wd_real_rank Top战力榜(累计至昨日)（15Dmail）
                       /wd_top 开启霸王榜（10Dmail）
@@ -55,7 +62,9 @@ public interface GameTextConstants {
     String RECORD_TXT = """
                         \n
                         ††††††††††††††††††††††††
-                        | 🔹 <b>{level}</b> ♡ {userName} (战力:{power})
+                        | 📍 境界：{level}
+                        | 🔹 {userName}
+                        | 🧊 战力：<b>{power}</b>（排名：{rankIndex}）
                         ††††††††††††††††††††††††
                         
                         🎮 <b>竞技积分</b>：{fraction} / {completeGame}场

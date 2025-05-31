@@ -100,7 +100,7 @@ public class WdService {
             tgService.sendMsg(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
             return;
         }
-        Integer costIv = 2;
+        Integer costIv = 5;
         if (embyUser.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看个人信息", 5 * 1000);
             return;
