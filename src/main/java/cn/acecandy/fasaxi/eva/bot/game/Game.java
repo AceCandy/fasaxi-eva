@@ -900,27 +900,27 @@ public class Game {
         String boomStr = "";
         if (allPeopleSurvive) {
             m.fraction *= 1.5;
-            boomStr += "<b> X 1.5</b>";
+            boomStr += "<b>(X1.5)</b>";
         }
         if (allUnderCoverSurvive) {
             m.fraction *= 2;
-            boomStr += "<b> X 2</b>";
+            boomStr += "<b>(X2)</b>";
         }
         if (spaceSingleSurvive) {
             m.fraction *= 3;
-            boomStr += "<b> X 3</b>";
+            boomStr += "<b>(X3)</b>";
         }
         if (allUnderCoverSurviveNoSpace) {
             m.fraction += 3;
-            boomStr += "<b> +3</b>";
+            boomStr += "<b>(+3)</b>";
         }
         if (brotherSurvive) {
             m.fraction += 3;
-            boomStr += "<b> +3</b>";
+            boomStr += "<b>(+3)</b>";
         }
         if (singleUnderCoverSurvive) {
             m.fraction += 5;
-            boomStr += "<b> +5</b>";
+            boomStr += "<b>(+5)</b>";
         }
         return boomStr;
     }
@@ -1028,7 +1028,7 @@ public class Game {
                 String oldLevel = m.oldLevel;
                 String newLevel = WdUtil.scoreToTitle(m.wodiUser.getFraction());
                 if (!StrUtil.equals(oldLevel, newLevel)) {
-                    m.dmailUp = WdUtil.scoreToFirstUpGift(m.wodiUser.getFraction());
+                    m.dmailUp = 90 + WdUtil.scoreToLv(m.wodiUser.getFraction()) * 10;
                     upBuilder.append(StrUtil.format(USER_LEVEL_UP,
                             TgUtil.tgNameOnUrl(m.user), newLevel, m.dmailUp));
                     embyDao.upIv(m.user.getId(), m.dmailUp);
