@@ -900,27 +900,27 @@ public class Game {
         String boomStr = "";
         if (allPeopleSurvive) {
             m.fraction *= 1.5;
-            boomStr += "<b>(X1.5)</b>";
+            boomStr += "<b> (X1.5)</b>";
         }
         if (allUnderCoverSurvive) {
             m.fraction *= 2;
-            boomStr += "<b>(X2)</b>";
+            boomStr += "<b> (X2)</b>";
         }
         if (spaceSingleSurvive) {
             m.fraction *= 3;
-            boomStr += "<b>(X3)</b>";
+            boomStr += "<b> (X3)</b>";
         }
         if (allUnderCoverSurviveNoSpace) {
             m.fraction += 3;
-            boomStr += "<b>(+3)</b>";
+            boomStr += "<b> (+3)</b>";
         }
         if (brotherSurvive) {
             m.fraction += 3;
-            boomStr += "<b>(+3)</b>";
+            boomStr += "<b> (+3)</b>";
         }
         if (singleUnderCoverSurvive) {
             m.fraction += 5;
-            boomStr += "<b>(+5)</b>";
+            boomStr += "<b> (+5)</b>";
         }
         return boomStr;
     }
