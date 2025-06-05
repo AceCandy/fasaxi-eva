@@ -19,6 +19,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.util.Comparator;
 import java.util.Date;
@@ -66,24 +67,25 @@ public final class WdUtil extends WdSubUtil {
      */
     public static double getRankBuff(Long tgId, Integer level, List<WodiTop> wodiTops,
                                      List<Map.Entry<Long, Integer>> top20) {
-        double buff = 0.05 * level;
+        BigDecimal buff = NumberUtil.mul(new BigDecimal("0.05"), level);
 
         // 战力排名buff
         int rank = findRankIndex(tgId, top20);
-        if (rank == 1) {
-            buff += 0.25;
+        if (rank <= 0) {
+            // 不做处理
+        } else if (rank == 1) {
+            buff = buff.add(new BigDecimal("0.25"));
         } else if (rank == 2) {
-            buff += 0.20;
+            buff = buff.add(new BigDecimal("0.2"));
         } else if (rank == 3) {
-            buff += 0.15;
-        } else if (rank > 0 && rank <= 10) {
-            buff += 0.1;
-        } else if (rank > 10 && rank <= 20) {
-            buff += 0.05;
+            buff = buff.add(new BigDecimal("0.15"));
+        } else if (rank <= 10) {
+            buff = buff.add(new BigDecimal("0.1"));
+        } else if (rank < 20) {
+            buff = buff.add(new BigDecimal("0.05"));
         }
         // top头衔buff
-        buff += CollUtil.size(wodiTops) * 0.1;
-        return buff;
+        return NumberUtil.add(buff, CollUtil.size(wodiTops) * 0.1).doubleValue();
     }
 
     /**
@@ -122,43 +124,43 @@ public final class WdUtil extends WdSubUtil {
     public static String getRankBuffStr(Integer level, List<WodiTop> wodiTops,
                                         int rankIndex) {
         StringBuilder sb = new StringBuilder();
-        double buff1 = NumberUtil.mul(0.05, level * 1.0);
-        if (buff1 > 0) {
+        BigDecimal buff1 = NumberUtil.mul(new BigDecimal("0.05"), level);
+        if (buff1.compareTo(BigDecimal.ZERO) > 0) {
             sb.append(StrUtil.format("等级({}) ", buff1));
         }
 
         // 战力排名buff
-        double buff2 = 0;
+        BigDecimal buff2 = BigDecimal.ZERO;
         if (rankIndex > 0) {
             if (rankIndex == 1) {
-                buff2 += 0.25;
+                buff2 = buff2.add(new BigDecimal("0.25"));
             } else if (rankIndex == 2) {
-                buff2 += 0.20;
+                buff2 = buff2.add(new BigDecimal("0.2"));
             } else if (rankIndex == 3) {
-                buff2 += 0.15;
+                buff2 = buff2.add(new BigDecimal("0.15"));
             } else if (rankIndex <= 10) {
-                buff2 += 0.1;
-            } else if (rankIndex <= 20) {
-                buff2 += 0.05;
+                buff2 = buff2.add(new BigDecimal("0.1"));
+            } else if (rankIndex < 20) {
+                buff2 = buff2.add(new BigDecimal("0.05"));
             }
-            if (buff2 > 0) {
+            if (buff2.compareTo(BigDecimal.ZERO) > 0) {
                 sb.append(StrUtil.format("战力({}) ", buff2));
             }
         }
 
         // top头衔buff
-        double buff3 = 0;
+        BigDecimal buff3 = BigDecimal.ZERO;
         if (CollUtil.isNotEmpty(wodiTops)) {
-            buff3 = NumberUtil.mul(0.1, CollUtil.size(wodiTops));
-            if (buff3 > 0) {
+            buff3 = NumberUtil.mul(new BigDecimal("0.1"), CollUtil.size(wodiTops));
+            if (buff3.compareTo(BigDecimal.ZERO) > 0) {
                 sb.append(StrUtil.format("头衔({}) ", buff3));
             }
         }
-        double buff = buff1 + buff2 + buff3;
-        if (buff == 0) {
+        BigDecimal buff = NumberUtil.add(buff1, buff2, buff3);
+        if (buff.compareTo(BigDecimal.ZERO) == 0) {
             return "";
         }
-        return 1 + buff1 + buff2 + buff3 + "【" + sb + "】";
+        return NumberUtil.add(buff, 1) + "【" + sb + "】";
     }
 
     public static String getRecord(WodiUser user, Emby embyUser, List<WodiTop> wodiTops,
