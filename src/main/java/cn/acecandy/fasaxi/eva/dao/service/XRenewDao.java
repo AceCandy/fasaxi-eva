@@ -1,20 +1,15 @@
 package cn.acecandy.fasaxi.eva.dao.service;
 
-import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.entity.XRenew;
-import cn.acecandy.fasaxi.eva.dao.mapper.XInviteMapper;
 import cn.acecandy.fasaxi.eva.dao.mapper.XRenewMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -65,7 +60,7 @@ public class XRenewDao extends ServiceImpl<XRenewMapper, XRenew> {
      * 按code查找
      *
      * @param code 代码
-     * @return {@link XInvite }
+     * @return {@link XRenew }
      */
     public XRenew findByCode(String code) {
         if (StrUtil.isBlank(code)) {

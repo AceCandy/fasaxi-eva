@@ -26,7 +26,7 @@ public interface GameTextConstants {
     String XRENEW_CREATE_ERROR = "❌ 创建续命码失败";
     String XRENEW_CREATE_SUCC = "✅ 成功创建{}个{}Dmail续命码";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
-    String TIP_IN_INVITE = "您花费100封Dmail创建传承邀请";
+    String TIP_IN_INVITE = "您花费{}封Dmail创建传承邀请";
     String TIP_IN_RANK = "您花费{}封Dmail进行开启榜单";
     String TIP_HELP = """
                       使用命令可创建游戏（<b>花费10封Dmail 成功开局才扣除</b>），游戏开始后每个人会得到自己的游戏词语。

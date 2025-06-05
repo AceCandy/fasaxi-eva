@@ -1,7 +1,6 @@
 package cn.acecandy.fasaxi.eva.dao.service;
 
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUserLog;
-import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.mapper.WodiUserLogMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
@@ -86,7 +85,7 @@ public class WodiUserLogDao {
      * 按用户当天的记录
      *
      * @param tgIds 网址
-     * @return {@link XInvite }
+     * @return {@link WodiUserLog }
      */
     public List<WodiUserLog> findByTgIdToday(List<Long> tgIds) {
         if (CollUtil.isEmpty(tgIds)) {
@@ -103,7 +102,7 @@ public class WodiUserLogDao {
      * 按用户昨天的记录
      *
      * @param tgIds 网址
-     * @return {@link XInvite }
+     * @return {@link WodiUserLog }
      */
     public List<WodiUserLog> findByTgIdYesterday(List<Long> tgIds) {
         if (CollUtil.isEmpty(tgIds)) {

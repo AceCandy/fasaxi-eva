@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.List;
 
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
+
 /**
  * 邀请 dao
  *
@@ -40,6 +42,7 @@ public class XInviteDao {
         XInvite xInvite = new XInvite();
         xInvite.setUrl(url);
         xInvite.setInviterId(tgId);
+        xInvite.setSeason(CURRENT_SEASON);
         return xInviteMapper.insert(xInvite) > 0;
     }
 
@@ -54,6 +57,7 @@ public class XInviteDao {
         }
         xInviteMapper.insertOrUpdate(xInvite);
     }
+
     /**
      * 更新受邀者
      *
@@ -119,6 +123,7 @@ public class XInviteDao {
         ;
         return xInviteMapper.selectList(wrapper);
     }
+
     /**
      * 查询师尊
      *
@@ -137,18 +142,18 @@ public class XInviteDao {
     }
 
     /**
-     * 按用户最近一天创建的数量
+     * 赛季数量
      *
      * @param tgId 网址
      * @return {@link XInvite }
      */
-    public Long cntByInviterToday(Long tgId) {
+    public Long cntBySeason(Long tgId) {
         if (null == tgId) {
             return 0L;
         }
         LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(XInvite::getInviterId, tgId)
-                .ge(XInvite::getCreateTime, System.currentTimeMillis() - 24 * 60 * 60 * 1000)
+                .eq(XInvite::getSeason, CURRENT_SEASON)
         ;
         return xInviteMapper.selectCount(wrapper);
     }

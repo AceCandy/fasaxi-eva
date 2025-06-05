@@ -1,15 +1,17 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUserLog;
 import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
-import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.map.MapUtil;
@@ -55,6 +57,9 @@ public class CcService {
     private XInviteDao xInviteDao;
 
     @Resource
+    private WodiTopDao wodiTopDao;
+
+    @Resource
     private WodiUserDao wodiUserDao;
 
     @Resource
@@ -98,11 +103,16 @@ public class CcService {
 
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
         Integer lv = WdUtil.scoreToLv(wodiUser.getFraction());
-        Integer canInviteCnt = lv / 3 + 1;
-        Long cnt = xInviteDao.cntByInviterToday(userId);
-        if (cnt >= canInviteCnt) {
-            tgService.sendMsg(chatId,
-                    "您今日创建传承邀请超限(" + canInviteCnt + ")了，请明日再来", 5 * 1000);
+        if (lv < 1) {
+            tgService.sendMsg(chatId, "您没有创建传承邀请的资格，请升级后再来", 5 * 1000);
+            return;
+        }
+        List<WodiTop> top = wodiTopDao.selectByTgId(userId);
+        lv += CollUtil.size(top);
+        Long cnt = xInviteDao.cntBySeason(userId);
+        if (cnt >= lv) {
+            tgService.sendMsg(chatId, StrUtil.format("本赛季您当前总共可创建{}个传承邀请，已创建{}个",
+                    lv, cnt), 5 * 1000);
             return;
         }
 
@@ -114,10 +124,10 @@ public class CcService {
         if (!CollUtil.contains(tgService.getAdmins(), userId)) {
             embyDao.upIv(userId, -costIv);
         }
-        tgService.sendMsg(chatId, TIP_IN_INVITE, 2 * 1000);
+        tgService.sendMsg(chatId, StrUtil.format(TIP_IN_INVITE, costIv), 2 * 1000);
 
         String inviteUrl = tgService.generateInvite(userId, 1);
-        log.info("{} 生成了一个传承邀请:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
+        log.warn("{} 生成了一个传承邀请:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
         tgService.sendMsg(message.getMessageId(), message.getChatId().toString(),
                 StrUtil.format(GENERATE_INVITE, inviteUrl));
         xInviteDao.insertInviter(userId, inviteUrl);

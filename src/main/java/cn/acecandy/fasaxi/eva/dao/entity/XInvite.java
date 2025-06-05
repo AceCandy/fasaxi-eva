@@ -37,4 +37,7 @@ public class XInvite {
 
     @Schema(name = "领取时间")
     private Date collectTime;
+
+    @Schema(name = "赛季")
+    private Integer season;
 }
