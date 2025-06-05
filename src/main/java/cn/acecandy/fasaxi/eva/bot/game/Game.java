@@ -1136,6 +1136,7 @@ public class Game {
             // 违禁爆词 本词或者拼音
             tgService.sendMsg(userId.toString(), StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));
             embyDao.upIv(userId, -5);
+            log.warn("用户 {} 违禁爆词：{}，自己收到的词: {}", member.user.getFirstName(), text, member.word);
         }
         member.speak = true;
         speakList.add(text);
