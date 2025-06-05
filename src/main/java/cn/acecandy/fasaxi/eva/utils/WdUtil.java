@@ -11,6 +11,7 @@ import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Console;
 import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.text.UnicodeUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -354,14 +355,17 @@ public final class WdUtil extends WdSubUtil {
                 finishVoteStr.add(StrUtil.format(VOTE_PUBLICITY, TgUtil.tgNameOnUrl(member.user),
                         anonymousVote ? "████" : TgUtil.tgNameOnUrl(member.toUser.user)));
                 member.notVote = 0;
+                member.abstainedVote = 0;
             } else if (member.finishVote) {
                 // 投票弃权
                 abstainVoteStr.add(StrUtil.format(VOTE_ABSTAINED, TgUtil.tgNameOnUrl(member.user)));
                 member.notVote = 0;
+                member.abstainedVote++;
             } else {
                 // 没有在时间内投票
                 notVoteStr.add(StrUtil.format(NOT_VOTE, TgUtil.tgNameOnUrl(member.user)));
                 member.notVote++;
+                member.abstainedVote++;
             }
         }
         stringBuilder.append(StrUtil.join("", finishVoteStr))
@@ -409,7 +413,7 @@ public final class WdUtil extends WdSubUtil {
         outMap.put("逃跑", memberList.stream().filter(m ->
                 m.survive && m.notVote >= notVote).peek(m -> m.survive = false).toList());
         outMap.put("连续弃票", memberList.stream().filter(m -> m.survive &&
-                m.abstainedRound >= CONTINUOUS_ABSTAINED).peek(m -> m.survive = false).toList());
+                m.abstainedVote >= CONTINUOUS_ABSTAINED).peek(m -> m.survive = false).toList());
         return outMap;
     }
 
@@ -787,6 +791,8 @@ public final class WdUtil extends WdSubUtil {
             Console.log(fillWidth(l, 20) + "战斗力");
             // Console.log(StrUtil.fillAfter(l, ' ', 20));
         });
-        Console.log();
+
+        String s = "{\"rating\": {\"max\": 10, \"average\": \"7.8\", \"numRaters\": 156555, \"min\": 0}, \"author\": [{\"name\": \"\\u4e9a\\u4f26\\u00b7\\u970d\\u74e6\\u65af Aaron Horvath\"}, {\"name\": \"\\u8fc8\\u514b\\u5c14\\u00b7\\u6770\\u52d2\\u5c3c\\u514b Michael Jelenic\"}], \"alt_title\": \"\\u8d85\\u7ea7\\u9a6c\\u529b\\u6b27\\u5144\\u5f1f\\u5927\\u7535\\u5f71 \\/ \\u8d85\\u7ea7\\u9a6c\\u91cc\\u5965\\u5144\\u5f1f\", \"image\": \"https://img3.doubanio.com\\/view\\/photo\\/s_ratio_poster\\/public\\/p2909217327.jpg\", \"title\": \"The Super Mario Bros. Movie\", \"summary\": \"\\u9a6c\\u529b\\u6b27\\uff08\\u514b\\u91cc\\u65af\\u00b7\\u5e15\\u62c9\\u7279 Chris Pratt \\u914d\\u97f3\\uff09\\u548c\\u8def\\u6613\\u5409\\uff08\\u67e5\\u7406\\u00b7\\u6234 Charlie Day \\u9970\\uff09\\u662f\\u751f\\u6d3b\\u5728\\u5e03\\u9c81\\u514b\\u6797\\u7684\\u4e24\\u540d\\u6c34\\u7ba1\\u5de5\\uff0c\\u4ed6\\u4eec\\u521a\\u521a\\u6210\\u7acb\\u4e86\\u81ea\\u5df1\\u7684\\u5c0f\\u516c\\u53f8\\uff0c\\u4f46\\u5f88\\u663e\\u7136\\uff0c\\u4ed6\\u4eec\\u7684\\u5bb6\\u4eba\\u5e76\\u4e0d\\u5b8c\\u5168\\u652f\\u6301\\u5144\\u5f1f\\u4e24\\u4eba\\u7684\\u8fd9\\u4efd\\u4e8b\\u4e1a\\u3002\\u67d0\\u65e5\\uff0c\\u5728\\u5de5\\u4f5c\\u4e2d\\uff0c\\u9a6c\\u529b\\u6b27\\u548c\\u8def\\u6613\\u5409\\u88ab\\u6c34\\u7ba1\\u5438\\u5165\\u5230\\u4e86\\u4e00\\u4e2a\\u5149\\u602a\\u9646\\u79bb\\u7684\\u4e16\\u754c\\u4e4b\\u4e2d\\uff0c\\u4e24\\u4eba\\u5728\\u65c5\\u9014\\u4e2d\\u88ab\\u8feb\\u5206\\u5f00\\uff0c\\u9a6c\\u529b\\u6b27\\u6765\\u5230\\u4e86\\u7531\\u78a7\\u59ec\\u516c\\u4e3b\\uff08\\u5b89\\u96c5\\u00b7\\u6cf0\\u52d2-\\u4e54\\u4f0a Anya Taylor-Joy \\u914d\\u97f3\\uff09\\u7edf\\u6cbb\\u7684\\u8611\\u83c7\\u738b\\u56fd\\uff0c\\u800c\\u8def\\u6613\\u5409\\u5219\\u4e0d\\u5e78\\u7684\\u88ab\\u4f20\\u9001\\u5230\\u4e86\\u7531\\u9177\\u9738\\u738b\\uff08\\u6770\\u514b\\u00b7\\u5e03\\u83b1\\u514b Jack Black \\u914d\\u97f3\\uff09\\u7edf\\u6cbb\\u7684\\u5e93\\u5df4\\u738b\\u56fd\\u3002\\n\\u6b64\\u65f6\\uff0c\\u9177\\u9738\\u738b\\u6b63\\u51c6\\u5907\\u5927\\u4e3e\\u8fdb\\u653b\\u8611\\u83c7\\u56fd\\uff0c\\u63b3\\u8d70\\u516c\\u4e3b\\u5e76\\u548c\\u5979\\u7ed3\\u5a5a\\uff0c\\u5728\\u8fd9\\u4e2a\\u8282\\u9aa8\\u773c\\u4e0a\\uff0c\\u9a6c\\u529b\\u6b27\\u7684\\u51fa\\u73b0\\u5e26\\u7ed9\\u4e86\\u78a7\\u59ec\\u516c\\u4e3b\\u5e0c\\u671b\\uff0c\\u5979\\u5e26\\u7740\\u9a6c\\u529b\\u6b27\\u6765\\u5230\\u4e86\\u4e1b\\u6797\\u738b\\u56fd\\uff0c\\u8bf7\\u6c42\\u90a3\\u91cc\\u7684\\u56fd\\u738b\\u548c\\u738b\\u5b50\\uff08\\u585e\\u65af\\u00b7\\u7f57\\u6839 Seth Aaron Rogen \\u9970\\uff09\\u7684\\u652f\\u63f4\\u3002\", \"attrs\": {\"website\": [\"https:\\/\\/www.thesupermariobros.movie\\/\"], \"language\": [\"\\u82f1\\u8bed\"], \"pubdate\": [\"2023-04-05(\\u7f8e\\u56fd\\/\\u4e2d\\u56fd\\u5927\\u9646)\", \"2023-04-27(\\u65e5\\u672c)\"], \"title\": [\"The Super Mario Bros. Movie\"], \"country\": [\"\\u7f8e\\u56fd\", \"\\u65e5\\u672c\"], \"writer\": [\"\\u9a6c\\u4fee\\u00b7\\u798f\\u683c\\u5c14 Matthew Fogel\"], \"director\": [\"\\u4e9a\\u4f26\\u00b7\\u970d\\u74e6\\u65af Aaron Horvath\", \"\\u8fc8\\u514b\\u5c14\\u00b7\\u6770\\u52d2\\u5c3c\\u514b Michael Jelenic\"], \"cast\": [\"\\u514b\\u91cc\\u65af\\u00b7\\u5e15\\u62c9\\u7279 Chris Pratt\", \"\\u5b89\\u96c5\\u00b7\\u6cf0\\u52d2-\\u4e54\\u4f0a Anya Taylor-Joy\", \"\\u67e5\\u7406\\u00b7\\u6234 Charlie Day\", \"\\u6770\\u514b\\u00b7\\u5e03\\u83b1\\u514b Jack Black\", \"\\u79d1\\u7518-\\u8fc8\\u514b\\u5c14\\u00b7\\u51ef Keegan-Michael Key\", \"\\u585e\\u65af\\u00b7\\u7f57\\u6839 Seth Rogen\", \"\\u5f17\\u83b1\\u5fb7\\u00b7\\u963f\\u7c73\\u68ee Fred Armisen\", \"\\u51ef\\u6587\\u00b7\\u8fc8\\u514b\\u5c14\\u00b7\\u7406\\u67e5\\u5fb7\\u68ee Kevin Michael Richardson\", \"\\u6731\\u4e3d\\u53f6\\u00b7\\u6770\\u52d2\\u5c3c\\u514b\", \"\\u585e\\u5df4\\u65af\\u8482\\u5b89\\u00b7\\u9a6c\\u5c3c\\u65af\\u79d1 Sebastian Maniscalco\", \"\\u5361\\u91cc\\u00b7\\u4f69\\u987f Khary Payton\", \"\\u67e5\\u5c14\\u65af\\u00b7\\u9a6c\\u4e01\\u5185\\u65af Charles Martinet\", \"\\u6770\\u897f\\u5361\\u00b7\\u8fea\\u897f\\u53ef Jessica DiCicco\", \"\\u91cc\\u8bfa\\u00b7\\u7f57\\u9a6c\\u8bfa Rino Romano\", \"\\u7ea6\\u7ff0\\u00b7\\u8fea\\u00b7\\u9a6c\\u5409\\u6b27 John Di Maggio\", \"\\u827e\\u745e\\u514b\\u00b7\\u9c8d\\u624e Eric Bauza\", \"\\u65af\\u79d1\\u7279\\u00b7\\u95e8\\u7ef4\\u5c14 Scott Menville\", \"\\u5361\\u6d1b\\u65af\\u00b7\\u963f\\u62c9\\u65af\\u62c9\\u5947 Carlos Alazraqui\", \"\\u96c5\\u58eb\\u5229\\u00b7\\u4f2f\\u5947 Ashly Burch\", \"\\u96f7\\u5207\\u5c14\\u00b7\\u5df4\\u7279\\u62c9 Rachel Butera\", \"\\u51ef\\u831c\\u00b7\\u5361\\u74e6\\u8482\\u59ae Cathy Cavadini\", \"\\u4e9a\\u4f26\\u00b7\\u4ea8\\u5fb7\\u5229 Aaron Hendry\", \"Andy Hirsch\", \"\\u83f2\\u5c14\\u00b7\\u62c9\\u9a6c Phil LaMarr\", \"\\u6770\\u91cc\\u7c73\\u00b7\\u9a6c\\u514b\\u65af\\u97e6\\u5c14 Jeremy Maxwell\", \"Eric Osmond\", \"\\u674e\\u00b7\\u8096\\u987f Lee Shorten\", \"\\u514b\\u91cc\\u00b7\\u8428\\u83ab Cree Summer\"], \"movie_duration\": [\"92\\u5206\\u949f\"], \"year\": [\"2023\"], \"movie_type\": [\"\\u559c\\u5267\", \"\\u7231\\u60c5\", \"\\u79d1\\u5e7b\", \"\\u52a8\\u753b\", \"\\u5947\\u5e7b\", \"\\u5192\\u9669\"]}, \"id\": \"https:\\/\\/api.douban.com\\/movie\\/27199894\", \"mobile_link\": \"https:\\/\\/m.douban.com\\/movie\\/subject\\/27199894\\/\", \"alt\": \"https:\\/\\/movie.douban.com\\/movie\\/27199894\", \"tags\": [{\"count\": 3534, \"name\": \"\\u52a8\\u753b\"}, {\"count\": 2432, \"name\": \"\\u7f8e\\u56fd\"}, {\"count\": 1605, \"name\": \"2023\"}, {\"count\": 1156, \"name\": \"\\u559c\\u5267\"}, {\"count\": 874, \"name\": \"\\u65e5\\u672c\"}, {\"count\": 827, \"name\": \"\\u5192\\u9669\"}, {\"count\": 750, \"name\": \"\\u7535\\u5f71\"}, {\"count\": 601, \"name\": \"\\u6e38\\u620f\\u6539\\u7f16\"}]}";
+        Console.log(UnicodeUtil.toString(s));
     }
 }

@@ -57,6 +57,11 @@ public class GameUser {
     public int notVote = 0;
 
     /**
+     * 连续弃权轮次
+     */
+    public int abstainedVote = 0;
+
+    /**
      * 本轮投票时间
      */
     public long voteTime = Long.MAX_VALUE;
@@ -69,10 +74,7 @@ public class GameUser {
      * 投票给
      */
     public GameUser toUser;
-    /**
-     * 连续弃权轮次
-     */
-    public int abstainedRound;
+
     /**
      * 游戏结算分
      */

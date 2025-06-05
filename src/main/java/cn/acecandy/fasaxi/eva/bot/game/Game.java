@@ -365,11 +365,11 @@ public class Game {
             if (-1 != toUser) {
                 toMember.beVoted.incrementAndGet();
                 member.toUser = toMember;
-                member.abstainedRound = 0;
-            } else {
+                // member.abstainedRound = 0;
+            } /*else {
                 // 弃权场次+1
                 member.abstainedRound += 1;
-            }
+            }*/
         }
         return ret;
     }
