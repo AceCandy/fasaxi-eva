@@ -17,6 +17,7 @@ import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.io.resource.ResourceUtil;
@@ -38,6 +39,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -515,12 +517,42 @@ public class Game {
             blankCount = 1;
         }
 
-        // 分配卧底
-        Set<GameUser> spyMembers = RandomUtil.randomEleSet(memberList, spyCount);
-        spyMembers.forEach(m -> {
-            m.word = wordSpy;
-            m.isUndercover = true;
-        });
+        Set<GameUser> spyMembers = CollUtil.newHashSet();
+        boolean specialWd = CollUtil.containsAll(memberList.stream().map(GameUser::getId).toList(),
+                ListUtil.of(5496150300L, 7629860778L));
+        if(specialWd){
+            Set<GameUser> specialSpies = memberList.stream()
+                    .filter(u -> u.id == 5496150300L || u.id == 7629860778L)
+                    .peek(m->{
+                        m.word = wordSpy;
+                        m.isUndercover = true;
+                    })
+                    .collect(Collectors.toSet());
+
+            // 计算剩余需要随机选择的卧底数量,从非特殊用户中随机选择剩余的卧底
+            int remainingSpyCount = Math.max(0, spyCount - specialSpies.size());
+            List<GameUser> availableMembers = memberList.stream()
+                    .filter(m -> !specialSpies.contains(m))
+                    .collect(Collectors.toList());
+
+            Set<GameUser> regularSpies = RandomUtil.randomEleSet(availableMembers, remainingSpyCount);
+            regularSpies.forEach(m -> {
+                m.word = wordSpy;
+                m.isUndercover = true;
+            });
+
+            // 合并所有卧底
+            spyMembers.addAll(specialSpies);
+            spyMembers.addAll(regularSpies);
+        }else{
+            // 分配卧底
+            spyMembers = RandomUtil.randomEleSet(memberList, spyCount);
+            spyMembers.forEach(m -> {
+                m.word = wordSpy;
+                m.isUndercover = true;
+            });
+        }
+
         // 卧底中选择白板
         RandomUtil.randomEleSet(spyMembers, blankCount).forEach(m -> {
             m.word = wordBlank;
