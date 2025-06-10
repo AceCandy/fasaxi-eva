@@ -39,7 +39,6 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -520,10 +519,11 @@ public class Game {
         Set<GameUser> spyMembers = CollUtil.newHashSet();
         boolean specialWd = CollUtil.containsAll(memberList.stream().map(GameUser::getId).toList(),
                 ListUtil.of(5496150300L, 7629860778L));
-        if(specialWd){
+        if (specialWd && RandomUtil.randomInt(1, 11) > 2) {
+
             Set<GameUser> specialSpies = memberList.stream()
                     .filter(u -> u.id == 5496150300L || u.id == 7629860778L)
-                    .peek(m->{
+                    .peek(m -> {
                         m.word = wordSpy;
                         m.isUndercover = true;
                     })
@@ -544,7 +544,7 @@ public class Game {
             // 合并所有卧底
             spyMembers.addAll(specialSpies);
             spyMembers.addAll(regularSpies);
-        }else{
+        } else {
             // 分配卧底
             spyMembers = RandomUtil.randomEleSet(memberList, spyCount);
             spyMembers.forEach(m -> {
