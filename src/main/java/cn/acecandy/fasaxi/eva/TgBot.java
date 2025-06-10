@@ -158,7 +158,7 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
      * @param message 消息
      */
     private void processSpeak(Message message) {
-        if (!TgUtil.isGroupMsg(message)) {
+        if (!TgUtil.isGroupMsg(message) || message.isCommand()) {
             return;
         }
         try {
