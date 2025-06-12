@@ -519,7 +519,7 @@ public class Game {
         Set<GameUser> spyMembers = CollUtil.newHashSet();
         boolean specialWd = CollUtil.containsAll(memberList.stream().map(GameUser::getId).toList(),
                 ListUtil.of(5496150300L, 7629860778L));
-        if (specialWd && RandomUtil.randomInt(1, 11) > 2) {
+        if (size > 6 && specialWd && RandomUtil.randomInt(1, 11) > 2) {
 
             Set<GameUser> specialSpies = memberList.stream()
                     .filter(u -> u.id == 5496150300L || u.id == 7629860778L)
