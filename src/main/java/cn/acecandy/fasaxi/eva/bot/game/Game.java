@@ -893,17 +893,17 @@ public class Game {
         String boomStr = "";
         if (surviveNum == 3) {
             member.fraction += 5;
-            boomStr += "<b> +5</b>";
+            boomStr += "<b> (+5)</b>";
             stringBuilder.append(GAME_OVER_BOOM_SPACE3);
         } else {
             if (noSpaceSurviveNum == 0 && noSpaceNum > 0) {
                 member.fraction += 4;
-                boomStr += "<b> + 4</b>";
+                boomStr += "<b> (+4)</b>";
                 stringBuilder.append(GAME_OVER_BOOM_SPACE);
             }
             if (noSpaceNum > 0 && noSpaceNum == noSpaceSurviveNum) {
                 member.fraction -= 1;
-                boomStr += "<b> -1</b>";
+                boomStr += "<b> (-1)</b>";
                 stringBuilder.append(GAME_OVER_BOOM_SPACE2);
             }
         }
