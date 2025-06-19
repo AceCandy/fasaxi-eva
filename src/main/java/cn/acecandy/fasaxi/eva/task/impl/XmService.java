@@ -24,6 +24,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_OWNER;
@@ -163,9 +164,9 @@ public class XmService {
         List<Long> tgIds = embyList.stream().map(Emby::getTg).toList();
         // 剔除含有门人的tgId
         List<XInvite> xInvites = xInviteDao.findInviteeByInviter(tgIds);
-        List<Long> inviteeTgIds = xInvites.stream().filter(x ->
+        Set<Long> inviteeTgIds = xInvites.stream().filter(x ->
                         DateUtil.betweenDay(DateUtil.date(), x.getJoinTime(), false) < 22)
-                .map(XInvite::getInviterId).toList();
+                .map(XInvite::getInviterId).collect(Collectors.toSet());
 
         // 剔除7天内参加过游戏的tgId
         Set<Long> activeTgIds = wodiUserLogDao.findOnTgIdSevenDay();
