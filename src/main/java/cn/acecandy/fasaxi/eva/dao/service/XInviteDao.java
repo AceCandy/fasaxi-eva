@@ -113,11 +113,21 @@ public class XInviteDao {
      * @return {@link XInvite }
      */
     public List<XInvite> findInviteeByInviter(Long tgId) {
-        if (null == tgId) {
+        return findInviteeByInviter(CollUtil.newArrayList(tgId));
+    }
+
+    /**
+     * 查询门人名单
+     *
+     * @param tgIds 网址
+     * @return {@link XInvite }
+     */
+    public List<XInvite> findInviteeByInviter(List<Long> tgIds) {
+        if (CollUtil.isEmpty(tgIds)) {
             return CollUtil.newArrayList();
         }
         LambdaQueryWrapper<XInvite> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(XInvite::getInviterId, tgId)
+        wrapper.in(XInvite::getInviterId, tgIds)
                 .isNotNull(XInvite::getInviteeId)
                 .orderByAsc(XInvite::getCreateTime);
         ;

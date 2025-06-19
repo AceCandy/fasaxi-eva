@@ -60,4 +60,16 @@ public class EmbyDao {
         }
         return CollUtil.getFirst(findByTgId(CollUtil.newArrayList(telegramId)));
     }
+
+    /**
+     * 查找有号账户
+     *
+     * @return {@link List }<{@link Emby }>
+     */
+    public List<Emby> findOnHasAccount() {
+        LambdaQueryWrapper<Emby> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Emby::getLv, CollUtil.newArrayList("a", "b", "c"))
+        ;
+        return embyMapper.selectList(wrapper);
+    }
 }

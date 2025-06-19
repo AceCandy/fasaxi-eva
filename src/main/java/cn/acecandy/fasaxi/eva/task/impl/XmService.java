@@ -1,48 +1,40 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
-import cn.acecandy.fasaxi.eva.bot.game.Game;
-import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
-import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
-import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.entity.XRenew;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
+import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
 import cn.acecandy.fasaxi.eva.dao.service.XRenewDao;
-import cn.acecandy.fasaxi.eva.utils.GameListUtil;
-import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
-import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.collection.IterUtil;
-import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.Console;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.User;
-import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
 import java.util.stream.IntStream;
 
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
-import static cn.acecandy.fasaxi.eva.common.enums.GameStatus.讨论时间;
-import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.GAME_SPEAK_CNT;
-import static cn.acecandy.fasaxi.eva.utils.GlobalUtil.RANK_CACHE;
-import static cn.hutool.core.text.CharSequenceUtil.EMPTY;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_OWNER;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_PRIVATE;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_XRENEW_CREATE;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_XRENEW_USE;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_XRENEW_USED;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_CREATE_ERROR;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_CREATE_SUCC;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_USE_ERROR;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_USE_SUCC;
 
 /**
  * 续命码相关 实现
@@ -60,6 +52,10 @@ public class XmService {
     private EmbyDao embyDao;
     @Resource
     private XRenewDao xRenewDao;
+    @Resource
+    private XInviteDao xInviteDao;
+    @Resource
+    private WodiUserLogDao wodiUserLogDao;
 
     public final static String 使用续命码 = "/xm_use";
     public final static String 生成续命码 = "/xm_create";
@@ -156,5 +152,44 @@ public class XmService {
         tgService.sendMsg(userId.toString(), StrUtil.format(XRENEW_USE_SUCC, xRenew.getCode(), xRenew.getIv()));
 
         log.warn("[续命码使用] 用户: {}, 续命码: {}, 奖励: {}", TgUtil.tgName(message.getFrom()), xRenew.getCode(), xRenew.getIv());
+    }
+
+    @SneakyThrows
+    public void bleedBuff() {
+        List<Emby> embyList = embyDao.findOnHasAccount();
+        if (CollUtil.isEmpty(embyList)) {
+            return;
+        }
+        List<Long> tgIds = embyList.stream().map(Emby::getTg).toList();
+        // 剔除含有门人的tgId
+        List<XInvite> xInvites = xInviteDao.findInviteeByInviter(tgIds);
+        List<Long> inviteeTgIds = xInvites.stream().filter(x ->
+                        DateUtil.betweenDay(DateUtil.date(), x.getJoinTime(), false) < 22)
+                .map(XInvite::getInviterId).toList();
+
+        // 剔除7天内参加过游戏的tgId
+        Set<Long> activeTgIds = wodiUserLogDao.findOnTgIdSevenDay();
+        activeTgIds.addAll(inviteeTgIds);
+
+        // 找到不活跃账号
+        List<Long> inactiveTgIds = CollUtil.subtractToList(tgIds, activeTgIds);
+        List<Emby> inactiveEmbyList = embyList.stream()
+                .filter(emby -> CollUtil.contains(inactiveTgIds, emby.getTg()))
+                .toList();
+        inactiveEmbyList.forEach(emby -> {
+            int iv = RandomUtil.randomInt(2, 5);
+            if (emby.getIv() >= 500) {
+                iv += RandomUtil.randomInt(1, 6);
+            }
+            if (emby.getIv() >= 1500) {
+                iv += RandomUtil.randomInt(1, 6);
+            }
+            if (emby.getIv() >= 4000) {
+                iv += RandomUtil.randomInt(1, 6);
+            }
+            embyDao.upIv(emby.getTg(), -iv);
+            log.warn("[🩸] 用户: {}, 减少: {}", emby.getTg(), -iv);
+        });
+
     }
 }

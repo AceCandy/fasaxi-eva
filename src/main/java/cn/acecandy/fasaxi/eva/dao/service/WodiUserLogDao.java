@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.CURRENT_SEASON;
 
@@ -114,6 +116,22 @@ public class WodiUserLogDao {
                 // 大于等于昨天的开始时间 小于等于昨天的结束时间
                 .between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(date), DateUtil.endOfDay(date));
         return wodiUserLogMapper.selectList(wrapper);
+    }
+
+    /**
+     * 查询七天内有活跃的用户
+     *
+     * @return {@link WodiUserLog }
+     */
+    public Set<Long> findOnTgIdSevenDay() {
+        DateTime yesterday = DateUtil.yesterday();
+        DateTime sevenDay = DateUtil.offsetDay(yesterday, -6);
+        LambdaQueryWrapper<WodiUserLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(sevenDay),
+                DateUtil.endOfDay(yesterday));
+        // 大于等于昨天的开始时间 小于等于昨天的结束时间
+        return wodiUserLogMapper.selectList(wrapper).stream()
+                .map(WodiUserLog::getTelegramId).collect(Collectors.toSet());
     }
 
     /**
