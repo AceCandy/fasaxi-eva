@@ -102,6 +102,10 @@ public class CcService {
         }
 
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
+        if (null == wodiUser) {
+            tgService.sendMsg(chatId, "本赛季您没有参加过游戏，没有传承机会", 5 * 1000);
+            return;
+        }
         Integer lv = WdUtil.scoreToLv(wodiUser.getFraction());
         if (lv < 1) {
             tgService.sendMsg(chatId, "您没有创建传承邀请的资格，请升级后再来", 5 * 1000);
