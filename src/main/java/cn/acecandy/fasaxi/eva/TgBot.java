@@ -183,7 +183,7 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             return;
         }
         GameUser member = game.getMember(message.getFrom().getId());
-        if (null == member) {
+        if (null == member || !member.survive) {
             return;
         }
         tgService.sendMsg(message.getMessageId(), message.getChatId() + "",
