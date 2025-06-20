@@ -657,7 +657,7 @@ public class Game {
         // 小于8人 -2分
         member.fraction += memberList.size() < 8 ? -2 : 0;
         // 每回合+1分
-        member.fraction += member.round;
+        member.fraction += Math.min(member.round, 6);
         // 房主
         boolean isOwner = member.id.equals(homeOwner.getId());
 
