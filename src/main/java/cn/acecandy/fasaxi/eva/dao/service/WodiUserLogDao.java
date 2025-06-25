@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -119,7 +120,7 @@ public class WodiUserLogDao {
     }
 
     /**
-     * 查询七天内有活跃的用户
+     * 查询七天内有活跃（三条记录）的用户
      *
      * @return {@link WodiUserLog }
      */
@@ -130,8 +131,13 @@ public class WodiUserLogDao {
         wrapper.between(WodiUserLog::getCreateTime, DateUtil.beginOfDay(sevenDay),
                 DateUtil.endOfDay(yesterday));
         // 大于等于昨天的开始时间 小于等于昨天的结束时间
+        /*return wodiUserLogMapper.selectList(wrapper).stream()
+                .map(WodiUserLog::getTelegramId).collect(Collectors.toSet());*/
         return wodiUserLogMapper.selectList(wrapper).stream()
-                .map(WodiUserLog::getTelegramId).collect(Collectors.toSet());
+                .collect(Collectors.groupingBy(WodiUserLog::getTelegramId, Collectors.counting()))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue() >= 3)
+                .map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
     /**
