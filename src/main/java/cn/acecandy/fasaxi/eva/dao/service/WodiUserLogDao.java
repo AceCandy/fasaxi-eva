@@ -136,7 +136,7 @@ public class WodiUserLogDao {
         return wodiUserLogMapper.selectList(wrapper).stream()
                 .collect(Collectors.groupingBy(WodiUserLog::getTelegramId, Collectors.counting()))
                 .entrySet().stream()
-                .filter(entry -> entry.getValue() >= 3)
+                .filter(entry -> entry.getValue() >= 2)
                 .map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
