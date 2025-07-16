@@ -10,6 +10,7 @@ import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
+import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -357,5 +358,18 @@ public class WdService {
         } else {
             game.speak(message, text);
         }
+    }
+
+    /**
+     * 游戏讨论
+     *
+     * @param message 消息
+     */
+    public void needDel(Message message) {
+        String text = message.getText();
+        if (!StrUtil.containsAny(text, "#WodiInfo ", "#WodiRank ", "#WodiTop ", "#WodiRealRank ")) {
+            return;
+        }
+        MsgDelUtil.addAutoDelMsg(message, 10 * 1000);
     }
 }

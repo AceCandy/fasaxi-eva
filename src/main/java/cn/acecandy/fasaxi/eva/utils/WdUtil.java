@@ -199,6 +199,7 @@ public final class WdUtil extends WdSubUtil {
                     lvToTitle(w.getLevel()) + "·之王").toList());
             recordTxt = recordTxt.replace("无头衔", title);
         }
+        recordTxt += StrUtil.format("\n#WodiInfo {}", DateUtil.now());
         // }
         return recordTxt;
     }

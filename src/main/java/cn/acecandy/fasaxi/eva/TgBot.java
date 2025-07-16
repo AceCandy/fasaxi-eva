@@ -98,6 +98,8 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             handleCallbackQuery(callback);
         } else if (joinRequest != null) {
             handleChatJoinRequest(joinRequest);
+        }else{
+            handleOtherMsg(msg);
         }
     }
 
@@ -111,6 +113,15 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
         checkGroupAuth(message);
         processCommand(message);
         processSpeak(message);
+    }
+
+    /**
+     * 处理传入消息
+     *
+     * @param message 消息
+     */
+    private void handleOtherMsg(Message message) {
+        wdService.needDel(message);
     }
 
     /**
@@ -162,6 +173,7 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             return;
         }
         try {
+            wdService.needDel(message);
             gameService.speak(message);
             wdService.speak(message);
         } finally {
