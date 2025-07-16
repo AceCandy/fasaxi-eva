@@ -113,6 +113,7 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
         checkGroupAuth(message);
         processCommand(message);
         processSpeak(message);
+        wdService.needDel(message);
     }
 
     /**
@@ -173,7 +174,6 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             return;
         }
         try {
-            wdService.needDel(message);
             gameService.speak(message);
             wdService.speak(message);
         } finally {
