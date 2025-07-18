@@ -31,7 +31,7 @@ public class PowerRankTask {
             log.error("执行异常-战力统计 ", e);
         }
         try {
-            xmService.bleedBuff();
+            // xmService.bleedBuff();
         } catch (Exception e) {
             log.error("执行异常-🩸buff ", e);
         }

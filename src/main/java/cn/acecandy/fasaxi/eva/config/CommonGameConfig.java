@@ -15,6 +15,22 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class CommonGameConfig {
     /**
+     * 群门
+     */
+    private Gx groupDoor;
+    /**
+     * 卧底
+     */
+    private Gx wd;
+    /**
+     * 传承
+     */
+    private Gx cc;
+    /**
+     * 续命
+     */
+    private Gx xm;
+    /**
      * 看图猜番号
      */
     private Gx ktcfh;

@@ -51,10 +51,10 @@ public interface GameTextConstants {
                       9. <b>飞升规则</b>：游戏积分达到一定数值后可以飞升，飞升后可以获得大量Dmail奖励，并能提供Dmail增益Buff。
                       
                       /wd 创建游戏（10Dmail 成功开局后扣取）
-                      /wd_info 查看自身游戏积分记录（5Dmail）
+                      /wd_checkin 签到并查看个人信息（5Dmail）
                       /wd_rank 开启积分榜（10Dmail）
-                      /wd_real_rank Top战力榜(累计至昨日)（15Dmail）
-                      /wd_top 开启霸王榜（10Dmail）
+                      /wd_real_rank 开启战力榜(累计至昨日)（15Dmail）
+                      /wd_top 开启登顶霸王榜（3Dmail）
                       /wd_exit 关闭游戏（3Dmail）
                       """;
     String SPEAK_TIME_LIMIT = "当前还差<b>{}</b>条发言才可以开启游戏哦🤣！";
@@ -75,6 +75,27 @@ public interface GameTextConstants {
                         🕯️ <b>头衔</b>：无头衔
                         
                         """;
+    String CHECKIN_RECORD_TXT = """
+                                
+                                📍 <b>境界：{level}</b>
+                                🔹 <b>{userName}</b>
+                                🧊 <b>战力：{power} (排名：{rankIndex})</b>
+                                
+                                ┌─详细属性
+                                ┊
+                                ┊ 🎮 竞技积分：{fraction} / {completeGame}场
+                                ┊ 🤵 平民场次：{word_people_victory} / {word_people} ({people_percentage})
+                                ┊ ⛄️ 卧底场次：{word_spy_victory} / {word_spy} ({spy_percentage})
+                                ┊ 💎 流通货币：{dm} Dmail
+                                ┊ 🎖 额外加成：无加成
+                                ┊ 🕯 头衔：无头衔
+                                
+                                ├─传承名单
+                                ┊
+                                ┊ 🍂 秋风萧瑟，您还没有传承弟子
+                                └───────────────
+                                
+                                """;
     String RANK = "\n<b>▎无限远点的牵牛星 🏷 S{}赛季·积分榜 ♪</b>\n\n";
     String REAL_RANK = "\n<b>▎交叉坐标的星辰 🏷 S{}赛季·战力榜 ♪</b>\n\n";
     String TOP_TITLE = "\n<b>▎{} 🏷 S{}赛季·霸王榜 ♪</b>\n\n";
@@ -230,6 +251,15 @@ public interface GameTextConstants {
                          {list}
                          """;
     String INVITE_SINGLE = "{}(<b>当日累计: {}</b>)\t\t加入时间:{} \n";
+    String CHECKIN_INVITE_SINGLE = "┊ {}(<b>当日累计: {}</b>) \n";
+    String CHECKIN_INFO = """
+                          ├─签到成功｜收益详情
+                          ┊
+                          ┊ <b>{baseIv}</b><i>（随机基础）</i>
+                          ┊ <b>{gameIv}</b><i>（游戏等级）</i>
+                          ┊ <b>{inheritIv}</b><i>（传承收益）</i>
+                          └───────────────
+                          """;
     String INVITE_COLLECT = "🎉 你的传承弟子们昨日非常用功，你不禁抚须大笑，Dmail+<b>{}</b> \n";
     String INVITE_COLLECT2 = "🤔 你的传承弟子们都在闭关，宗门竟只你一人好像闲着，Dmail+<b>{}</b> \n";
     String INVITE_HELP = """
@@ -242,7 +272,6 @@ public interface GameTextConstants {
                          5. 门主可以通过指令获取弟子(未出师)名单，并且获取到传承弟子昨日游戏表现对应的Dmail奖励(每日一次)。
                          
                          /cc_inv 创建传承邀请（200Dmail）
-                         /cc_info 查看弟子(未出师)名单/领取昨日弟子奖励
                          /cc_help 召唤出当前帮助
                          """;
 }

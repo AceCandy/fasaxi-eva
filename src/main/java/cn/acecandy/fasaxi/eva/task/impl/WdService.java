@@ -5,21 +5,29 @@ import cn.acecandy.fasaxi.eva.common.enums.GameStatus;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiUserLog;
+import cn.acecandy.fasaxi.eva.dao.entity.XInvite;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
+import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutableTriple;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
@@ -55,10 +63,15 @@ public class WdService {
     @Resource
     private WodiTopDao wodiTopDao;
     @Resource
+    private XInviteDao xInviteDao;
+    @Resource
+    private WodiUserLogDao wodiUserLogDao;
+    @Resource
     private PowerRankService powerRankService;
 
     private final static String 新建游戏 = "/wd";
-    private final static String 个人信息 = "/wd_info";
+    private final static String 信息签到 = "/wd_checkin";
+    // private final static String 个人信息 = "/wd_info";
     private final static String 积分排行 = "/wd_rank";
     private final static String 战力排行 = "/wd_real_rank";
     private final static String 大佬榜单 = "/wd_top";
@@ -71,13 +84,15 @@ public class WdService {
     public void process(String cmd, Message message) {
         String chatId = message.getChatId().toString();
         Long userId = message.getFrom().getId();
+        tgService.delMsg(message);
         if (!TgUtil.isGroupMsg(message) && !CollUtil.contains(tgService.getAdmins(), userId)) {
             tgService.sendMsg(chatId, TIP_IN_GROUP, 10 * 1000);
             return;
         }
         switch (cmd) {
             case 新建游戏 -> handleNewGameCommand(message.getFrom(), message.getChat());
-            case 个人信息 -> handleRecordCommand(chatId, userId);
+            case 信息签到 -> handleCheckinCommand(chatId, userId);
+            // case 个人信息 -> handleRecordCommand(chatId, userId);
             case 积分排行 -> handleRankCommand(chatId, userId);
             case 战力排行 -> handleRealRankCommand(chatId, userId);
             case 大佬榜单 -> handleTopCommand(chatId, userId, message.getText());
@@ -89,12 +104,87 @@ public class WdService {
     }
 
     /**
+     * 处理 信息签到
+     *
+     * @param chatId 聊天id
+     * @param userId 用户id
+     */
+    public void handleCheckinCommand(String chatId, Long userId) {
+        WodiUser user = wodiUserDao.findByTgId(userId);
+        Emby embyUser = embyDao.findByTgId(userId);
+        if (user == null || embyUser == null) {
+            tgService.sendMsg(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
+            return;
+        }
+        Integer costIv = 5;
+        if (embyUser.getIv() < costIv) {
+            tgService.sendMsg(chatId, "您的Dmail不足，无法查看个人信息", 5 * 1000);
+            return;
+        }
+        if (!CollUtil.contains(tgService.getAdmins(), userId)) {
+            embyDao.upIv(userId, -costIv);
+        }
+        List<WodiTop> wodiTops = wodiTopDao.selectByTgId(userId);
+        Map<Long, Integer> topMap = powerRankService.findTopByCache();
+
+        // 查询弟子名单 小于21天为未出师弟子（计算22天是为了取昨日）
+        List<XInvite> xInvites = xInviteDao.findInviteeByInviter(userId);
+        xInvites = xInvites.stream().filter(x ->
+                DateUtil.betweenDay(DateUtil.date(), x.getJoinTime(), false) < 22).toList();
+        // 获取昨日弟子表现
+        List<Long> yesInviteeIds = xInvites.stream().filter(x -> x.getCollectTime() == null
+                        || DateUtil.compare(x.getCollectTime(), DateUtil.yesterday()) < 0)
+                .map(XInvite::getInviteeId).toList();
+        Map<Long, Integer> ivMap = wodiUserLogDao.findByTgIdYesterday(yesInviteeIds).stream()
+                .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
+                        Collectors.summingInt(bean ->
+                                (int) (bean.getFraction() * 0.5 + bean.getTiv() * 0.2))
+                ));
+        // 今日累计展示
+        List<Long> inviteeIds = xInvites.stream().map(XInvite::getInviteeId).toList();
+        Map<Long, WodiUser> embyMap = wodiUserDao.findByTgId(inviteeIds).stream().collect(
+                Collectors.toMap(WodiUser::getTelegramId, v -> v, (k1, k2) -> k2));
+        Map<Long, Integer> newIvMap = wodiUserLogDao.findByTgIdToday(inviteeIds).stream()
+                .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
+                        Collectors.summingInt(bean ->
+                                (int) (bean.getFraction() * 0.5 + bean.getTiv() * 0.2))
+                ));
+        MutableTriple<Integer, Integer, Integer> ivTriple = null;
+        if (null == embyUser.getCh() || !DateUtil.isSameDay(embyUser.getCh(), DateUtil.date())) {
+            ivTriple = new MutableTriple<>(0, 0, 0);
+            // 随机基础base
+            ivTriple.setLeft(RandomUtil.randomInt(0, 10));
+            // 游戏加成
+            ivTriple.setMiddle(WdUtil.scoreToLv(user.getFraction()));
+            // 发放弟子奖励
+            if (MapUtil.isNotEmpty(ivMap)) {
+                xInviteDao.updateCollectTime(yesInviteeIds, DateUtil.yesterday());
+                int ivTotal = ivMap.values().stream().mapToInt(v -> v).sum();
+                ivTotal = ivTotal > 0 ? ivTotal : yesInviteeIds.size();
+                ivTriple.setRight(ivTotal);
+            }
+            embyDao.upIv(userId, ivTriple.left + ivTriple.middle + ivTriple.right);
+            embyDao.checkIn(userId);
+            embyUser.setIv(embyUser.getIv() + ivTriple.left + ivTriple.middle + ivTriple.right);
+        }
+
+        SendPhoto sendPhoto = SendPhoto.builder()
+                .chatId(chatId).caption(WdUtil.getCheckRecord(user, embyUser, wodiTops, topMap,
+                        xInvites, embyMap, newIvMap, ivTriple))
+                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
+                        "static/pic/s{}/lv{}.webp", CURRENT_SEASON, WdUtil.scoreToLv(user.getFraction()))),
+                        "谁是卧底个人信息"))
+                .build();
+        tgService.sendPhoto(sendPhoto, 300 * 1000);
+    }
+
+    /**
      * 处理 个人记录
      *
      * @param chatId 聊天id
      * @param userId 用户id
      */
-    private void handleRecordCommand(String chatId, Long userId) {
+    public void handleRecordCommand(String chatId, Long userId) {
         WodiUser user = wodiUserDao.findByTgId(userId);
         Emby embyUser = embyDao.findByTgId(userId);
         if (user == null || embyUser == null) {

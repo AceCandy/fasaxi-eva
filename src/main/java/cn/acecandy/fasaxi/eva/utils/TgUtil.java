@@ -343,6 +343,32 @@ public final class TgUtil {
         return true;
     }
 
+    /**
+     * 用户加入消息
+     *
+     * @param msg 味精
+     * @return boolean
+     */
+    public static boolean isNewMember(Message msg) {
+        if (null == msg || CollUtil.isEmpty(msg.getNewChatMembers())) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 用户离开消息
+     *
+     * @param msg 味精
+     * @return boolean
+     */
+    public static boolean isLeftMember(Message msg) {
+        if (null == msg || null == msg.getLeftChatMember()) {
+            return false;
+        }
+        return true;
+    }
+
     public static void main(String[] args) {
         Console.log(extractCommand("/wd_rank@WorldLineGame_bot 123", "WorldLineGame_bot"));
         Console.log(extractCommand("/wd_rank@WorldLi", "WorldLineGame_bot"));

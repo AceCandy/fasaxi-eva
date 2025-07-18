@@ -17,6 +17,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutableTriple;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.math.BigDecimal;
@@ -201,6 +202,72 @@ public final class WdUtil extends WdSubUtil {
         }
         recordTxt += StrUtil.format("\n#WodiInfo {}", DateUtil.now());
         // }
+        return recordTxt;
+    }
+
+    public static String getCheckRecord(WodiUser user, Emby embyUser, List<WodiTop> wodiTops,
+                                        Map<Long, Integer> topMap, List<XInvite> xInvites,
+                                        Map<Long, WodiUser> embyMap, Map<Long, Integer> ivMap,
+                                        MutableTriple<Integer, Integer, Integer> ivTriple) {
+        int rankIndex = findRankIndex(user.getTelegramId(), topMap);
+        Integer completeGame = NumberUtil.nullToZero(user.getCompleteGame());
+        Integer wordPeople = NumberUtil.nullToZero(user.getWordPeople());
+        Integer wordSpy = NumberUtil.nullToZero(user.getWordSpy());
+        Integer wordPeopleVictory = NumberUtil.nullToZero(user.getWordPeopleVictory());
+        Integer wordSpyVictory = NumberUtil.nullToZero(user.getWordSpyVictory());
+        String recordTxt = CHECKIN_RECORD_TXT
+                .replace("{userName}", TgUtil.tgNameOnUrl(user))
+                .replace("{power}", MapUtil.getStr(topMap, user.getTelegramId(), "0"))
+                .replace("{rankIndex}", rankIndex > 0 ? rankIndex + "" : "无")
+                .replace("{completeGame}", completeGame + "")
+                .replace("{word_people}", wordPeople + "")
+                .replace("{word_spy}", wordSpy + "")
+                .replace("{word_people_victory}", wordPeopleVictory + "")
+                .replace("{word_spy_victory}", wordSpyVictory + "")
+                .replace("{people_percentage}", NumberUtil.formatPercent(
+                        wordPeopleVictory / NumberUtil.toDouble(wordPeople), 1))
+                .replace("{spy_percentage}", NumberUtil.formatPercent(
+                        wordSpyVictory / NumberUtil.toDouble(wordSpy), 1))
+                .replace("{fraction}", user.getFraction() + "")
+                .replace("{level}", scoreToTitle(user.getFraction()))
+                .replace("{dm}", embyUser.getIv() + "");
+        if (StrUtil.equals(embyUser.getLv(), "e")) {
+            recordTxt = recordTxt.replace("Dmail", "Email");
+        }
+        Integer level = scoreToLv(user.getFraction());
+        String jiaCheng = getRankBuffStr(level, wodiTops, rankIndex);
+        if (StrUtil.isNotBlank(jiaCheng)) {
+            recordTxt = recordTxt.replace("无加成", jiaCheng);
+        }
+        if (CollUtil.isNotEmpty(wodiTops)) {
+            String title = StrUtil.join("、", wodiTops.stream().map(w ->
+                    lvToTitle(w.getLevel()) + "·之王").toList());
+            recordTxt = recordTxt.replace("无头衔", title);
+        }
+
+        if (CollUtil.isNotEmpty(xInvites)) {
+            StringBuilder rankFinal = new StringBuilder();
+            xInvites.forEach(x -> {
+                WodiUser wdUser = embyMap.get(x.getInviteeId());
+                String inviteeName = TgUtil.tgNameOnUrl(wdUser);
+                if (StrUtil.isBlank(inviteeName)) {
+                    inviteeName = x.getInviteeId().toString();
+                }
+                Integer iv = ivMap.getOrDefault(x.getInviteeId(), 0);
+                String inviteeStr = StrUtil.format(CHECKIN_INVITE_SINGLE, inviteeName, iv);
+                rankFinal.append(inviteeStr);
+            });
+            recordTxt = recordTxt.replace("┊ 🍂 秋风萧瑟，您还没有传承弟子", rankFinal);
+        }
+        if (null != ivTriple) {
+            // 签到逻辑
+            recordTxt += CHECKIN_INFO.replace("{baseIv}", StrUtil.toString(ivTriple.left))
+                    .replace("{gameIv}", StrUtil.toString(ivTriple.middle))
+                    .replace("{inheritIv}", StrUtil.toString(ivTriple.right))
+            ;
+        }
+
+        recordTxt += StrUtil.format("\n#WodiInfo {}", DateUtil.now());
         return recordTxt;
     }
 

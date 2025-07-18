@@ -2,6 +2,7 @@ package cn.acecandy.fasaxi.eva.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.Date;
@@ -12,6 +13,7 @@ import java.util.Date;
  * @author AceCandy
  * @since 2024/10/29
  */
+@Builder
 @Data
 public class Emby {
 
@@ -31,7 +33,7 @@ public class Emby {
     @Schema(name = "安全码")
     private String pwd2;
 
-    @Schema(name = "a-白名单 b-正常用户 c-禁用 d-删除账号")
+    @Schema(name = "a-白名单 b-正常用户 c-禁用 d-删除账号 e-外门")
     private String lv;
 
     @Schema(name = "创建时间")

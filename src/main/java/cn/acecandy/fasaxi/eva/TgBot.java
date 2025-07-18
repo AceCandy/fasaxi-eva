@@ -5,7 +5,12 @@ import cn.acecandy.fasaxi.eva.bot.game.Game;
 import cn.acecandy.fasaxi.eva.bot.game.GameEvent;
 import cn.acecandy.fasaxi.eva.bot.game.GameUser;
 import cn.acecandy.fasaxi.eva.common.ex.BaseException;
+import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.config.EmbyBossConfig;
+import cn.acecandy.fasaxi.eva.dao.entity.Emby;
+import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
+import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.task.impl.CcService;
 import cn.acecandy.fasaxi.eva.task.impl.GameService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
@@ -20,6 +25,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
@@ -27,7 +33,10 @@ import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateC
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+
+import java.util.List;
 
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.NO_AUTH_GROUP;
 import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.WARNING_EDIT;
@@ -60,6 +69,12 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
     public CcService ccService;
     @Resource
     public XmService xmService;
+    @Resource
+    public CommonGameConfig commonGameConfig;
+    @Autowired
+    private EmbyDao embyDao;
+    @Autowired
+    private WodiUserDao wodiUserDao;
 
     @Override
     public String getBotToken() {
@@ -90,7 +105,11 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
         ChatJoinRequest joinRequest = update.getChatJoinRequest();
         CallbackQuery callback = update.getCallbackQuery();
 
-        if (TgUtil.isMessageValid(msg)) {
+        if (TgUtil.isNewMember(msg) && commonGameConfig.getGroupDoor().getEnable()) {
+            handleNewMember(msg);
+        } else if (TgUtil.isLeftMember(msg) && commonGameConfig.getGroupDoor().getEnable()) {
+            handleLeftMember(msg);
+        } else if (TgUtil.isMessageValid(msg)) {
             handleMsg(msg);
         } else if (editMsg != null) {
             handleEditMsg(editMsg);
@@ -98,11 +117,41 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             handleCallbackQuery(callback);
         } else if (joinRequest != null) {
             handleChatJoinRequest(joinRequest);
-        }else{
+        } else {
             handleOtherMsg(msg);
         }
     }
 
+    /**
+     * 处理新加入成员
+     *
+     * @param message 消息
+     */
+    private void handleNewMember(Message message) {
+        List<User> newUsers = message.getNewChatMembers();
+        newUsers.forEach(user -> {
+            Emby emby = embyDao.findByTgId(user.getId());
+            int iv = 0;
+            if (emby != null && StrUtil.equals(emby.getLv(), "e")) {
+                WodiUser wodi = wodiUserDao.findByTgId(user.getId());
+                iv = (int) ((emby.getIv() + 3 * wodi.getFraction()) * 0.1);
+            }
+            embyDao.init(user.getId(), iv);
+        });
+    }
+
+    /**
+     * 处理离开成员
+     *
+     * @param message 消息
+     */
+    private void handleLeftMember(Message message) {
+        User user = message.getLeftChatMember();
+        if (null == user) {
+            return;
+        }
+        embyDao.destory(user.getId());
+    }
 
     /**
      * 处理传入消息
@@ -154,10 +203,22 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
         }
         String cmd = TgUtil.extractCommand(message.getText(), tgService.getBotUsername());
         if (CommandUtil.isWdCommand(cmd)) {
+            if (!commonGameConfig.getWd().getEnable()) {
+                tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);
+                return;
+            }
             wdService.process(cmd, message);
         } else if (CommandUtil.isCcCommand(cmd)) {
+            if (!commonGameConfig.getCc().getEnable()) {
+                tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);
+                return;
+            }
             ccService.process(cmd, message);
         } else if (CommandUtil.isXmCommand(cmd)) {
+            if (!commonGameConfig.getXm().getEnable()) {
+                tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);
+                return;
+            }
             xmService.process(cmd, message);
         } else {
             command.process(cmd, message);

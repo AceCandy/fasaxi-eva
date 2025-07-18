@@ -1,5 +1,6 @@
 package cn.acecandy.fasaxi.eva.task.impl;
 
+import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiTop;
 import cn.acecandy.fasaxi.eva.dao.entity.WodiUser;
@@ -65,15 +66,18 @@ public class CcService {
     @Resource
     private WodiUserLogDao wodiUserLogDao;
 
+    @Resource
+    private CommonGameConfig commonGameConfig;
+
     public final static String 生成传承邀请 = "/cc_inv";
-    public final static String 获取传承名单 = "/cc_info";
+    // public final static String 获取传承名单 = "/cc_info";
     public final static String 传承帮助 = "/cc_help";
 
     @Transactional(rollbackFor = Exception.class)
     public void process(@NotNull String cmd, Message message) {
         switch (cmd) {
             case 生成传承邀请 -> xInvite(message);
-            case 获取传承名单 -> xInviteList(message);
+            // case 获取传承名单 -> xInviteList(message);
             case 传承帮助 -> tgService.sendMsg(message.getChatId().toString(), INVITE_HELP, 300 * 1000);
             default -> {
             }

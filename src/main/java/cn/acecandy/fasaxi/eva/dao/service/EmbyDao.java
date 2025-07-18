@@ -3,6 +3,7 @@ package cn.acecandy.fasaxi.eva.dao.service;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.mapper.EmbyMapper;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
@@ -23,6 +24,30 @@ public class EmbyDao {
 
     @Resource
     private EmbyMapper embyMapper;
+
+    public void init(Long telegramId, Integer iv) {
+        if (null == telegramId) {
+            return;
+        }
+        Emby emby = Emby.builder().tg(telegramId).iv(iv).build();
+        embyMapper.insertOrUpdate(emby);
+    }
+
+    public void destory(Long telegramId) {
+        if (null == telegramId) {
+            return;
+        }
+        Emby emby = Emby.builder().tg(telegramId).lv("e").build();
+        embyMapper.insertOrUpdate(emby);
+    }
+
+    public void checkIn(Long telegramId) {
+        if (null == telegramId) {
+            return;
+        }
+        Emby emby = Emby.builder().tg(telegramId).ch(DateUtil.date()).build();
+        embyMapper.insertOrUpdate(emby);
+    }
 
     public void upIv(Long telegramId, Integer iv) {
         if (null == telegramId || null == iv || 0 == iv) {

@@ -1,6 +1,9 @@
 package cn.acecandy.fasaxi.eva;
 
+import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
+import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -32,29 +35,32 @@ public class Application {
 
     @SneakyThrows
     public static void main(String[] args) {
-            ConfigurableApplicationContext application = SpringApplication.run(Application.class, args);
-            init();
-            Environment env = application.getEnvironment();
-            String host = InetAddress.getLocalHost().getHostAddress();
-            String port = env.getProperty("server.port", "8801");
-            String pathContext = env.getProperty("server.servlet.context-path", "");
-            String uri = StrUtil.format("http://{}:{}{}", host, port, pathContext);
-            log.info("""
-                     \r----------------------------------------------------------
-                     {}[{}] 已启动!
-                     请求路径: {}
-                     健康检查: {}/health/time
-                     接口文档: {}/doc.html
-                     ----------------------------------------------------------
-                     """,
-                    env.getProperty("spring.application.name"), env.getProperty("spring.profiles.active"),
-                    uri, uri, uri);
+        ConfigurableApplicationContext application = SpringApplication.run(Application.class, args);
+        init();
+        Environment env = application.getEnvironment();
+        String host = InetAddress.getLocalHost().getHostAddress();
+        String port = env.getProperty("server.port", "8801");
+        String pathContext = env.getProperty("server.servlet.context-path", "");
+        String uri = StrUtil.format("http://{}:{}{}", host, port, pathContext);
+        log.info("""
+                 \r----------------------------------------------------------
+                 {}[{}] 已启动!
+                 请求路径: {}
+                 健康检查: {}/health/time
+                 接口文档: {}/doc.html
+                 ----------------------------------------------------------
+                 """,
+                env.getProperty("spring.application.name"), env.getProperty("spring.profiles.active"),
+                uri, uri, uri);
     }
 
     /**
      * 提前初始化一些数据
      */
     private static void init() {
+        if (SpringUtil.getBean(CommonGameConfig.class).getWd().getEnable()) {
+            SpringUtil.getBean(TgService.class).setCommand();
+        }
         // ThreadUtil.execAsync(() -> SpringUtil.getBean(ScheduledTask.class).run());
     }
 }

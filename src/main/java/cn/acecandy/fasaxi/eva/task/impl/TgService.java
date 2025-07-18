@@ -8,7 +8,6 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
@@ -36,8 +35,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.util.List;
 
 import static cn.hutool.core.text.StrPool.COMMA;
@@ -315,9 +312,10 @@ public class TgService {
     public void setCommand() {
         SetMyCommands setMyCommands = new SetMyCommands(List.of(
                 new BotCommand("/wd", "创建游戏(10Dmail)"),
-                new BotCommand("/wd_info", "查看自身游戏积分记录(2Dmail)"),
-                new BotCommand("/wd_rank", "翻阅游戏积分排行榜(15Dmail)"),
-                new BotCommand("/wd_top", "翻阅首飞霸王榜(10Dmail)"),
+                new BotCommand("/wd_checkin", "签到并查看个人信息（5Dmail）"),
+                new BotCommand("/wd_rank", "开启积分榜（10Dmail）"),
+                new BotCommand("/wd_real_rank", "开启战力榜(累计至昨日)（15Dmail）"),
+                new BotCommand("/wd_top", "开启登顶霸王榜（3Dmail）"),
                 new BotCommand("/wd_exit", "关闭游戏(3Dmail)"),
                 new BotCommand("/wd_help", "获取帮助")
         ));
