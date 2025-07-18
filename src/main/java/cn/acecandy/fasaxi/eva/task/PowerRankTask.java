@@ -1,5 +1,6 @@
 package cn.acecandy.fasaxi.eva.task;
 
+import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.task.impl.PowerRankService;
 import cn.acecandy.fasaxi.eva.task.impl.XmService;
 import jakarta.annotation.Resource;
@@ -21,10 +22,16 @@ public class PowerRankTask {
     private PowerRankService powerRankService;
 
     @Resource
+    private CommonGameConfig commonGameConfig;
+
+    @Resource
     private XmService xmService;
 
     @Scheduled(cron = "0 59 7 * * ?")
     public void powerRankCheck() {
+        if(!commonGameConfig.getWd().getEnable()){
+            return;
+        }
         try {
             powerRankService.powerRankCheck();
         } catch (Exception e) {
