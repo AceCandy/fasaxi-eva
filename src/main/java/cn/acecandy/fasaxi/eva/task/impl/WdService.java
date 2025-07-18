@@ -296,7 +296,7 @@ public class WdService {
         if (null == emby) {
             return;
         }
-        Integer costIv = 10;
+        Integer costIv = 3;
         if (emby.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
             return;
@@ -456,7 +456,7 @@ public class WdService {
      * @param message 消息
      */
     public void needDel(Message message) {
-        if (!message.hasText()) {
+        if (null == message || !message.hasText()) {
             return;
         }
         String text = message.getText();

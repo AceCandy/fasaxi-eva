@@ -274,9 +274,9 @@ public final class TgUtil {
         rowList.add(pageBtn);
 
         // 添加关闭按钮
-        InlineKeyboardButton closeButton = new InlineKeyboardButton("❌ - 关闭");
+        /*InlineKeyboardButton closeButton = new InlineKeyboardButton("❌ - 关闭");
         closeButton.setCallbackData("closeit");
-        rowList.add(new InlineKeyboardRow(closeButton));
+        rowList.add(new InlineKeyboardRow(closeButton));*/
 
         // 设置键盘
         return new InlineKeyboardMarkup(rowList);
