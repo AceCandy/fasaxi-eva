@@ -456,6 +456,9 @@ public class WdService {
      * @param message 消息
      */
     public void needDel(Message message) {
+        if (!message.hasText()) {
+            return;
+        }
         String text = message.getText();
         if (!StrUtil.containsAny(text, "#WodiInfo ", "#WodiRank ", "#WodiTop ", "#WodiRealRank ")) {
             return;
