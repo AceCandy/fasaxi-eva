@@ -134,6 +134,9 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             if (emby != null && StrUtil.equals(emby.getLv(), "e")) {
                 WodiUser wodi = wodiUserDao.findByTgId(user.getId());
                 iv = (int) ((emby.getIv() + 3 * wodi.getFraction()) * 0.1);
+
+                tgService.sendMsg(message.getChatId().toString(), StrUtil.format("恭喜外门弟子{}进入内门, " +
+                        "您的本金已经转化为{} Dmail, 注意去新bot中查看！", TgUtil.tgName(user), iv));
             }
             embyDao.init(user.getId(), iv);
         });
