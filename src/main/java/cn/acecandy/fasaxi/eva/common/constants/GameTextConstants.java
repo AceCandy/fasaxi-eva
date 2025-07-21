@@ -27,7 +27,9 @@ public interface GameTextConstants {
     String XRENEW_CREATE_SUCC = "✅ 成功创建{}个{}Dmail续命码";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";
     String TIP_IN_INVITE = "您花费{}封Dmail创建传承邀请";
-    String TIP_IN_RANK = "您花费{}封Dmail进行开启榜单";
+    String TIP_IN_RANK = "您花费{}封Dmail开启榜单";
+    String TIP_IN_CHECKIN = "您花费{}封Dmail开启个人信息";
+    String TIP_IN_CHECKIN_NOPAY = "已开启过个人信息，3分钟内免除查询消费";
     String TIP_HELP = """
                       使用命令可创建游戏（<b>花费10封Dmail 成功开局才扣除</b>），游戏开始后每个人会得到自己的游戏词语。
                       
@@ -50,12 +52,12 @@ public interface GameTextConstants {
                       9. <b>战力提升</b>：优秀场次可以提升战力，排位前19均能享受buff增益。所以以战力为王多多获取战力值的提升吧！
                       10. <b>境界霸主</b>：战力累计优先达到阈值能晋升段位霸主名列top榜单，获得大量Dmail和buff增益，每个段位只有一次机会。
                       
-                      /wd 创建游戏（10Dmail 成功开局后扣取）
-                      /wd_checkin 签到并查看个人信息（5Dmail）
-                      /wd_rank 开启积分榜（10Dmail）
-                      /wd_real_rank 开启战力榜(累计至昨日)（10Dmail）
-                      /wd_top 开启登顶霸王榜（3Dmail）
-                      /wd_exit 关闭游戏（3Dmail）
+                      /wd 创建游戏(10 Dmail)
+                      /wd_checkin 签到并查看个人信息(5 Dmail 3分钟内无消耗)
+                      /wd_rank 开启积分榜(10 Dmail)
+                      /wd_real_rank 开启实时战力榜(10 Dmail)
+                      /wd_top 开启登顶霸王榜(3 Dmail)
+                      /wd_exit 关闭游戏(3 Dmail)
                       
                       PS：无Dmail的情况均以Email进行替代
                       """;

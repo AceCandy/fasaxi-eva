@@ -311,12 +311,12 @@ public class TgService {
 
     public void setCommand() {
         SetMyCommands setMyCommands = new SetMyCommands(List.of(
-                new BotCommand("/wd", "创建游戏(10Dmail)"),
-                new BotCommand("/wd_checkin", "签到并查看个人信息（5Dmail）"),
-                new BotCommand("/wd_rank", "开启积分榜（10Dmail）"),
-                new BotCommand("/wd_real_rank", "开启战力榜(累计至昨日)（10Dmail）"),
-                new BotCommand("/wd_top", "开启登顶霸王榜（3Dmail）"),
-                new BotCommand("/wd_exit", "关闭游戏(3Dmail)"),
+                new BotCommand("/wd", "创建游戏(10 Dmail)"),
+                new BotCommand("/wd_checkin", "签到并查看个人信息(5 Dmail 3分钟内无消耗)"),
+                new BotCommand("/wd_rank", "开启积分榜(10 Dmail)"),
+                new BotCommand("/wd_real_rank", "开启实时战力榜(10 Dmail)"),
+                new BotCommand("/wd_top", "开启登顶霸王榜(3 Dmail)"),
+                new BotCommand("/wd_exit", "关闭游戏(3 Dmail)"),
                 new BotCommand("/wd_help", "获取帮助")
         ));
         setMyCommands.setScope(new BotCommandScopeAllGroupChats());
