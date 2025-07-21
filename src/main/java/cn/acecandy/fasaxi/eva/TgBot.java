@@ -25,7 +25,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
@@ -71,9 +70,9 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
     public XmService xmService;
     @Resource
     public CommonGameConfig commonGameConfig;
-    @Autowired
+    @Resource
     private EmbyDao embyDao;
-    @Autowired
+    @Resource
     private WodiUserDao wodiUserDao;
 
     @Override
@@ -202,7 +201,19 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             return;
         }
         String cmd = TgUtil.extractCommand(message.getText(), tgService.getBotUsername());
-        if (CommandUtil.isWdCommand(cmd)) {
+        if (StrUtil.equals(cmd, "/init")) {
+            if (!commonGameConfig.getInit().getEnable()) {
+                return;
+            }
+            if (embyDao.findByTgId(message.getFrom().getId()) != null &&
+                    wodiUserDao.findByTgId(message.getFrom().getId()) != null) {
+                return;
+            }
+            embyDao.destory(message.getFrom().getId());
+            WodiUser wodiUser = new WodiUser();
+            wodiUser.setTelegramId(message.getFrom().getId());
+            wodiUserDao.insertOrUpdate(wodiUser);
+        } else if (CommandUtil.isWdCommand(cmd)) {
             if (!commonGameConfig.getWd().getEnable()) {
                 tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);
                 return;

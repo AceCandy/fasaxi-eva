@@ -15,6 +15,10 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class CommonGameConfig {
     /**
+     * 外群初始化
+     */
+    private Gx init;
+    /**
      * 群门
      */
     private Gx groupDoor;

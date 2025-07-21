@@ -2,6 +2,7 @@ package cn.acecandy.fasaxi.eva.bot.game;
 
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
+import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.task.impl.WdService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
@@ -13,6 +14,7 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
@@ -41,6 +43,8 @@ public class GameEvent {
     private WdService wdService;
     @Resource
     private EmbyDao embyDao;
+    @Autowired
+    private WodiUserDao wodiUserDao;
 
 
     public void onClick(CallbackQuery callback) {
@@ -102,6 +106,10 @@ public class GameEvent {
 
         switch (action) {
             case ACTION_JOIN_GAME: {
+                if (embyDao.findByTgId(userId) == null || wodiUserDao.findByTgId(userId) == null) {
+                    callback.setText("❌ 加入游戏前请先私聊下bot哈～");
+                    return;
+                }
                 handleJoinGame(game, user, callback);
                 break;
             }
