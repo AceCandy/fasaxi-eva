@@ -29,6 +29,7 @@ import org.telegram.telegrambots.meta.api.objects.ChatInviteLink;
 import org.telegram.telegrambots.meta.api.objects.ChatPermissions;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeAllGroupChats;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeAllPrivateChats;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -322,11 +323,11 @@ public class TgService {
         setMyCommands.setScope(new BotCommandScopeAllGroupChats());
         executeTg(() -> tgClient.executeAsync(setMyCommands));
         log.info("初始化群bot指令成功！");
-        /*SetMyCommands setPrivateCommands = new SetMyCommands(List.of(
-                new BotCommand("/init", "账号初始化")
+        SetMyCommands setPrivateCommands = new SetMyCommands(List.of(
+                new BotCommand("/wd_help", "获取帮助")
         ));
         setPrivateCommands.setScope(new BotCommandScopeAllPrivateChats());
         executeTg(() -> tgClient.executeAsync(setPrivateCommands));
-        log.info("初始化私人bot指令成功！");*/
+        log.info("初始化私人bot指令成功！");
     }
 }

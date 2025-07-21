@@ -164,7 +164,7 @@ public class WdService {
             if (null == embyUser.getCh() || !DateUtil.isSameDay(embyUser.getCh(), DateUtil.date())) {
                 ivTriple = new MutableTriple<>(0, 0, 0);
                 // 随机基础base
-                ivTriple.setLeft(RandomUtil.randomInt(0, 10));
+                ivTriple.setLeft(RandomUtil.randomInt(1, 10));
                 // 游戏加成
                 ivTriple.setMiddle(WdUtil.scoreToLv(user.getFraction()));
                 // 发放弟子奖励
