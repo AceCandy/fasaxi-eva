@@ -81,7 +81,7 @@ public class WdService {
     private final static String 游戏帮助 = "/wd_help";
 
     private final static TimedCache<Long, Integer> CACHE_CHECKIN
-            = CacheUtil.newTimedCache(3 * 60 * 1000);
+            = CacheUtil.newTimedCache(4 * 60 * 1000);
 
     @Resource
     private EmbyDao embyDao;
@@ -149,7 +149,7 @@ public class WdService {
             Map<Long, Integer> ivMap = wodiUserLogDao.findByTgIdYesterday(yesInviteeIds).stream()
                     .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
                             Collectors.summingInt(bean ->
-                                    (int) (bean.getFraction() * 0.5 + bean.getTiv() * 0.2))
+                                    (int) (bean.getFraction() * 0.3 + bean.getTiv() * 0.1))
                     ));
             // 今日累计展示
             List<Long> inviteeIds = xInvites.stream().map(XInvite::getInviteeId).toList();
@@ -158,7 +158,7 @@ public class WdService {
             Map<Long, Integer> newIvMap = wodiUserLogDao.findByTgIdToday(inviteeIds).stream()
                     .collect(Collectors.groupingBy(WodiUserLog::getTelegramId,
                             Collectors.summingInt(bean ->
-                                    (int) (bean.getFraction() * 0.5 + bean.getTiv() * 0.2))
+                                    (int) (bean.getFraction() * 0.3 + bean.getTiv() * 0.1))
                     ));
             MutableTriple<Integer, Integer, Integer> ivTriple = null;
             if (null == embyUser.getCh() || !DateUtil.isSameDay(embyUser.getCh(), DateUtil.date())) {
@@ -168,12 +168,12 @@ public class WdService {
                 // 游戏加成
                 ivTriple.setMiddle(WdUtil.scoreToLv(user.getFraction()));
                 // 发放弟子奖励
+                int ivTotal = CollUtil.size(yesInviteeIds);
                 if (MapUtil.isNotEmpty(ivMap)) {
                     xInviteDao.updateCollectTime(yesInviteeIds, DateUtil.yesterday());
-                    int ivTotal = ivMap.values().stream().mapToInt(v -> v).sum();
-                    ivTotal = ivTotal > 0 ? ivTotal : yesInviteeIds.size();
-                    ivTriple.setRight(ivTotal);
+                    ivTotal = Math.max(ivMap.values().stream().mapToInt(v -> v).sum(), ivTotal);
                 }
+                ivTriple.setRight(ivTotal);
                 embyDao.upIv(userId, ivTriple.left + ivTriple.middle + ivTriple.right);
                 embyDao.checkIn(userId);
                 embyUser.setIv(embyUser.getIv() + ivTriple.left + ivTriple.middle + ivTriple.right);

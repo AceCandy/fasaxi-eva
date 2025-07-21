@@ -224,6 +224,7 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
                 wodiUser.setTelegramId(message.getFrom().getId());
                 wodiUserDao.insertOrUpdate(wodiUser);
             }
+            tgService.sendMsg(message.getChatId().toString(), "✅初始化Game账号成功！", 5 * 1000);
         } else if (CommandUtil.isWdCommand(cmd)) {
             if (!commonGameConfig.getWd().getEnable()) {
                 tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);
