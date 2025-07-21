@@ -107,7 +107,7 @@ public class GameEvent {
         switch (action) {
             case ACTION_JOIN_GAME: {
                 if (embyDao.findByTgId(userId) == null || wodiUserDao.findByTgId(userId) == null) {
-                    callback.setText("❌ 加入游戏前请先私聊下bot哈～");
+                    callback.setText("❌ 加入游戏前请先私聊bot");
                     return;
                 }
                 handleJoinGame(game, user, callback);
