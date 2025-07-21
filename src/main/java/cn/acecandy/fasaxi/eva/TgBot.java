@@ -204,18 +204,26 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             return;
         }
         String cmd = TgUtil.extractCommand(message.getText(), tgService.getBotUsername());
-        if (StrUtil.equals(cmd, "/init")) {
+        if (StrUtil.equals(cmd, "/start")) {
             if (!commonGameConfig.getInit().getEnable()) {
                 return;
             }
-            if (embyDao.findByTgId(message.getFrom().getId()) != null &&
-                    wodiUserDao.findByTgId(message.getFrom().getId()) != null) {
+            Emby embyUser = embyDao.findByTgId(message.getFrom().getId());
+            WodiUser wodiUser = wodiUserDao.findByTgId(message.getFrom().getId());
+            if (embyUser != null && wodiUser != null) {
                 return;
             }
-            embyDao.destory(message.getFrom().getId());
-            WodiUser wodiUser = new WodiUser();
-            wodiUser.setTelegramId(message.getFrom().getId());
-            wodiUserDao.insertOrUpdate(wodiUser);
+            if (embyUser == null) {
+                embyDao.destory(message.getFrom().getId());
+            }
+            if (wodiUser == null) {
+                wodiUser = new WodiUser();
+                wodiUser.setFirstName(message.getFrom().getFirstName());
+                wodiUser.setLastName(message.getFrom().getLastName());
+                wodiUser.setUserName(message.getFrom().getUserName());
+                wodiUser.setTelegramId(message.getFrom().getId());
+                wodiUserDao.insertOrUpdate(wodiUser);
+            }
         } else if (CommandUtil.isWdCommand(cmd)) {
             if (!commonGameConfig.getWd().getEnable()) {
                 tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);
