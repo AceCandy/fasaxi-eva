@@ -36,6 +36,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.List;
@@ -125,7 +126,7 @@ public class WdService {
             tgService.sendMsg(chatId, TIP_IN_CHECKIN_NOPAY, 2 * 1000);
         } else {
             Integer costIv = 5;
-            if (embyUser.getIv() < costIv) {
+            if (null == embyUser.getIv() || embyUser.getIv() < costIv) {
                 tgService.sendMsg(chatId, "您的Dmail不足，无法查看个人信息", 5 * 1000);
                 return;
             }
@@ -135,6 +136,9 @@ public class WdService {
             tgService.sendMsg(chatId, StrUtil.format(TIP_IN_CHECKIN, costIv), 2 * 1000);
         }
         try {
+            ChatMember chatMember = tgService.getChatMember(chatId, userId);
+            boolean isAdmin = TgUtil.isAdmin(chatMember);
+
             List<WodiTop> wodiTops = wodiTopDao.selectByTgId(userId);
             Map<Long, Integer> topMap = powerRankService.findTopByCache();
 
@@ -174,14 +178,18 @@ public class WdService {
                     ivTotal = Math.max(ivMap.values().stream().mapToInt(v -> v).sum(), ivTotal);
                 }
                 ivTriple.setRight(ivTotal);
-                embyDao.upIv(userId, ivTriple.left + ivTriple.middle + ivTriple.right);
+                int ivUp = ivTriple.left + ivTriple.middle + ivTriple.right;
+                if (isAdmin) {
+                    ivUp += 3;
+                }
+                embyDao.upIv(userId, ivUp);
                 embyDao.checkIn(userId);
-                embyUser.setIv(embyUser.getIv() + ivTriple.left + ivTriple.middle + ivTriple.right);
+                embyUser.setIv(embyUser.getIv() + ivUp);
             }
 
             SendPhoto sendPhoto = SendPhoto.builder()
                     .chatId(chatId).caption(WdUtil.getCheckRecord(user, embyUser, wodiTops, topMap,
-                            xInvites, embyMap, newIvMap, ivTriple))
+                            xInvites, embyMap, newIvMap, ivTriple, chatMember))
                     .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
                             "static/pic/s{}/lv{}.webp", CURRENT_SEASON, WdUtil.scoreToLv(user.getFraction()))),
                             "谁是卧底个人信息"))
@@ -206,7 +214,7 @@ public class WdService {
             return;
         }
         Integer costIv = 5;
-        if (embyUser.getIv() < costIv) {
+        if (null == embyUser.getIv() || embyUser.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看个人信息", 5 * 1000);
             return;
         }
@@ -246,7 +254,7 @@ public class WdService {
             return;
         }
         Integer costIv = 10;
-        if (emby.getIv() < costIv) {
+        if (null == emby.getIv() || emby.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
             return;
         }
@@ -282,7 +290,7 @@ public class WdService {
         }
 
         Integer costIv = 15;
-        if (emby.getIv() < costIv) {
+        if (null == emby.getIv() || emby.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
             return;
         }
@@ -311,7 +319,7 @@ public class WdService {
             return;
         }
         Integer costIv = 3;
-        if (emby.getIv() < costIv) {
+        if (null == emby.getIv() || emby.getIv() < costIv) {
             tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
             return;
         }

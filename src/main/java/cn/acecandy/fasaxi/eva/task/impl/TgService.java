@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.ApproveChatJoinRequest;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.CreateChatInviteLink;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.DeclineChatJoinRequest;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.RevokeChatInviteLink;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPermissions;
 import org.telegram.telegrambots.meta.api.methods.pinnedmessages.PinChatMessage;
@@ -27,6 +28,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.meta.api.objects.ChatInviteLink;
 import org.telegram.telegrambots.meta.api.objects.ChatPermissions;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeAllGroupChats;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeAllPrivateChats;
@@ -304,6 +306,18 @@ public class TgService {
     public void delMsg(String chatId, Integer msgId) {
         DeleteMessage msg = new DeleteMessage(chatId, msgId);
         executeTg(() -> tgClient.executeAsync(msg));
+    }
+
+    /**
+     * 获取用户在该群组状态
+     *
+     * @param chatId 聊天id
+     * @param userId 用户id
+     * @return {@link ChatMember }
+     */
+    public ChatMember getChatMember(String chatId, Long userId) {
+        GetChatMember getChatMember = new GetChatMember(chatId, userId);
+        return executeTg(() -> tgClient.execute(getChatMember));
     }
 
     public void sendCallback(AnswerCallbackQuery callback) {

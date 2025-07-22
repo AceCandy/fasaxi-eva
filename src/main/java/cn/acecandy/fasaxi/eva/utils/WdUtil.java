@@ -15,10 +15,12 @@ import cn.hutool.core.text.UnicodeUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
@@ -208,7 +210,7 @@ public final class WdUtil extends WdSubUtil {
     public static String getCheckRecord(WodiUser user, Emby embyUser, List<WodiTop> wodiTops,
                                         Map<Long, Integer> topMap, List<XInvite> xInvites,
                                         Map<Long, WodiUser> embyMap, Map<Long, Integer> ivMap,
-                                        MutableTriple<Integer, Integer, Integer> ivTriple) {
+                                        MutableTriple<Integer, Integer, Integer> ivTriple, ChatMember chatMember) {
         int rankIndex = findRankIndex(user.getTelegramId(), topMap);
         Integer completeGame = NumberUtil.nullToZero(user.getCompleteGame());
         Integer wordPeople = NumberUtil.nullToZero(user.getWordPeople());
@@ -231,8 +233,27 @@ public final class WdUtil extends WdSubUtil {
                 .replace("{fraction}", user.getFraction() + "")
                 .replace("{level}", scoreToTitle(user.getFraction()))
                 .replace("{dm}", embyUser.getIv() + "");
-        if (StrUtil.equals(embyUser.getLv(), "e")) {
+        if (StrUtil.isBlank(embyUser.getLv()) || StrUtil.equals(embyUser.getLv(), "e")) {
+            recordTxt = recordTxt.replace("{camp}", "<i>[外门]</i>");
             recordTxt = recordTxt.replace("Dmail", "Email");
+        } else {
+            recordTxt = recordTxt.replace("{camp}", "");
+            recordTxt += CHECKIN_RECORD_CC_TXT;
+            if (CollUtil.isNotEmpty(xInvites)) {
+                List<String> rankFinalList = CollUtil.newArrayList();
+                xInvites.forEach(x -> {
+                    WodiUser wdUser = embyMap.get(x.getInviteeId());
+                    String inviteeName = TgUtil.tgNameOnUrl(wdUser);
+                    if (StrUtil.isBlank(inviteeName)) {
+                        inviteeName = x.getInviteeId().toString();
+                    }
+                    Integer iv = ivMap.getOrDefault(x.getInviteeId(), 0);
+                    String inviteeStr = StrUtil.format(CHECKIN_INVITE_SINGLE, inviteeName, iv);
+                    rankFinalList.add(inviteeStr);
+                });
+                recordTxt = recordTxt.replace("┊ 🍂 秋风萧瑟，您还没有传承弟子",
+                        StrUtil.join("\n", rankFinalList));
+            }
         }
         Integer level = scoreToLv(user.getFraction());
         String jiaCheng = getRankBuffStr(level, wodiTops, rankIndex);
@@ -244,26 +265,24 @@ public final class WdUtil extends WdSubUtil {
                     lvToTitle(w.getLevel()) + "·之王").toList());
             recordTxt = recordTxt.replace("无头衔", title);
         }
-
-        if (CollUtil.isNotEmpty(xInvites)) {
-            StringBuilder rankFinal = new StringBuilder();
-            xInvites.forEach(x -> {
-                WodiUser wdUser = embyMap.get(x.getInviteeId());
-                String inviteeName = TgUtil.tgNameOnUrl(wdUser);
-                if (StrUtil.isBlank(inviteeName)) {
-                    inviteeName = x.getInviteeId().toString();
-                }
-                Integer iv = ivMap.getOrDefault(x.getInviteeId(), 0);
-                String inviteeStr = StrUtil.format(CHECKIN_INVITE_SINGLE, inviteeName, iv);
-                rankFinal.append(inviteeStr);
-            });
-            recordTxt = recordTxt.replace("┊ 🍂 秋风萧瑟，您还没有传承弟子", rankFinal);
-        }
         if (null != ivTriple) {
             // 签到逻辑
+            String adminRed = "";
+            int totalIv = 0;
+            if (TgUtil.isAdmin(chatMember)) {
+                String customTitle = JSONUtil.parseObj(chatMember).getStr("customTitle");
+                if (StrUtil.isBlank(customTitle)) {
+                    customTitle = "黑工管理";
+                }
+                adminRed = StrUtil.format("<b>3</b><i>（{}）</i>", customTitle);
+                totalIv += 3;
+            }
             recordTxt += CHECKIN_INFO.replace("{baseIv}", StrUtil.toString(ivTriple.left))
                     .replace("{gameIv}", StrUtil.toString(ivTriple.middle))
                     .replace("{inheritIv}", StrUtil.toString(ivTriple.right))
+                    .replace("{adminRed}", adminRed)
+                    .replace("{totalIv}", StrUtil.toString(
+                            totalIv + ivTriple.left + ivTriple.middle + ivTriple.right))
             ;
         }
 

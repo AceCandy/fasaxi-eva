@@ -66,7 +66,7 @@ public interface GameTextConstants {
     String RECORD_TXT = """
                         \n
                         ††††††††††††††††††††††††
-                        | 📍 境界：{level}
+                        | 📍 境界：<b>{level}</b>
                         | 🔹 {userName}
                         | 🧊 战力：<b>{power}</b>（排名：{rankIndex}）
                         ††††††††††††††††††††††††
@@ -82,7 +82,7 @@ public interface GameTextConstants {
     String CHECKIN_RECORD_TXT = """
                                 
                                 📍 <b>境界：{level}</b>
-                                🔹 <b>{userName}</b>
+                                🔹 <b>{userName} {camp}</b>
                                 🧊 <b>战力：{power} (排名：{rankIndex})</b>
                                 
                                 ┌─详细属性
@@ -93,13 +93,25 @@ public interface GameTextConstants {
                                 ┊ 💎 流通货币：{dm} Dmail
                                 ┊ 🎖 额外加成：无加成
                                 ┊ 🕯 头衔：无头衔
-                                
-                                ├─传承名单
-                                ┊
-                                ┊ 🍂 秋风萧瑟，您还没有传承弟子
                                 └────────────
-                                
                                 """;
+    String CHECKIN_RECORD_CC_TXT = """
+                                   
+                                   ├─传承名单
+                                   ┊
+                                   ┊ 🍂 秋风萧瑟，您还没有传承弟子
+                                   └────────────
+                                   """;
+    String INVITE_SINGLE = "{}(<b>当日累计: {}</b>)\t\t加入时间:{} \n";
+    String CHECKIN_INVITE_SINGLE = "┊ {}(<b>当日累计: {}</b>)";
+    String CHECKIN_INFO = """
+                          
+                          ├─✅签到成功｜今日总收益: {totalIv} <b>Dmail</b>
+                          ┊
+                          ┊  <b>{baseIv}</b><i>（随机基础）</i> {adminRed}
+                          ┊  <b>{gameIv}</b><i>（游戏等级）</i> <b>{inheritIv}</b><i>（传承收益）</i>
+                          └────────────
+                          """;
     String RANK = "\n<b>▎无限远点的牵牛星 🏷 S{}赛季·积分榜 ♪</b>\n\n";
     String REAL_RANK = "\n<b>▎交叉坐标的星辰 🏷 S{}赛季·战力榜 ♪</b>\n\n";
     String TOP_TITLE = "\n<b>▎{} 🏷 S{}赛季·霸王榜 ♪</b>\n\n";
@@ -254,16 +266,6 @@ public interface GameTextConstants {
                          
                          {list}
                          """;
-    String INVITE_SINGLE = "{}(<b>当日累计: {}</b>)\t\t加入时间:{} \n";
-    String CHECKIN_INVITE_SINGLE = "┊ {}(<b>当日累计: {}</b>) \n";
-    String CHECKIN_INFO = """
-                          ├─✅签到成功｜今日收益详情
-                          ┊
-                          ┊ <b>{baseIv}</b><i>（随机基础）</i>
-                          ┊ <b>{gameIv}</b><i>（游戏等级）</i>
-                          ┊ <b>{inheritIv}</b><i>（传承收益）</i>
-                          └────────────
-                          """;
     String INVITE_COLLECT = "🎉 你的传承弟子们昨日非常用功，你不禁抚须大笑，Dmail+<b>{}</b> \n";
     String INVITE_COLLECT2 = "🤔 你的传承弟子们都在闭关，宗门竟只你一人好像闲着，Dmail+<b>{}</b> \n";
     String INVITE_HELP = """

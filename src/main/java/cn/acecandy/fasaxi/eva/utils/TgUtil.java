@@ -11,6 +11,7 @@ import com.alibaba.fastjson2.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -367,6 +368,19 @@ public final class TgUtil {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 用户离开消息
+     *
+     * @param chatMember 味精
+     * @return boolean
+     */
+    public static boolean isAdmin(ChatMember chatMember) {
+        if (null == chatMember) {
+            return false;
+        }
+        return StrUtil.equalsAny(chatMember.getStatus(), "creator", "administrator");
     }
 
     public static void main(String[] args) {
