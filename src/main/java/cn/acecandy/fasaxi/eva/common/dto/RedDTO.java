@@ -161,20 +161,20 @@ public class RedDTO {
         String startMsg = StrUtil.format("🧧 红包\n\n😎 {} 的红包已经被瓜分完了~\n\n", senderName);
 
         // 排序领取记录
-        Integer max = receivers.values().stream()
-                .map(RedReceiverDTO::getAmount).findFirst().get();
+        Integer max = receivers.values().stream().map(RedReceiverDTO::getAmount)
+                .max(Integer::compareTo).orElse(0);
 
         List<String> tipList = CollUtil.newArrayList();
-        for (int i = 0; i < receivers.values().size(); i++) {
-            RedReceiverDTO receiver = receivers.values().get(i);
-            if (i == 0) {
+        receivers.forEach((userId, receiver) -> {
+            int amount = receiver.getAmount();
+            if (amount == max) {
                 tipList.add(StrUtil.format("**🏆 手气最佳 [{}]** 抢到了 {} 点心意",
                         receiver.getUserName(), receiver.getAmount()));
             } else {
                 tipList.add(StrUtil.format("**[{}]** 抢到了 {} 点心意",
                         receiver.getUserName(), receiver.getAmount()));
             }
-        }
+        });
         return startMsg + CollUtil.join(tipList, "\n");
     }
 }
