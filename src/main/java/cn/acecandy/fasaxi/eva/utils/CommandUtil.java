@@ -20,6 +20,16 @@ public final class CommandUtil {
      * @param command 命令
      * @return boolean
      */
+    public static boolean isRedCommand(String command) {
+        return StrUtil.startWith(command, "/red");
+    }
+
+    /**
+     * 是wd相关命令
+     *
+     * @param command 命令
+     * @return boolean
+     */
     public static boolean isWdCommand(String command) {
         return StrUtil.startWith(command, "/wd");
     }

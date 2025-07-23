@@ -245,6 +245,21 @@ public final class TgUtil {
     }
 
     /**
+     * 红包按钮
+     *
+     * @param redId 红包id
+     * @return {@link InlineKeyboardMarkup }
+     */
+    public static InlineKeyboardMarkup getRedBtn(String redId) {
+        InlineKeyboardButton viewWord = new InlineKeyboardButton("运气爆棚 🎁");
+        viewWord.setCallbackData(JSONObject.of("action",
+                GameEventUtil.PUBLIC_ACTION_RED + redId).toString());
+        List<InlineKeyboardRow> rows = CollUtil.newArrayList();
+        rows.add(new InlineKeyboardRow(viewWord));
+        return new InlineKeyboardMarkup(rows);
+    }
+
+    /**
      * 创建翻页按钮
      *
      * @return {@link InlineKeyboardMarkup }

@@ -1,11 +1,14 @@
 package cn.acecandy.fasaxi.eva.common.dto;
 
 import cn.acecandy.fasaxi.eva.common.enums.RedType;
+import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Data;
+import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -33,14 +36,11 @@ public class RedDTO {
      * 红包人数
      */
     private Integer members;
+
     /**
-     * 发送人tgId
+     * 发送人
      */
-    private Long senderId;
-    /**
-     * 发送人tg名
-     */
-    private String senderName;
+    private User sendUser;
     /**
      * 红包类型
      */
@@ -59,13 +59,16 @@ public class RedDTO {
      */
     private final Map<Long, RedReceiverDTO> receivers = MapUtil.newConcurrentHashMap();
 
-    public RedDTO(String id, Integer money, Integer members,
-                  Long senderId, String senderName, RedType type) {
+    /**
+     * 对应群消息
+     */
+    private Message msg;
+
+    public RedDTO(String id, Integer money, Integer members, User sendUser, RedType type) {
         this.id = id;
         this.money = money;
         this.members = members;
-        this.senderId = senderId;
-        this.senderName = senderName;
+        this.sendUser = sendUser;
         this.type = type;
         this.remainingMembers = new AtomicInteger(members);
 
@@ -116,7 +119,7 @@ public class RedDTO {
 
         for (int i = 0; i < members - 1; i++) {
             // 计算当前最大可分配金额（剩余均值的2倍）
-            int max = 2 * remainingAmount / remainingCount;
+            int max = Math.min(remainingAmount - remainingCount + 1, 2 * remainingAmount / remainingCount);
 
             // 生成随机金额（1到max之间）
             int randomValue = RandomUtil.randomInt(1, max + 1);
@@ -131,7 +134,7 @@ public class RedDTO {
         return amounts;
     }
 
-    public synchronized RedReceiverDTO grab(Long userId, String userName) {
+    public RedReceiverDTO grab(User user) {
         // 检查是否还有剩余红包
         if (remainingMembers.get() <= 0) {
             return null;
@@ -142,13 +145,12 @@ public class RedDTO {
         if (amount == null) {
             return null;
         }
-
         // 更新剩余数量
-        int current = remainingMembers.decrementAndGet();
+        remainingMembers.decrementAndGet();
 
         // 记录领取信息
-        RedReceiverDTO receiver = new RedReceiverDTO(userId, userName, amount);
-        receivers.put(userId, receiver);
+        RedReceiverDTO receiver = new RedReceiverDTO(user, amount);
+        receivers.put(user.getId(), receiver);
 
         return receiver;
     }
@@ -158,23 +160,34 @@ public class RedDTO {
     }
 
     public String getFinalMessage() {
-        String startMsg = StrUtil.format("🧧 红包\n\n😎 {} 的红包已经被瓜分完了~\n\n", senderName);
+        String startMsg = StrUtil.format("🧧 Dmail红包\n\n😎 {} 的红包已经被瓜分完了~\n\n",
+                TgUtil.tgNameOnUrl(sendUser));
 
-        // 排序领取记录
+        // 找出最大领取金额
         Integer max = receivers.values().stream().map(RedReceiverDTO::getAmount)
                 .max(Integer::compareTo).orElse(0);
 
+        // 统计最大金额的领取人数
+        long maxCount = receivers.values().stream()
+                .filter(receiver -> receiver.getAmount().equals(max))
+                .count();
+
         List<String> tipList = CollUtil.newArrayList();
+        boolean isLuckyType = type.equals(RedType.拼手气红包);
+
         receivers.forEach((userId, receiver) -> {
             int amount = receiver.getAmount();
-            if (amount == max) {
-                tipList.add(StrUtil.format("**🏆 手气最佳 [{}]** 抢到了 {} 点心意",
-                        receiver.getUserName(), receiver.getAmount()));
+            String tip;
+            if (isLuckyType && amount == max && maxCount == 1) {
+                tip = StrUtil.format("<b>🏆[手气最佳] {}</b> 抢到了 {} 点心意",
+                        TgUtil.tgNameOnUrl(receiver.getUser()), amount);
             } else {
-                tipList.add(StrUtil.format("**[{}]** 抢到了 {} 点心意",
-                        receiver.getUserName(), receiver.getAmount()));
+                tip = StrUtil.format("<b>{}</b> 抢到了 {} 点心意",
+                        TgUtil.tgNameOnUrl(receiver.getUser()), amount);
             }
+            tipList.add(tip);
         });
+
         return startMsg + CollUtil.join(tipList, "\n");
     }
 }

@@ -127,7 +127,7 @@ public class XmService {
         Long userId = message.getFrom().getId();
         Emby embyUser = embyDao.findByTgId(userId);
         if (embyUser == null) {
-            tgService.sendMsg(chatId, "您还未在助手处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未在bot处登记哦~", 5 * 1000);
             return;
         }
 

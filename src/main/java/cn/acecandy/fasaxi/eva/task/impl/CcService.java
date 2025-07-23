@@ -154,7 +154,7 @@ public class CcService {
         WodiUser wodiUser = wodiUserDao.findByTgId(userId);
         Emby emby = embyDao.findByTgId(userId);
         if (null == wodiUser || null == emby) {
-            tgService.sendMsg(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未参与过游戏或者未在bot处登记哦~", 5 * 1000);
             return;
         }
 

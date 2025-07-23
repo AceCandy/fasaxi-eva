@@ -13,6 +13,7 @@ import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.task.impl.CcService;
 import cn.acecandy.fasaxi.eva.task.impl.GameService;
+import cn.acecandy.fasaxi.eva.task.impl.RedService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.task.impl.WdService;
 import cn.acecandy.fasaxi.eva.task.impl.XmService;
@@ -74,6 +75,8 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
     private EmbyDao embyDao;
     @Resource
     private WodiUserDao wodiUserDao;
+    @Resource
+    private RedService redService;
 
     @Override
     public String getBotToken() {
@@ -203,6 +206,7 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
         if (!message.isCommand()) {
             return;
         }
+        tgService.delMsg(message);
         String cmd = TgUtil.extractCommand(message.getText(), tgService.getBotUsername());
         if (StrUtil.equals(cmd, "/start")) {
             if (!commonGameConfig.getInit().getEnable()) {
@@ -225,6 +229,11 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
                 wodiUserDao.insertOrUpdate(wodiUser);
             }
             tgService.sendMsg(message.getChatId().toString(), "✅初始化Game账号成功！", 5 * 1000);
+        } else if (CommandUtil.isRedCommand(cmd)) {
+            if (!commonGameConfig.getRed().getEnable()) {
+                return;
+            }
+            redService.process(cmd, message);
         } else if (CommandUtil.isWdCommand(cmd)) {
             if (!commonGameConfig.getWd().getEnable()) {
                 tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);

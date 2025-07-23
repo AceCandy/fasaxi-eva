@@ -15,6 +15,10 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class CommonGameConfig {
     /**
+     * 红包功能
+     */
+    private Gx red;
+    /**
      * 外群初始化
      */
     private Gx init;

@@ -16,7 +16,7 @@ public interface GameTextConstants {
     String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前群组信息已上传网信部记录！";
     String CURFEW_GAME_TIME = "❌ 当前未在可游戏时间，游戏开放时间9～12、14～18、19～22点！";
     String TIP_IN_GROUP = "请在群组中使用命令~";
-    String TIP_IN_PRIVATE = "请私聊助手使用命令~";
+    String TIP_IN_PRIVATE = "请私聊bot使用命令~";
     String TIP_IN_OWNER = "您无法使用该命令~";
     String TIP_IN_XRENEW_CREATE = "❌ 指令不正确，格式参考： /xm_create [Dmail] [数量]";
     String TIP_IN_XRENEW_USE = "❌ 指令或码子格式不正确，格式参考： /xm_use [code]";
@@ -141,7 +141,8 @@ public interface GameTextConstants {
                          """;
     String SPEAK_ORDER = "请由 <b>{}</b> 先进行首位发言；\n<b>{}</b> 进行第二位发言";
     String ViewWord = "查看词语";
-    String GAME_START = "房主{}扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
+    String GAME_START = "房主 {} 扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
+    String GAME_START_ERROR = "游戏开启失败，{} 没有游戏开启权限！";
     String VOTING_START = "现在开始投票，你想淘汰谁？";
     String NOT_VOTE_SELF = "❌ 不能投自己";
     String NO_SPEAK_NO_VOTE = "❌ 未发言玩家禁止投票";

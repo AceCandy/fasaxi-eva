@@ -1,8 +1,10 @@
 package cn.acecandy.fasaxi.eva.bot.game;
 
+import cn.acecandy.fasaxi.eva.common.dto.RedDTO;
 import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.task.impl.GameService;
+import cn.acecandy.fasaxi.eva.task.impl.RedService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -47,6 +49,8 @@ public class Command {
     private TgService tgService;
     @Resource
     private GameService gameService;
+    @Resource
+    private RedService redService;
 
 
     @Getter
@@ -106,7 +110,7 @@ public class Command {
     public Emby isEmbyUser(String chatId, Long userId) {
         Emby embyUser = embyDao.findByTgId(userId);
         if (embyUser == null) {
-            tgService.sendMsg(chatId, "您还未在助手处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未在bot处登记哦~", 5 * 1000);
         }
         return embyUser;
     }
@@ -169,7 +173,7 @@ public class Command {
         }
         Emby emby = isEmbyUser(sbChatId, userId);
         if (null == emby) {
-            callback.setText("❌ 未在助手处登记");
+            callback.setText("❌ 未在bot处登记");
             return;
         }
         Integer costIv = 50;
@@ -214,6 +218,36 @@ public class Command {
         callback.setText("✅ 花费50Dmail成功！");
         SB_USER_LIST.put(userId, "");
         Collections.shuffle(SB_BOX_GIFT);
+    }
+
+    /**
+     * 用户领取红包
+     *
+     * @param callback 召回
+     * @param user     用户
+     */
+    public void handleRed(AnswerCallbackQuery callback, User user, String redId) {
+        RedDTO envelope = redService.getRedEnvelope(redId);
+        if (null == envelope) {
+            callback.setText("❌ 红包已过期");
+            return;
+        }
+        Message msg = envelope.getMsg();
+        if (null == msg) {
+            callback.setText("❌ 红包已过期");
+            return;
+        }
+        if (envelope.isEmpty()) {
+            redService.removeRedEnvelope(redId);
+            tgService.editMsg(msg, envelope.getFinalMessage());
+            return;
+        }
+        callback.setText(redService.grabRed(redId, user));
+        if (redService.getRedEnvelope(redId).isEmpty()) {
+            redService.removeRedEnvelope(redId);
+            tgService.editMsg(msg, envelope.getFinalMessage());
+            return;
+        }
     }
 
 }

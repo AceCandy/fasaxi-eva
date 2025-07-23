@@ -39,6 +39,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.chat.Chat;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -317,15 +318,22 @@ public class Game {
 
     public void startDiscussion() {
         TimeInterval timer = DateUtil.timer();
-        embyDao.upIv(homeOwner.getId(), -10);
-        tgService.sendMsg(chatId, StrUtil.format(GAME_START, TgUtil.tgNameOnUrl(homeOwner)), 5 * 1000);
         initWords();
-        log.warn("游戏开始！平民词：{}，卧底词：{}，白板：{}, 耗时：{}ms",
-                PEOPLE_WORD, SPY_WORD, SPACE_MEMBER, timer.intervalMs());
-        sendUserWord();
-        log.info("玩家收到词，耗时3：{}ms", timer.intervalMs());
-        sendSpeechPerform();
-        log.info("发送讨论开始tip，耗时4：{}ms", timer.intervalMs());
+        List<User> errorUser = sendUserWord();
+        log.info("玩家收到词，耗时：{}ms", timer.intervalMs());
+        if (CollUtil.isEmpty(errorUser)) {
+            log.warn("游戏开始！平民词：{}，卧底词：{}，白板：{}, 耗时：{}ms",
+                    PEOPLE_WORD, SPY_WORD, SPACE_MEMBER, timer.intervalMs());
+            embyDao.upIv(homeOwner.getId(), -10);
+            tgService.sendMsg(chatId, StrUtil.format(GAME_START,
+                    TgUtil.tgNameOnUrl(homeOwner)), 5 * 1000);
+            sendSpeechPerform();
+            log.info("发送讨论开始tip，耗时3：{}ms", timer.intervalMs());
+        } else {
+            String errUsers = CollUtil.join(errorUser.stream().map(TgUtil::tgName).toList(), "、");
+            tgService.sendMsg(chatId, StrUtil.format(GAME_START_ERROR, errUsers), 15 * 1000);
+            log.error("发牌失败，{} 未私聊bot！", errUsers);
+        }
     }
 
     /**
@@ -571,12 +579,29 @@ public class Game {
         }
     }
 
-    void sendUserWord() {
-        memberList.parallelStream().forEach(m -> {
-            SendMessage sendMessage = new SendMessage(m.id.toString(),
-                    StrUtil.format(sendWord, chat.getTitle(), m.word));
-            Message message = tgService.sendMsg(sendMessage);
-        });
+    List<User> sendUserWord() {
+        // 存储已成功发送的消息ID
+        List<Message> sentMsg = Collections.synchronizedList(CollUtil.newArrayList());
+
+        // 执行并行发送并收集异常
+        List<User> errorUser = memberList.parallelStream().map(m -> {
+            try {
+                SendMessage sendMessage = new SendMessage(m.id.toString(),
+                        StrUtil.format(sendWord, chat.getTitle(), m.word));
+                Message message = tgService.sendMsg(sendMessage);
+                sentMsg.add(message);
+                return null;
+            } catch (Exception e) {
+                return m.getUser(); // 失败时返回异常
+            }
+        }).filter(Objects::nonNull).toList();
+
+        if (CollUtil.isEmpty(errorUser)) {
+            return null;
+        }
+        // 并行删除已发送的消息
+        sentMsg.parallelStream().forEach(msg -> tgService.delMsg(msg));
+        return errorUser;
     }
 
     /**

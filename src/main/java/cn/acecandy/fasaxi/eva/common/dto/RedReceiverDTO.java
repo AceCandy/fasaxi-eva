@@ -2,6 +2,7 @@ package cn.acecandy.fasaxi.eva.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.telegram.telegrambots.meta.api.objects.User;
 
 /**
  * @author tangningzhu
@@ -13,11 +14,7 @@ public class RedReceiverDTO {
     /**
      * 用户id
      */
-    private Long userId;
-    /**
-     * 用户名
-     */
-    private String userName;
+    private User user;
     /**
      * 红包金额
      */

@@ -157,6 +157,11 @@ public class GameEvent {
             AnswerCallbackQuery callback = new AnswerCallbackQuery(callbackQuery.getId());
             command.handleEditSb(callback, callbackQuery.getFrom());
             tgService.sendCallback(callback);
+        } else if (StrUtil.startWith(action, PUBLIC_ACTION_RED)) {
+            String redId = StrUtil.removePrefix(action, PUBLIC_ACTION_RED);
+            AnswerCallbackQuery callback = new AnswerCallbackQuery(callbackQuery.getId());
+            command.handleRed(callback, callbackQuery.getFrom(), redId);
+            tgService.sendCallback(callback);
         }
     }
 

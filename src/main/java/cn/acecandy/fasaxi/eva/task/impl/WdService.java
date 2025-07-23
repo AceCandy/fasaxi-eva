@@ -90,7 +90,6 @@ public class WdService {
     public void process(String cmd, Message message) {
         String chatId = message.getChatId().toString();
         Long userId = message.getFrom().getId();
-        tgService.delMsg(message);
         if (!TgUtil.isGroupMsg(message) && !CollUtil.contains(tgService.getAdmins(), userId)) {
             tgService.sendMsg(chatId, TIP_IN_GROUP, 10 * 1000);
             return;
@@ -119,7 +118,7 @@ public class WdService {
         WodiUser user = wodiUserDao.findByTgId(userId);
         Emby embyUser = embyDao.findByTgId(userId);
         if (user == null || embyUser == null) {
-            tgService.sendMsg(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未参与过游戏或者未在bot处登记哦~", 5 * 1000);
             return;
         }
         if (CACHE_CHECKIN.containsKey(userId) && CACHE_CHECKIN.get(userId) == 1) {
@@ -210,7 +209,7 @@ public class WdService {
         WodiUser user = wodiUserDao.findByTgId(userId);
         Emby embyUser = embyDao.findByTgId(userId);
         if (user == null || embyUser == null) {
-            tgService.sendMsg(chatId, "您还未参与过游戏或者未在助手处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未参与过游戏或者未在bot处登记哦~", 5 * 1000);
             return;
         }
         Integer costIv = 5;
@@ -242,7 +241,7 @@ public class WdService {
     public Emby isEmbyUser(String chatId, Long userId) {
         Emby embyUser = embyDao.findByTgId(userId);
         if (embyUser == null) {
-            tgService.sendMsg(chatId, "您还未在助手处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "您还未在bot处登记哦~", 5 * 1000);
         }
         return embyUser;
     }

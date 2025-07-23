@@ -50,6 +50,8 @@ knife4j:
       group: 对外API
 
 common-game:
+  red:
+    enable: false
   init:
     enable: false
   groupDoor:
