@@ -108,11 +108,11 @@ public class RedService {
 
         int cost = total;
         // 税收
-        if (total >= 500) {
+        if (total > 500) {
             cost = (int) (total / 1.5);
-        } else if (total >= 200) {
+        } else if (total > 200) {
             cost = (int) (total / 1.35);
-        } else if (total >= 50) {
+        } else if (total > 50) {
             cost = (int) (total / 1.2);
         }
         RedDTO redDTO = createRed(cost, members, user, null == mode ? RedType.拼手气红包 : RedType.均等红包);
