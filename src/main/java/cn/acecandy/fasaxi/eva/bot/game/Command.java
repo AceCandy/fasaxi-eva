@@ -243,6 +243,9 @@ public class Command {
             return;
         }
         callback.setText(redService.grabRed(redId, user));
+        if (StrUtil.startWith(callback.getText(), "🧧")) {
+            callback.setShowAlert(true);
+        }
         if (redService.getRedEnvelope(redId).isEmpty()) {
             redService.removeRedEnvelope(redId);
             tgService.editMsg(msg, envelope.getFinalMessage());
