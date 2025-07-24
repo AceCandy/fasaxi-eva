@@ -1,6 +1,5 @@
 package cn.acecandy.fasaxi.eva.dao.mapper;
 
-import cn.acecandy.fasaxi.eva.dao.entity.WodiTopLog;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 

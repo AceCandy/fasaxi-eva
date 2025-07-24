@@ -1,6 +1,7 @@
 package cn.acecandy.fasaxi.eva.dao.service;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -73,9 +74,11 @@ public class WodiWordDao {
         if (null == id) {
             return;
         }
-        LambdaUpdateWrapper<WodiWord> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(WodiWord::getId, id);
-        updateWrapper.setSql("play_time = play_time + 1");
-        wodiWordMapper.update(null, updateWrapper);
+        ThreadUtil.execAsync(() -> {
+            LambdaUpdateWrapper<WodiWord> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.eq(WodiWord::getId, id);
+            updateWrapper.setSql("play_time = play_time + 1");
+            wodiWordMapper.update(null, updateWrapper);
+        });
     }
 }

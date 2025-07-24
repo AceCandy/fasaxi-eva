@@ -318,6 +318,7 @@ public class Game {
 
     public void startDiscussion() {
         TimeInterval timer = DateUtil.timer();
+        Message startMsg = tgService.sendMsg(chatId, GAME_START1);
         initWords();
         List<User> errorUser = sendUserWord();
         log.info("玩家收到词，耗时：{}ms", timer.intervalMs());
@@ -325,8 +326,9 @@ public class Game {
             log.warn("游戏开始！平民词：{}，卧底词：{}，白板：{}, 耗时：{}ms",
                     PEOPLE_WORD, SPY_WORD, SPACE_MEMBER, timer.intervalMs());
             embyDao.upIv(homeOwner.getId(), -10);
-            tgService.sendMsg(chatId, StrUtil.format(GAME_START,
-                    TgUtil.tgNameOnUrl(homeOwner)), 5 * 1000);
+            tgService.delMsg(startMsg);
+            tgService.sendMsg(chatId, StrUtil.format(GAME_START2,
+                    TgUtil.tgNameOnUrl(homeOwner)), 3 * 1000);
             sendSpeechPerform();
             log.info("发送讨论开始tip，耗时3：{}ms", timer.intervalMs());
         } else {
@@ -398,7 +400,7 @@ public class Game {
         String speechSortStr = WdUtil.buildSpeechSortStr(this);
         boolean isPin = StrUtil.isNotBlank(speechSortStr);
 
-        SendMessage sendMessage = new SendMessage(this.chatId.toString(),
+        SendMessage sendMessage = new SendMessage(this.chatId,
                 StrUtil.format(SPEECH_TIME, getSurvivesUserNames(), speechTime, rotate, speechSortStr));
         sendMessage.setReplyMarkup(TgUtil.getViewWord(tgService.getBotUsername()));
         Message msg = tgService.sendMsg(sendMessage);

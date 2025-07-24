@@ -141,7 +141,8 @@ public interface GameTextConstants {
                          """;
     String SPEAK_ORDER = "请由 <b>{}</b> 先进行首位发言；\n<b>{}</b> 进行第二位发言";
     String ViewWord = "查看词语";
-    String GAME_START = "房主 {} 扣除10封Dmail成功！\n所有玩家准备就绪，游戏初始化中\n\n";
+    String GAME_START1 = "所有玩家准备就绪，游戏初始化中……";
+    String GAME_START2 = "房主 {} 扣除10封Dmail，游戏初始化完成！";
     String GAME_START_ERROR = "游戏开启失败，{} 没有游戏开启权限！";
     String VOTING_START = "现在开始投票，你想淘汰谁？";
     String NOT_VOTE_SELF = "❌ 不能投自己";

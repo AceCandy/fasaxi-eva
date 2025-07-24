@@ -4,6 +4,7 @@ import cn.acecandy.fasaxi.eva.dao.entity.Emby;
 import cn.acecandy.fasaxi.eva.dao.mapper.EmbyMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
@@ -45,18 +46,22 @@ public class EmbyDao {
         if (null == telegramId) {
             return;
         }
-        Emby emby = Emby.builder().tg(telegramId).ch(DateUtil.date()).build();
-        embyMapper.insertOrUpdate(emby);
+        ThreadUtil.execAsync(() -> {
+            Emby emby = Emby.builder().tg(telegramId).ch(DateUtil.date()).build();
+            embyMapper.insertOrUpdate(emby);
+        });
     }
 
     public void upIv(Long telegramId, Integer iv) {
         if (null == telegramId || null == iv || 0 == iv) {
             return;
         }
-        LambdaUpdateWrapper<Emby> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(Emby::getTg, telegramId);
-        updateWrapper.setSql("iv = iv + " + iv);
-        embyMapper.update(null, updateWrapper);
+        ThreadUtil.execAsync(() -> {
+            LambdaUpdateWrapper<Emby> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.eq(Emby::getTg, telegramId);
+            updateWrapper.setSql("iv = iv + " + iv);
+            embyMapper.update(null, updateWrapper);
+        });
     }
 
     public void allUpIv(Integer iv) {

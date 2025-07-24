@@ -5,6 +5,7 @@ import cn.acecandy.fasaxi.eva.dao.mapper.WodiUserLogMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -62,10 +63,12 @@ public class WodiUserLogDao {
         if (null == id || null == iv || 0 == iv) {
             return;
         }
-        LambdaUpdateWrapper<WodiUserLog> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(WodiUserLog::getId, id);
-        updateWrapper.setSql("iv = iv + " + iv);
-        wodiUserLogMapper.update(null, updateWrapper);
+        ThreadUtil.execAsync(() -> {
+            LambdaUpdateWrapper<WodiUserLog> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.eq(WodiUserLog::getId, id);
+            updateWrapper.setSql("iv = iv + " + iv);
+            wodiUserLogMapper.update(null, updateWrapper);
+        });
     }
 
     /**
@@ -78,10 +81,12 @@ public class WodiUserLogDao {
         if (null == id || null == tiv || 0 == tiv) {
             return;
         }
-        LambdaUpdateWrapper<WodiUserLog> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(WodiUserLog::getId, id);
-        updateWrapper.setSql("tiv = tiv + " + tiv);
-        wodiUserLogMapper.update(null, updateWrapper);
+        ThreadUtil.execAsync(() -> {
+            LambdaUpdateWrapper<WodiUserLog> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.eq(WodiUserLog::getId, id);
+            updateWrapper.setSql("tiv = tiv + " + tiv);
+            wodiUserLogMapper.update(null, updateWrapper);
+        });
     }
 
     /**
