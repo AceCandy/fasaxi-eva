@@ -22,7 +22,8 @@ public interface GameTextConstants {
     String TIP_IN_XRENEW_USE = "❌ 指令或码子格式不正确，格式参考： /xm_use [code]";
     String TIP_IN_XRENEW_USED = "❌ 码子不存在或者已经使用过了，请勿频繁操作";
     String XRENEW_USE_ERROR = "❌ db更新失败，请联系腐竹";
-    String XRENEW_USE_SUCC = "✅ 使用码子[{}]成功，恭喜您获得了 {} 封Dmail！";
+    String XRENEW_USE_SUCC = "✅ 使用码子[{}]成功，恭喜您获得了 {} 封Mail！";
+    String XRENEW_USE_GROUP_SUCC = "💰 {}使用码子[{}]成功获得了 {} 封Mail！";
     String XRENEW_CREATE_ERROR = "❌ 创建续命码失败";
     String XRENEW_CREATE_SUCC = "✅ 成功创建{}个{}Dmail续命码";
     String NO_EMBY_USER_TIP = "❌ 当前未在bot开号！";

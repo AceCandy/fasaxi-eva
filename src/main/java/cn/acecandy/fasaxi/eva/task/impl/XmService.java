@@ -10,6 +10,7 @@ import cn.acecandy.fasaxi.eva.dao.service.XRenewDao;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.Console;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -27,15 +28,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_OWNER;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_PRIVATE;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_XRENEW_CREATE;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_XRENEW_USE;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.TIP_IN_XRENEW_USED;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_CREATE_ERROR;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_CREATE_SUCC;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_USE_ERROR;
-import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.XRENEW_USE_SUCC;
+import static cn.acecandy.fasaxi.eva.common.constants.GameTextConstants.*;
+import static cn.hutool.core.util.DesensitizedUtil.DesensitizedType.ADDRESS;
 
 /**
  * 续命码相关 实现
@@ -61,7 +55,8 @@ public class XmService {
     public final static String 使用续命码 = "/xm_use";
     public final static String 生成续命码 = "/xm_create";
 
-    public static final String CODE_FORMAT = "WorldLine-XRenew_";
+    public static final String CODE_FORMAT = "WorldLine-Mail_";
+    public static final String CODE_FORMAT_OLD = "WorldLine-XRenew_";
 
     @Transactional(rollbackFor = Exception.class)
     public void process(String cmd, Message message) {
@@ -133,7 +128,7 @@ public class XmService {
 
         String text = message.getText();
         String code = StrUtil.trim(StrUtil.removePrefix(text, 使用续命码));
-        if (StrUtil.isBlank(code) || !StrUtil.startWith(code, CODE_FORMAT)) {
+        if (StrUtil.isBlank(code) || !StrUtil.startWithAny(code, CODE_FORMAT, CODE_FORMAT_OLD)) {
             tgService.sendMsg(userId.toString(), TIP_IN_XRENEW_USE, 5 * 1000);
             return;
         }
@@ -151,7 +146,10 @@ public class XmService {
         }
         embyDao.upIv(userId, xRenew.getIv());
         tgService.sendMsg(userId.toString(), StrUtil.format(XRENEW_USE_SUCC, xRenew.getCode(), xRenew.getIv()));
-
+        tgService.sendMsg(tgService.getGroup(), StrUtil.format(XRENEW_USE_GROUP_SUCC,
+                TgUtil.tgName(message.getFrom()),
+                StrUtil.desensitized(xRenew.getCode(), ADDRESS), xRenew.getIv()));
+        ;
         log.warn("[续命码使用] 用户: {}, 续命码: {}, 奖励: {}", TgUtil.tgName(message.getFrom()), xRenew.getCode(), xRenew.getIv());
     }
 
@@ -191,6 +189,9 @@ public class XmService {
             embyDao.upIv(emby.getTg(), -iv);
             log.warn("[🩸] 用户: {}, 减少: {}", emby.getTg(), -iv);
         });
+    }
 
+    public static void main(String[] args) {
+        Console.log(StrUtil.desensitized("WorldLine-XRenew_490f408c2fb94e59b87d92e8def5f352", ADDRESS));
     }
 }
