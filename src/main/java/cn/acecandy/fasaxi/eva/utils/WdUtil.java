@@ -574,12 +574,19 @@ public final class WdUtil extends WdSubUtil {
      * @return long
      */
     public static long getSpeechTime(Game game) {
-        long speechTime = GameSecondsAddedByThePlayer * getSurvivesNumber(game);
-        if (speechTime > DiscussionTimeLimit) {
-            speechTime = DiscussionTimeLimit;
-        } else if (speechTime < DiscussionTimeLimitMin) {
-            speechTime = DiscussionTimeLimitMin;
+        long speechTime = DiscussionTimeLimitMin;
+
+        if (game.rotate == 1) {
+            speechTime = GameSecondsAddedByThePlayer * getSurvivesNumber(game);
+            if (speechTime > DiscussionTimeLimit) {
+                speechTime = DiscussionTimeLimit;
+            } else if (speechTime < DiscussionTimeLimitMin) {
+                speechTime = DiscussionTimeLimitMin;
+            }
+        } else {
+            speechTime += getSurvivesNumber(game) * 3;
         }
+
         return speechTime;
     }
 
