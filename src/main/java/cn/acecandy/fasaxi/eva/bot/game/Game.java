@@ -12,6 +12,7 @@ import cn.acecandy.fasaxi.eva.dao.service.WodiWordDao;
 import cn.acecandy.fasaxi.eva.task.impl.PowerRankService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
+import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
 import cn.acecandy.fasaxi.eva.utils.PinYinUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.acecandy.fasaxi.eva.utils.WdUtil;
@@ -590,6 +591,7 @@ public class Game {
             try {
                 SendMessage sendMessage = new SendMessage(m.id.toString(),
                         StrUtil.format(sendWord, chat.getTitle(), m.word));
+                ThreadUtil.safeSleep(RandomUtil.randomInt(1, 80));
                 Message message = tgService.sendMsg(sendMessage);
                 sentMsg.add(message);
                 return null;
@@ -602,7 +604,8 @@ public class Game {
             return null;
         }
         // 并行删除已发送的消息
-        sentMsg.parallelStream().forEach(msg -> tgService.delMsg(msg));
+        sentMsg.parallelStream().forEach(msg ->
+                MsgDelUtil.addAutoDelMsg(msg, RandomUtil.randomInt(10, 150)));
         return errorUser;
     }
 
