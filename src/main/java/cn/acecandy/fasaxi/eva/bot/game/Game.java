@@ -1194,6 +1194,7 @@ public class Game {
                 || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)
                 || PinYinUtil.findAllChar(text, member.word)
                 || PinYinUtil.findTwoChar(text, member.word)
+                || PinYinUtil.findRemainingInText(text, PEOPLE_WORD, SPY_WORD)
         ) {
             // 违禁爆词 本词或者拼音
             tgService.sendMsg(userId.toString(), StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));

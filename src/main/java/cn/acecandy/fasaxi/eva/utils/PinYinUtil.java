@@ -133,11 +133,53 @@ public final class PinYinUtil extends PinyinUtil {
         return true;
     }
 
+    /**
+     * 查找文本中是否包含 词A和词B除开相同部分外的剩余内容
+     *
+     * @param text  文本
+     * @param wordA 单词
+     * @param wordB Wordb
+     * @return boolean
+     */
+    public static boolean findRemainingInText(String text, String wordA, String wordB) {
+        if (StrUtil.isBlank(text) || StrUtil.isBlank(wordA) || StrUtil.isBlank(wordB)) {
+            return false;
+        }
+
+        // 计算共同前缀长度
+        int prefixLen = 0;
+        int minLen = Math.min(wordA.length(), wordB.length());
+        while (prefixLen < minLen && wordA.charAt(prefixLen) == wordB.charAt(prefixLen)) {
+            prefixLen++;
+        }
+
+        // 计算共同后缀长度
+        int suffixLenA = wordA.length() - prefixLen;
+        int suffixLenB = wordB.length() - prefixLen;
+        int suffixLen = 0;
+        while (suffixLen < Math.min(suffixLenA, suffixLenB) &&
+                wordA.charAt(wordA.length() - 1 - suffixLen) == wordB.charAt(wordB.length() - 1 - suffixLen)) {
+            suffixLen++;
+        }
+
+        // 提取剩余部分
+        String remainingA = prefixLen + suffixLen < wordA.length() ?
+                wordA.substring(prefixLen, wordA.length() - suffixLen) : "";
+        String remainingB = prefixLen + suffixLen < wordB.length() ?
+                wordB.substring(prefixLen, wordB.length() - suffixLen) : "";
+
+        // 检查剩余部分是否存在于text中
+        return (StrUtil.isNotBlank(remainingA) && StrUtil.containsIgnoreCase(text, remainingA)) ||
+                (StrUtil.isNotBlank(remainingB) && StrUtil.containsIgnoreCase(text, remainingB));
+    }
+
     public static void main(String[] args) {
-        Console.log(findAllChar("奇奇怪怪的曲", "曲奇1"));
-        Console.log(PinYinUtil.findAllChar("白色板子", "白板"));
-        Console.log(PinYinUtil.findTwoChar("一堆垃圾", "堆堆袜"));
-        Console.log(PinYinUtil.findTwoChar("白色板子", "白"));
-        Console.log(PinYinUtil.findTwoChar("奇奇怪怪的曲", "曲奇1"));
+        // Console.log(findAllChar("奇奇怪怪的曲", "曲奇1"));
+        // Console.log(PinYinUtil.findAllChar("白色板子", "白板"));
+        // Console.log(PinYinUtil.findTwoChar("一堆垃圾", "堆堆袜"));
+        // Console.log(PinYinUtil.findTwoChar("白色板子", "白"));
+        // Console.log(PinYinUtil.findTwoChar("奇奇怪怪的曲", "曲奇1"));
+        Console.log(PinYinUtil.findRemainingInText("一排对手", "足球","排球"));
+        Console.log(PinYinUtil.findRemainingInText("一包大眼睛", "双肩包","单肩包"));
     }
 }
