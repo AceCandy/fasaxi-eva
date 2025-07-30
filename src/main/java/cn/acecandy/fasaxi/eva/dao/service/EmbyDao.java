@@ -56,9 +56,16 @@ public class EmbyDao {
         if (null == telegramId || null == iv || 0 == iv) {
             return;
         }
+        upIv(CollUtil.newArrayList(telegramId), iv);
+    }
+
+    public void upIv(List<Long> telegramIds, Integer iv) {
+        if (CollUtil.isEmpty(telegramIds) || null == iv || 0 == iv) {
+            return;
+        }
         ThreadUtil.execAsync(() -> {
             LambdaUpdateWrapper<Emby> updateWrapper = new LambdaUpdateWrapper<>();
-            updateWrapper.eq(Emby::getTg, telegramId);
+            updateWrapper.in(Emby::getTg, telegramIds);
             updateWrapper.setSql("iv = iv + " + iv);
             embyMapper.update(null, updateWrapper);
         });

@@ -1035,53 +1035,56 @@ public class Game {
                 // 写入日志
                 m.setLogId(wodiUserLogDao.addLog(m.id, m.fraction, isVictory));
             });
-            wodiUserDao.upCompleteGame(completeGameId);
-            wodiUserDao.upWordPeople(wordPeopleId);
-            wodiUserDao.upWordSpy(wordSpyId);
-            wodiUserDao.upWordPeopleVictory(wordPeopleVictoryId);
-            wodiUserDao.upWordSpyVictory(wordSpyVictoryId);
+            ThreadUtil.execAsync(() -> {
+                wodiUserDao.upCompleteGame(completeGameId);
+                wodiUserDao.upWordPeople(wordPeopleId);
+                wodiUserDao.upWordSpy(wordSpyId);
+                wodiUserDao.upWordPeopleVictory(wordPeopleVictoryId);
+                wodiUserDao.upWordSpyVictory(wordSpyVictoryId);
+            });
 
             List<Map.Entry<Long, Integer>> top20 = powerRankService.findTop20ListByCache();
             // 发币
+            List<Long> tgIds = memberList.stream().map(GameUser::getId).toList();
+
             StringBuilder mailBuilder = new StringBuilder();
+            Map<Long, Long> wodiTopCountMap = wodiTopDao.selectByTgId(tgIds)
+                    .stream().collect(Collectors.groupingBy(WodiTop::getTelegramId, Collectors.counting()));
             memberList.forEach(m -> {
                 Integer level = WdUtil.scoreToLv(m.wodiUser.getFraction());
-                List<WodiTop> wodiTops = wodiTopDao.selectByTgId(m.id);
-                double buff = WdUtil.getRankBuff(m.id, level, wodiTops, top20);
+                double buff = WdUtil.getRankBuff(m.id, level, wodiTopCountMap.get(m.id), top20);
 
                 m.dmailUp = (int) ((m.fraction - 4) * (1 + buff));
                 mailBuilder.append(StrUtil.format(USER_DMAIL, level, TgUtil.tgNameOnUrl(m.user), m.dmailUp));
                 embyDao.upIv(m.user.getId(), m.dmailUp);
 
                 if (m.id.equals(homeOwner.getId())) {
-                    String ownerStr = "";
+                    int ownerMail = 7;
+                    String ownerStr = StrUtil.format(USER_DMAIL_OWNER_FAIL,
+                            TgUtil.tgNameOnUrl(m.user), ownerMail);
                     if ((m.isUndercover && winnerIsUndercover) || (!m.isUndercover && !winnerIsUndercover)) {
-                        m.dmailUp = 14;
+                        ownerMail = 14;
                         ownerStr = StrUtil.format(USER_DMAIL_OWNER_WIN,
-                                TgUtil.tgNameOnUrl(m.user), m.dmailUp);
-                    } else {
-                        m.dmailUp = 7;
-                        ownerStr = StrUtil.format(USER_DMAIL_OWNER_FAIL,
-                                TgUtil.tgNameOnUrl(m.user), m.dmailUp);
+                                TgUtil.tgNameOnUrl(m.user), ownerMail);
                     }
                     mailBuilder.append(ownerStr);
-                    embyDao.upIv(m.user.getId(), m.dmailUp);
+                    embyDao.upIv(m.user.getId(), ownerMail);
                 }
                 wodiUserLogDao.upIvById(m.logId, m.dmailUp);
             });
             int memberSize = memberList.size();
+            List<Long> noRunTgIds = memberList.stream()
+                    .filter(m -> !m.isRunner).map(m -> m.user.getId()).toList();
+            int upRotate = 0;
             if (memberSize >= 9) {
-                int upRotate = memberSize - 8;
+                upRotate += memberSize - 8;
                 mailBuilder.append("\n").append(StrUtil.format(USER_FULL, memberSize, upRotate));
-                memberList.stream().filter(m -> !m.isRunner)
-                        .forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
             if (rotate > memberSize + 1) {
-                int upRotate = NumberUtil.min(rotate - memberSize - 1, memberSize / 2);
+                upRotate += NumberUtil.min(rotate - memberSize - 1, memberSize / 2);
                 mailBuilder.append("\n").append(StrUtil.format(RORATE_FULL, rotate, upRotate));
-                memberList.stream().filter(m -> !m.isRunner)
-                        .forEach(m -> embyDao.upIv(m.user.getId(), upRotate));
             }
+            embyDao.upIv(noRunTgIds, upRotate);
             tgService.sendMsg(chatId, mailBuilder.toString());
 
             StringBuilder upBuilder = new StringBuilder();

@@ -63,12 +63,12 @@ public final class WdUtil extends WdSubUtil {
     /**
      * 获得等级、排名、头衔增益
      *
-     * @param level    数量
-     * @param wodiTops 水上衣
-     * @param top20    排行榜
+     * @param level        数量
+     * @param wodiTopCount 卧底top头衔数量
+     * @param top20        排行榜
      * @return double
      */
-    public static double getRankBuff(Long tgId, Integer level, List<WodiTop> wodiTops,
+    public static double getRankBuff(Long tgId, Integer level, Long wodiTopCount,
                                      List<Map.Entry<Long, Integer>> top20) {
         BigDecimal buff = NumberUtil.mul(new BigDecimal("0.05"), level);
 
@@ -88,7 +88,7 @@ public final class WdUtil extends WdSubUtil {
             buff = buff.add(new BigDecimal("0.05"));
         }
         // top头衔buff
-        return NumberUtil.add(buff, CollUtil.size(wodiTops) * 0.1).doubleValue();
+        return NumberUtil.add(buff, wodiTopCount == null ? 0 : wodiTopCount * 0.1).doubleValue();
     }
 
     /**

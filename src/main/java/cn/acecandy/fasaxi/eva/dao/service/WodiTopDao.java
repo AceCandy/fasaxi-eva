@@ -39,8 +39,15 @@ public class WodiTopDao {
     }
 
     public List<WodiTop> selectByTgId(Long tgId) {
+        return selectByTgId(CollUtil.newArrayList(tgId));
+    }
+
+    public List<WodiTop> selectByTgId(List<Long> tgIds) {
+        if (CollUtil.isEmpty(tgIds)) {
+            return CollUtil.newArrayList();
+        }
         LambdaQueryWrapper<WodiTop> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(WodiTop::getSeason, CURRENT_SEASON).eq(WodiTop::getTelegramId, tgId)
+        queryWrapper.eq(WodiTop::getSeason, CURRENT_SEASON).in(WodiTop::getTelegramId, tgIds)
                 .orderByAsc(WodiTop::getLevel);
         return wodiTopMapper.selectList(queryWrapper);
     }
