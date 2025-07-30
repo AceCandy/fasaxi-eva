@@ -154,11 +154,21 @@ public final class PinYinUtil extends PinyinUtil {
         }
 
         // 计算共同后缀长度
-        int suffixLenA = wordA.length() - prefixLen;
+        /*int suffixLenA = wordA.length() - prefixLen;
         int suffixLenB = wordB.length() - prefixLen;
         int suffixLen = 0;
         while (suffixLen < Math.min(suffixLenA, suffixLenB) &&
                 wordA.charAt(wordA.length() - 1 - suffixLen) == wordB.charAt(wordB.length() - 1 - suffixLen)) {
+            suffixLen++;
+        }*/
+        int suffixLen = 0;
+        int maxSuffixLen = Math.min(wordA.length() - prefixLen, wordB.length() - prefixLen);
+        while (suffixLen < maxSuffixLen) {
+            int idxA = wordA.length() - 1 - suffixLen;
+            int idxB = wordB.length() - 1 - suffixLen;
+            if (wordA.charAt(idxA) != wordB.charAt(idxB)) {
+                break;
+            }
             suffixLen++;
         }
 
@@ -180,6 +190,6 @@ public final class PinYinUtil extends PinyinUtil {
         // Console.log(PinYinUtil.findTwoChar("白色板子", "白"));
         // Console.log(PinYinUtil.findTwoChar("奇奇怪怪的曲", "曲奇1"));
         Console.log(PinYinUtil.findRemainingInText("一排对手", "足球","排球"));
-        Console.log(PinYinUtil.findRemainingInText("一包大眼睛", "双肩包","单肩包"));
+        Console.log(PinYinUtil.findRemainingInText("一双大眼睛", "双肩包","单肩包"));
     }
 }

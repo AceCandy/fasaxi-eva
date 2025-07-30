@@ -5,12 +5,12 @@ import cn.acecandy.fasaxi.eva.config.CommonGameConfig;
 import cn.acecandy.fasaxi.eva.dao.entity.GameKtccy;
 import cn.acecandy.fasaxi.eva.dao.service.EmbyDao;
 import cn.acecandy.fasaxi.eva.dao.service.GameKtccyDao;
-import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.FhUtil;
+import cn.acecandy.fasaxi.eva.utils.GameUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
-import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.acecandy.fasaxi.eva.utils.ImgUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
+import cn.acecandy.fasaxi.eva.utils.WdUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -28,6 +28,7 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.List;
 
 import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜成语;
 import static cn.acecandy.fasaxi.eva.bot.game.Command.看图猜番号;
@@ -121,14 +122,54 @@ public class GameService {
             picFile = ImgUtil.briefStrokes(picFile);
         }
 
-        SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(tgService.getGroup()).caption(KTCCY_TIP)
-                .photo(new InputFile(picFile))
-                .build();
-        Message msg = tgService.sendPhoto(sendPhoto, 60 * 60 * 1000, 看图猜成语);
-        GameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
-                .type(看图猜成语).answer(ktccy.getAnswer()).msgId(msg.getMessageId()).build());
-        log.warn("[成语猜猜看] {}", ktccy.getAnswer());
+        SmallGameDTO smallGame = SmallGameDTO.builder().type(看图猜成语).answer(ktccy.getAnswer()).build();
+        try {
+            SendPhoto sendPhoto = SendPhoto.builder()
+                    .chatId(tgService.getGroup()).caption(KTCCY_TIP)
+                    .photo(new InputFile(picFile))
+                    .build();
+            Message msg = tgService.sendPhoto(sendPhoto, 60 * 60 * 1000, 看图猜成语);
+            smallGame.setMsgId(msg.getMessageId());
+        } finally {
+            log.warn("[成语猜猜看] {}", ktccy.getAnswer());
+            GameUtil.GAME_CACHE.offer(smallGame);
+        }
+
+    }
+
+    public void ktccyToDb() {
+        List<GameKtccy> ktccyList = gameKtccyDao.findAllNoFileUrl();
+        if (CollUtil.isEmpty(ktccyList)) {
+            return;
+        }
+        String defaultPath = commonGameConfig.getKtccy().getPath();
+        ktccyList.forEach(ktccy -> {
+            File picFile = null;
+            try {
+                picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
+                        FileUtil.mkdir(defaultPath + ktccy.getSource()));
+            } catch (Exception e) {
+                if (StrUtil.containsIgnoreCase(ktccy.getPicUrl(), "https://free.wqwlkj.cn/wqwlapi/data/")) {
+                    ktccy.setPicUrl(ktccy.getPicUrl().replace("https://free.wqwlkj.cn/wqwlapi/data/",
+                            "https://api.lolimi.cn/API/ktcc/"));
+                    log.info("远程获取url:{}", ktccy.getPicUrl());
+                    picFile = HttpUtil.downloadFileFromUrl(ktccy.getPicUrl(),
+                            FileUtil.mkdir(defaultPath + ktccy.getSource()));
+                } else {
+                    log.error("====={}[{}] 下载失败", ktccy.getAnswer(), ktccy.getPicUrl());
+                    return;
+                }
+            }
+            gameKtccyDao.updateFileUrl(ktccy.getId(), picFile.getAbsolutePath());
+
+            // 简笔化
+            String handleFileUrl = StrUtil.replaceLast(ktccy.getFileUrl(),
+                    ".jpg", "-briefStrokes.jpg");
+            if (!FileUtil.exist(handleFileUrl)) {
+                ImgUtil.briefStrokes(picFile);
+            }
+            log.info("{}[{}] 下载成功", ktccy.getAnswer(), ktccy.getPicUrl());
+        });
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -161,6 +202,9 @@ public class GameService {
         if (path == null) {
             return;
         }
+        String fhName = FhUtil.getFhName(path.toString());
+        SmallGameDTO smallGame = SmallGameDTO.builder().type(看图猜番号)
+                .answer(fhName).build();
         try (InputStream input = ImgUtil.protectPic(path.toFile())) {
             if (null == input) {
                 return;
@@ -169,10 +213,10 @@ public class GameService {
                     .chatId(tgService.getGroup()).caption(KTCFH_TIP)
                     .photo(new InputFile(input, "ktcfh.jpg")).hasSpoiler(true).build();
             Message msg = tgService.sendPhoto(sendPhoto, 55 * 60 * 1000);
-            String fhName = FhUtil.getFhName(path.toString());
-            GameUtil.GAME_CACHE.offer(SmallGameDTO.builder()
-                    .type(看图猜番号).answer(fhName).msgId(msg.getMessageId()).build());
+            smallGame.setMsgId(msg.getMessageId());
+        } finally {
             log.warn("[道观我最强] {}", fhName);
+            GameUtil.GAME_CACHE.offer(smallGame);
         }
     }
 

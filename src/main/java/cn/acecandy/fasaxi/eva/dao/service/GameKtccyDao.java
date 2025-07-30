@@ -5,6 +5,7 @@ import cn.acecandy.fasaxi.eva.dao.entity.WodiWord;
 import cn.acecandy.fasaxi.eva.dao.mapper.GameKtccyMapper;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -61,12 +62,19 @@ public class GameKtccyDao {
      * @param fileUrl 文件路径
      */
     public void updateFileUrl(Long id, String fileUrl) {
-        if (null == id||StrUtil.isBlank(fileUrl)) {
+        if (null == id || StrUtil.isBlank(fileUrl)) {
             return;
         }
         GameKtccy gameKtccy = new GameKtccy();
         gameKtccy.setFileUrl(fileUrl);
         gameKtccy.setId(id);
         gameKtccyMapper.updateById(gameKtccy);
+    }
+
+    public List<GameKtccy> findAllNoFileUrl() {
+        LambdaQueryWrapper<GameKtccy> wrapper = new LambdaQueryWrapper<>();
+        wrapper.isNull(GameKtccy::getFileUrl);
+        ;
+        return gameKtccyMapper.selectList(wrapper);
     }
 }
