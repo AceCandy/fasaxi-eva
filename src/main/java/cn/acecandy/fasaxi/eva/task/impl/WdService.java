@@ -12,6 +12,7 @@ import cn.acecandy.fasaxi.eva.dao.service.WodiTopDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserDao;
 import cn.acecandy.fasaxi.eva.dao.service.WodiUserLogDao;
 import cn.acecandy.fasaxi.eva.dao.service.XInviteDao;
+import cn.acecandy.fasaxi.eva.utils.ChineseUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.MsgDelUtil;
@@ -460,6 +461,7 @@ public class WdService {
             return;
         }
         text = StrUtil.removePrefix(text, "，");
+        text = ChineseUtil.toSimple(text);
         // 第一轮不能爆；非。开头不能爆；第二轮时如果第一轮发言人数<2不能爆
         boolean canBoom = game.rotate != 1 && StrUtil.startWith(text, "。")
                 && !(game.rotate == 2 && game.firstSpeakList.size() < 2);
@@ -481,7 +483,7 @@ public class WdService {
             return;
         }
         String text = message.getText();
-        if (!StrUtil.containsAny(text, "#WodiInfo ", "#WodiRank ", "#WodiTop ", "#WodiRealRank ")) {
+        if (!StrUtil.containsAny(text, "#WodiInfo ", "#WodiRank ", "#WodiTop ", "#WodiRealRank ", "世界线")) {
             return;
         }
         MsgDelUtil.addAutoDelMsg(message, 10 * 1000);

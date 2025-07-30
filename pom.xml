@@ -139,6 +139,12 @@
             <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
+        <!-- 简繁转换 -->
+        <dependency>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>opencc4j</artifactId>
+            <version>1.13.1</version>
+        </dependency>
     </dependencies>
 
     <build>

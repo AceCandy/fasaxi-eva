@@ -31,7 +31,7 @@ public final class GlobalUtil {
     /**
      * 更新发言
      */
-    public static synchronized void updateSpeak() {
+    public static void updateSpeak() {
         GAME_SPEAK_CNT.decrementAndGet();
         lastSpeakTime = System.currentTimeMillis();
     }
