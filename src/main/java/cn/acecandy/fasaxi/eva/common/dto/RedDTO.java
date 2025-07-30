@@ -3,6 +3,7 @@ package cn.acecandy.fasaxi.eva.common.dto;
 import cn.acecandy.fasaxi.eva.common.enums.RedType;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -32,6 +33,10 @@ public class RedDTO {
      * 红包金额
      */
     private Integer money;
+    /**
+     * 创建红包时间 时间戳（秒）
+     */
+    private Long createTime;
     /**
      * 红包人数
      */
@@ -71,6 +76,7 @@ public class RedDTO {
         this.sendUser = sendUser;
         this.type = type;
         this.remainingMembers = new AtomicInteger(members);
+        this.createTime = DateUtil.currentSeconds();
 
         // 预分配红包金额
         // 打乱顺序
@@ -160,8 +166,8 @@ public class RedDTO {
     }
 
     public String getFinalMessage() {
-        String startMsg = StrUtil.format("🧧 Dmail红包\n\n😎 {} 的红包已经被瓜分完了~\n\n",
-                TgUtil.tgNameOnUrl(sendUser));
+        String startMsg = StrUtil.format("🧧 Dmail红包\n\n😎 {} 的红包{}s内就被瓜分完啦～～\n\n",
+                TgUtil.tgNameOnUrl(sendUser), DateUtil.currentSeconds() - createTime);
 
         // 找出最大领取金额
         Integer max = receivers.values().stream().map(RedReceiverDTO::getAmount)
