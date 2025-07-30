@@ -109,6 +109,9 @@ public class GameService {
                     throw new RuntimeException(StrUtil.format("图片下载失败: {}", ktccy.getPicUrl()), e);
                 }
             }
+            if (!StrUtil.equalsAnyIgnoreCase(FileUtil.extName(picFile), "png", "jpg", "jpeg", "webp")) {
+                return;
+            }
             gameKtccyDao.updateFileUrl(ktccy.getId(), picFile.getAbsolutePath());
         } else {
             picFile = FileUtil.file(ktccy.getFileUrl());
@@ -159,6 +162,9 @@ public class GameService {
                     log.error("====={}[{}] 下载失败", ktccy.getAnswer(), ktccy.getPicUrl());
                     return;
                 }
+            }
+            if (!StrUtil.equalsAnyIgnoreCase(FileUtil.extName(picFile), "png", "jpg", "jpeg", "webp")) {
+                return;
             }
             gameKtccyDao.updateFileUrl(ktccy.getId(), picFile.getAbsolutePath());
 
