@@ -483,7 +483,8 @@ public class WdService {
             return;
         }
         String text = message.getText();
-        if (!StrUtil.containsAny(text, "#WodiInfo ", "#WodiRank ", "#WodiTop ", "#WodiRealRank ", "世界线")) {
+        if (!StrUtil.containsAny(text, "#WodiInfo ", "#WodiRank ",
+                "#WodiTop ", "#WodiRealRank ", "世界线", "Dmail风云录")) {
             return;
         }
         MsgDelUtil.addAutoDelMsg(message, 10 * 1000);
