@@ -16,6 +16,6 @@ import java.util.List;
 @Mapper
 public interface GameKtccyMapper extends BaseMapper<GameKtccy> {
 
-    @Select("SELECT * FROM game_ktccy ORDER BY RAND() / (play_time + 1) LIMIT 50")
+    @Select("SELECT * FROM game_ktccy where file_url is not null ORDER BY RAND() / (play_time + 1) LIMIT 50")
     List<GameKtccy> selectRandomWord10();
 }
