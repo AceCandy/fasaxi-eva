@@ -15,6 +15,7 @@ import cn.acecandy.fasaxi.eva.task.impl.CcService;
 import cn.acecandy.fasaxi.eva.task.impl.GameService;
 import cn.acecandy.fasaxi.eva.task.impl.RedService;
 import cn.acecandy.fasaxi.eva.task.impl.TgService;
+import cn.acecandy.fasaxi.eva.task.impl.WarnService;
 import cn.acecandy.fasaxi.eva.task.impl.WdService;
 import cn.acecandy.fasaxi.eva.task.impl.XmService;
 import cn.acecandy.fasaxi.eva.utils.CommandUtil;
@@ -77,6 +78,8 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
     private WodiUserDao wodiUserDao;
     @Resource
     private RedService redService;
+    @Resource
+    private WarnService warnService;
 
     @Override
     public String getBotToken() {
@@ -234,6 +237,8 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
                 return;
             }
             redService.process(cmd, message);
+        } else if (CommandUtil.isWarnCommand(cmd)) {
+            warnService.process(cmd, message);
         } else if (CommandUtil.isWdCommand(cmd)) {
             if (!commonGameConfig.getWd().getEnable()) {
                 tgService.sendMsg(message.getChatId().toString(), "该bot未开启该功能！", 5 * 1000);

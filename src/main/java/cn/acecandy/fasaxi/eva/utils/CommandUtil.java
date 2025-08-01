@@ -15,13 +15,23 @@ public final class CommandUtil {
     }
 
     /**
-     * 是wd相关命令
+     * 是红包相关命令
      *
      * @param command 命令
      * @return boolean
      */
     public static boolean isRedCommand(String command) {
         return StrUtil.startWith(command, "/red");
+    }
+
+    /**
+     * 是警告相关命令
+     *
+     * @param command 命令
+     * @return boolean
+     */
+    public static boolean isWarnCommand(String command) {
+        return StrUtil.startWith(command, "/warn");
     }
 
     /**

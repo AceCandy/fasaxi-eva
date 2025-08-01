@@ -119,7 +119,7 @@ public class WdService {
         WodiUser user = wodiUserDao.findByTgId(userId);
         Emby embyUser = embyDao.findByTgId(userId);
         if (user == null || embyUser == null) {
-            tgService.sendMsg(chatId, "您还未参与过游戏或者未在bot处登记哦~", 5 * 1000);
+            tgService.sendMsg(chatId, "❌ 您还未参与过游戏或者未在bot处登记哦~", 5 * 1000);
             return;
         }
         if (CACHE_CHECKIN.containsKey(userId) && CACHE_CHECKIN.get(userId) == 1) {
@@ -127,7 +127,7 @@ public class WdService {
         } else {
             Integer costIv = 5;
             if (null == embyUser.getIv() || embyUser.getIv() < costIv) {
-                tgService.sendMsg(chatId, "您的Dmail不足，无法查看个人信息", 5 * 1000);
+                tgService.sendMsg(chatId, "❌ 您的Dmail值未达到指令开启条件", 5 * 1000);
                 return;
             }
             if (!CollUtil.contains(tgService.getAdmins(), userId)) {
@@ -201,38 +201,6 @@ public class WdService {
     }
 
     /**
-     * 处理 个人记录
-     *
-     * @param chatId 聊天id
-     * @param userId 用户id
-     */
-    public void handleRecordCommand(String chatId, Long userId) {
-        WodiUser user = wodiUserDao.findByTgId(userId);
-        Emby embyUser = embyDao.findByTgId(userId);
-        if (user == null || embyUser == null) {
-            tgService.sendMsg(chatId, "您还未参与过游戏或者未在bot处登记哦~", 5 * 1000);
-            return;
-        }
-        Integer costIv = 5;
-        if (null == embyUser.getIv() || embyUser.getIv() < costIv) {
-            tgService.sendMsg(chatId, "您的Dmail不足，无法查看个人信息", 5 * 1000);
-            return;
-        }
-        if (!CollUtil.contains(tgService.getAdmins(), userId)) {
-            embyDao.upIv(userId, -costIv);
-        }
-        List<WodiTop> wodiTops = wodiTopDao.selectByTgId(userId);
-        Map<Long, Integer> topMap = powerRankService.findTopByCache();
-        SendPhoto sendPhoto = SendPhoto.builder()
-                .chatId(chatId).caption(WdUtil.getRecord(user, embyUser, wodiTops, topMap))
-                .photo(new InputFile(ResourceUtil.getStream(StrUtil.format(
-                        "static/pic/s{}/lv{}.webp", CURRENT_SEASON, WdUtil.scoreToLv(user.getFraction()))),
-                        "谁是卧底个人信息"))
-                .build();
-        tgService.sendPhoto(sendPhoto, 75 * 1000);
-    }
-
-    /**
      * 是否玩家用户
      *
      * @param chatId 聊天id
@@ -251,11 +219,12 @@ public class WdService {
     private void handleRankCommand(String chatId, Long userId) {
         Emby emby = isEmbyUser(chatId, userId);
         if (null == emby) {
+            tgService.sendMsg(chatId, "未初始化玩家无法查看", 5 * 1000);
             return;
         }
         Integer costIv = 10;
         if (null == emby.getIv() || emby.getIv() < costIv) {
-            tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
+            tgService.sendMsg(chatId, "❌ 您的Dmail值未达到指令开启条件", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgService.getAdmins(), userId)) {
@@ -282,6 +251,7 @@ public class WdService {
     private void handleRealRankCommand(String chatId, Long userId) {
         Emby emby = isEmbyUser(chatId, userId);
         if (null == emby) {
+            tgService.sendMsg(chatId, "❌ 未初始化玩家无法使用该指令", 5 * 1000);
             return;
         }
         List<Map.Entry<Long, Integer>> top20 = powerRankService.findTop20ListByCache();
@@ -291,7 +261,7 @@ public class WdService {
 
         Integer costIv = 15;
         if (null == emby.getIv() || emby.getIv() < costIv) {
-            tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
+            tgService.sendMsg(chatId, "❌ 您的Dmail值未达到指令开启条件", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgService.getAdmins(), userId)) {
@@ -316,11 +286,12 @@ public class WdService {
     private void handleTopCommand(String chatId, Long userId, String text) {
         Emby emby = isEmbyUser(chatId, userId);
         if (null == emby) {
+            tgService.sendMsg(chatId, "❌ 未初始化玩家无法使用该指令", 5 * 1000);
             return;
         }
         Integer costIv = 3;
         if (null == emby.getIv() || emby.getIv() < costIv) {
-            tgService.sendMsg(chatId, "您的Dmail不足，无法查看榜单", 5 * 1000);
+            tgService.sendMsg(chatId, "❌ 您的Dmail值未达到指令开启条件", 5 * 1000);
             return;
         }
         if (!CollUtil.contains(tgService.getAdmins(), userId)) {
@@ -373,7 +344,7 @@ public class WdService {
         String userId = user.getId().toString();
         if (!StrUtil.equals(chatId, tgService.getGroup())) {
             tgService.sendMsg(chatId, NO_AUTH_GROUP);
-            log.error("非授权群组私自拉bot入群已被发现：{}, chat: {}", chatId, chat);
+            log.error("🚨 非授权群组私自拉bot入群已被发现：{}, chat: {}", chatId, chat);
             return;
         }
         if (!WdUtil.isInGameTime()) {
@@ -386,6 +357,16 @@ public class WdService {
             if (!CollUtil.contains(tgService.getAdmins(), userId) && GAME_SPEAK_CNT.get() > 0) {
                 tgService.sendMsg(chatId,
                         StrUtil.format(SPEAK_TIME_LIMIT, GAME_SPEAK_CNT.get()), 15 * 1000);
+                return;
+            }
+            Emby emby = isEmbyUser(chatId, user.getId());
+            if (null == emby) {
+                tgService.sendMsg(chatId, "❌ 未初始化玩家无法使用该指令", 5 * 1000);
+                return;
+            }
+            int costIv = 3;
+            if (null == emby.getIv() || emby.getIv() < costIv) {
+                tgService.sendMsg(chatId, "❌ 您的Dmail值未达到指令开启条件", 5 * 1000);
                 return;
             }
 
