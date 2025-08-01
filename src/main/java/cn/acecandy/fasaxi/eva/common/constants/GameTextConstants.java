@@ -15,9 +15,10 @@ public interface GameTextConstants {
 
     String NO_AUTH_GROUP = "❌ 严重警告，未授权群组不允许使用本Bot，当前群组信息已上传网信部记录！";
     String CURFEW_GAME_TIME = "❌ 当前未在可摸鱼时间，游戏时间9～12、14～18、19～22点！";
-    String TIP_IN_GROUP = "请在群组中使用命令~";
-    String TIP_IN_PRIVATE = "请私聊bot使用命令~";
-    String TIP_IN_OWNER = "您无法使用该命令~";
+    String TIP_IN_GROUP = "❌ 请在群组中使用命令~";
+    String TIP_IN_CMD_ERROR = "❌ 指令错误";
+    String TIP_IN_PRIVATE = "❌ 请私聊bot使用命令~";
+    String TIP_IN_OWNER = "❌ 您无法使用该命令~";
     String TIP_IN_XRENEW_CREATE = "❌ 指令不正确，格式参考： /xm_create [Dmail] [数量]";
     String TIP_IN_XRENEW_USE = "❌ 指令或码子格式不正确，格式参考： /xm_use [code]";
     String TIP_IN_XRENEW_USED = "❌ 码子不存在或者已经使用过了，请勿频繁操作";
@@ -235,6 +236,8 @@ public interface GameTextConstants {
                           🌌🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪🔪
                           """;
     String BOOM_FAIL = "☠️❌☠️❌☠️ 【{}】突然猝死暴毙倒下，围观群众虽不明但都躲得远远的，生怕被碰瓷（Dmail-2）\n";
+
+    String YELLOW_PAI = "🤡 由于您的某些行为导致X名不愿意透露姓名的群友将您举报了，您收到一张黄牌，Dmail -100！";
 
     String SEASON0 = "零化域的缺失之环";
     String SEASON1 = "闭时曲线的碑文";

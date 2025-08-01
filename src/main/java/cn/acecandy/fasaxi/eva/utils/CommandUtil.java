@@ -31,7 +31,7 @@ public final class CommandUtil {
      * @return boolean
      */
     public static boolean isWarnCommand(String command) {
-        return StrUtil.startWith(command, "/warn");
+        return StrUtil.startWith(command, "/fp");
     }
 
     /**
