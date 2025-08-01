@@ -1081,8 +1081,9 @@ public class Game {
                 mailBuilder.append("\n").append(StrUtil.format(USER_FULL, memberSize, upRotate));
             }
             if (rotate > memberSize + 1) {
-                upRotate += NumberUtil.min(rotate - memberSize - 1, memberSize / 2);
-                mailBuilder.append("\n").append(StrUtil.format(RORATE_FULL, rotate, upRotate));
+                int upMember = NumberUtil.min(rotate - memberSize - 1, memberSize / 2);
+                upRotate += upMember;
+                mailBuilder.append("\n").append(StrUtil.format(RORATE_FULL, rotate, upMember));
             }
             embyDao.upIv(noRunTgIds, upRotate);
             tgService.sendMsg(chatId, mailBuilder.toString());
@@ -1197,7 +1198,7 @@ public class Game {
                 || StrUtil.equalsIgnoreCase(pinyin, wordPinyin)
                 || PinYinUtil.findAllChar(text, member.word)
                 || PinYinUtil.findTwoChar(text, member.word)
-                || PinYinUtil.findRemainingInText(text, PEOPLE_WORD, SPY_WORD)
+                || PinYinUtil.findRemainingInText(text, PEOPLE_WORD, SPY_WORD, member.word)
         ) {
             // 违禁爆词 本词或者拼音
             tgService.sendMsg(userId.toString(), StrUtil.format(SPEAK_NOWAY, TgUtil.tgNameOnUrl(member)));

@@ -136,13 +136,17 @@ public final class PinYinUtil extends PinyinUtil {
     /**
      * 查找文本中是否包含 词A和词B除开相同部分外的剩余内容
      *
-     * @param text  文本
-     * @param wordA 单词
-     * @param wordB Wordb
+     * @param text   文本
+     * @param wordA  单词
+     * @param wordB  Wordb
+     * @param single 个人词语
      * @return boolean
      */
-    public static boolean findRemainingInText(String text, String wordA, String wordB) {
+    public static boolean findRemainingInText(String text, String wordA, String wordB, String single) {
         if (StrUtil.isBlank(text) || StrUtil.isBlank(wordA) || StrUtil.isBlank(wordB)) {
+            return false;
+        }
+        if (StrUtil.containsIgnoreCase(wordA, wordB) || StrUtil.containsIgnoreCase(wordB, wordA)) {
             return false;
         }
 
@@ -152,15 +156,6 @@ public final class PinYinUtil extends PinyinUtil {
         while (prefixLen < minLen && wordA.charAt(prefixLen) == wordB.charAt(prefixLen)) {
             prefixLen++;
         }
-
-        // 计算共同后缀长度
-        /*int suffixLenA = wordA.length() - prefixLen;
-        int suffixLenB = wordB.length() - prefixLen;
-        int suffixLen = 0;
-        while (suffixLen < Math.min(suffixLenA, suffixLenB) &&
-                wordA.charAt(wordA.length() - 1 - suffixLen) == wordB.charAt(wordB.length() - 1 - suffixLen)) {
-            suffixLen++;
-        }*/
         int suffixLen = 0;
         int maxSuffixLen = Math.min(wordA.length() - prefixLen, wordB.length() - prefixLen);
         while (suffixLen < maxSuffixLen) {
@@ -179,8 +174,10 @@ public final class PinYinUtil extends PinyinUtil {
                 wordB.substring(prefixLen, wordB.length() - suffixLen) : "";
 
         // 检查剩余部分是否存在于text中
-        return (StrUtil.isNotBlank(remainingA) && StrUtil.containsIgnoreCase(text, remainingA)) ||
-                (StrUtil.isNotBlank(remainingB) && StrUtil.containsIgnoreCase(text, remainingB));
+        return (StrUtil.isNotBlank(remainingA) && StrUtil.containsIgnoreCase(text, remainingA)) &&
+                StrUtil.equalsIgnoreCase(wordA, single) ||
+                (StrUtil.isNotBlank(remainingB) && StrUtil.containsIgnoreCase(text, remainingB)) &&
+                        StrUtil.equalsIgnoreCase(wordB, single);
     }
 
     public static void main(String[] args) {
@@ -189,7 +186,9 @@ public final class PinYinUtil extends PinyinUtil {
         // Console.log(PinYinUtil.findTwoChar("一堆垃圾", "堆堆袜"));
         // Console.log(PinYinUtil.findTwoChar("白色板子", "白"));
         // Console.log(PinYinUtil.findTwoChar("奇奇怪怪的曲", "曲奇1"));
-        Console.log(PinYinUtil.findRemainingInText("一排对手", "足球","排球"));
-        Console.log(PinYinUtil.findRemainingInText("一双大眼睛", "双肩包","单肩包"));
+        Console.log(PinYinUtil.findRemainingInText("一排对手", "足球", "排球", "足球"));
+        Console.log(PinYinUtil.findRemainingInText("一排对手", "足球", "排球", "排球"));
+        Console.log(PinYinUtil.findRemainingInText("就是他雨天", "遮阳伞", "雨伞", "雨伞"));
+        Console.log(PinYinUtil.findRemainingInText("就是他雨天", "遮阳伞", "雨伞", "遮阳伞"));
     }
 }
