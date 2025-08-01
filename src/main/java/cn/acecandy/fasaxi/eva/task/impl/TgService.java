@@ -326,7 +326,7 @@ public class TgService {
 
     public void setCommand() {
         SetMyCommands setMyCommands = new SetMyCommands(List.of(
-                new BotCommand("/red 5 5", "创建红包"),
+                new BotCommand("/red", "创建红包"),
                 new BotCommand("/wd", "创建游戏(10 Dmail)"),
                 new BotCommand("/wd_checkin", "签到并查看个人信息(5 Dmail 3分钟内无消耗)"),
                 new BotCommand("/wd_rank", "开启积分榜(10 Dmail)"),
