@@ -22,6 +22,7 @@ import cn.acecandy.fasaxi.eva.utils.CommandUtil;
 import cn.acecandy.fasaxi.eva.utils.GameListUtil;
 import cn.acecandy.fasaxi.eva.utils.GlobalUtil;
 import cn.acecandy.fasaxi.eva.utils.TgUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
@@ -111,7 +112,7 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
         CallbackQuery callback = update.getCallbackQuery();
 
         if (TgUtil.isNewMember(msg) && commonGameConfig.getGroupDoor().getEnable()) {
-            handleNewMember(msg);
+            handleNewMember(msg.getNewChatMembers());
         } else if (TgUtil.isLeftMember(msg) && commonGameConfig.getGroupDoor().getEnable()) {
             handleLeftMember(msg);
         } else if (TgUtil.isMessageValid(msg)) {
@@ -122,6 +123,9 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
             handleCallbackQuery(callback);
         } else if (joinRequest != null) {
             handleChatJoinRequest(joinRequest);
+            if (commonGameConfig.getGroupDoor().getEnable()) {
+                handleNewMember(CollUtil.newArrayList(joinRequest.getUser()));
+            }
         } else {
             handleOtherMsg(msg);
         }
@@ -130,10 +134,9 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
     /**
      * 处理新加入成员
      *
-     * @param message 消息
+     * @param newUsers 新用户
      */
-    private void handleNewMember(Message message) {
-        List<User> newUsers = message.getNewChatMembers();
+    private void handleNewMember(List<User> newUsers) {
         newUsers.forEach(user -> {
             Emby emby = embyDao.findByTgId(user.getId());
             int iv = 0;
@@ -141,8 +144,8 @@ public class TgBot implements SpringLongPollingBot, LongPollingSingleThreadUpdat
                 WodiUser wodi = wodiUserDao.findByTgId(user.getId());
                 iv = (int) ((emby.getIv() + 3 * wodi.getFraction()) * 0.1);
 
-                tgService.sendMsg(message.getChatId().toString(), StrUtil.format("恭喜外门弟子{}进入内门, " +
-                        "您的本金已经转化为{} Dmail, 注意去新bot中查看！", TgUtil.tgName(user), iv));
+                tgService.sendMsg(tgService.getGroup(), StrUtil.format("💗 恭喜外门弟子{}进入内门, " +
+                        "您的Email本金已经转化为{} Dmail, 注意私聊本群bot", TgUtil.tgName(user), iv));
             }
             embyDao.init(user.getId(), iv);
         });

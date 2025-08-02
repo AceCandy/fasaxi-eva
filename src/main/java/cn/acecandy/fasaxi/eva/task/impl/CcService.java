@@ -135,10 +135,9 @@ public class CcService {
         tgService.sendMsg(chatId, StrUtil.format(TIP_IN_INVITE, costIv), 2 * 1000);
 
         String inviteUrl = tgService.generateInvite(userId, 1);
-        log.warn("{} 生成了一个传承邀请:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
-        tgService.sendMsg(message.getMessageId(), message.getChatId().toString(),
-                StrUtil.format(GENERATE_INVITE, inviteUrl));
         xInviteDao.insertInviter(userId, inviteUrl);
+        log.warn("{} 生成了一个传承邀请:{}", TgUtil.tgName(message.getFrom()), inviteUrl);
+        tgService.sendMsg(message.getChatId().toString(), StrUtil.format(GENERATE_INVITE, inviteUrl));
     }
 
     /**
@@ -212,8 +211,11 @@ public class CcService {
         // 更新db
         XInvite xInvite = xInviteDao.findByUrl(inviteLink);
         if (null == xInvite) {
-            xInvite = new XInvite();
-            xInvite.setUrl(inviteLink);
+            /*xInvite = new XInvite();
+            xInvite.setUrl(inviteLink);*/
+            tgService.declineJoin(tgId);
+            log.error("未知邀请{} 不允许使用,拒绝 {} 加入", joinRequest.getInviteLink().getName(), tgId);
+            return;
         }
         // 自动拒绝
         if (null != xInvite.getInviteeId()) {
