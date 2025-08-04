@@ -54,12 +54,12 @@ public interface GameTextConstants {
                       9. <b>战力提升</b>：优秀场次可以提升战力，排位前19均能享受buff增益。所以以战力为王多多获取战力值的提升吧！
                       10. <b>境界霸主</b>：战力累计优先达到阈值能晋升段位霸主名列top榜单，获得大量Dmail和buff增益，每个段位只有一次机会。
                       
-                      /wd 创建游戏(10 Dmail)
-                      /wd_checkin 签到并查看个人信息(5 Dmail 3分钟内无消耗)
-                      /wd_rank 开启积分榜(10 Dmail)
-                      /wd_real_rank 开启实时战力榜(10 Dmail)
-                      /wd_top 开启登顶霸王榜(3 Dmail)
-                      /wd_exit 关闭游戏(3 Dmail)
+                      /wd 创建游戏(10Dmail)
+                      /wd_checkin 签到并查看个人信息(5Dmail[3分钟内无消耗])
+                      /wd_rank 开启积分榜(10Dmail)
+                      /wd_real_rank 开启实时战力榜(10Dmail)
+                      /wd_top 开启登顶霸王榜(3Dmail)
+                      /wd_exit 关闭游戏(10Dmail/异常局不扣除)
                       
                       PS：无Dmail的情况均以Email进行替代
                       """;

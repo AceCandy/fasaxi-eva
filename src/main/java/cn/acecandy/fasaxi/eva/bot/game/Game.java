@@ -587,11 +587,11 @@ public class Game {
         List<Message> sentMsg = Collections.synchronizedList(CollUtil.newArrayList());
 
         // 执行并行发送并收集异常
-        List<User> errorUser = memberList.parallelStream().map(m -> {
+        List<User> errorUser = memberList.stream().map(m -> {
             try {
                 SendMessage sendMessage = new SendMessage(m.id.toString(),
                         StrUtil.format(sendWord, chat.getTitle(), m.word));
-                ThreadUtil.safeSleep(RandomUtil.randomInt(1, 80));
+                ThreadUtil.safeSleep(RandomUtil.randomInt(10, 50));
                 Message message = tgService.sendMsg(sendMessage);
                 sentMsg.add(message);
                 return null;
@@ -604,7 +604,7 @@ public class Game {
             return null;
         }
         // 并行删除已发送的消息
-        sentMsg.parallelStream().forEach(msg ->
+        sentMsg.forEach(msg ->
                 MsgDelUtil.addAutoDelMsg(msg, RandomUtil.randomInt(10, 150)));
         return errorUser;
     }
