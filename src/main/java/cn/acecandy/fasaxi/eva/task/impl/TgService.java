@@ -304,6 +304,9 @@ public class TgService {
     }
 
     public void delMsg(String chatId, Integer msgId) {
+        if (null == msgId) {
+            return;
+        }
         DeleteMessage msg = new DeleteMessage(chatId, msgId);
         executeTg(() -> tgClient.executeAsync(msg));
     }
