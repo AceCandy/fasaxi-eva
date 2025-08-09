@@ -336,6 +336,7 @@ public class Game {
             String errUsers = CollUtil.join(errorUser.stream().map(TgUtil::tgName).toList(), "、");
             tgService.sendMsg(chatId, StrUtil.format(GAME_START_ERROR, errUsers), 15 * 1000);
             log.error("发牌失败，{} 未私聊bot！", errUsers);
+            status = GameStatus.游戏关闭;
         }
     }
 
