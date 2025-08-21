@@ -30,7 +30,7 @@ public class EmbyDao {
         if (null == telegramId) {
             return;
         }
-        Emby emby = Emby.builder().tg(telegramId).iv(iv).build();
+        Emby emby = Emby.builder().tg(telegramId).lv("d").iv(iv).build();
         embyMapper.insertOrUpdate(emby);
     }
 
